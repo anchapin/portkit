@@ -313,6 +313,56 @@ class ConversionReportDownloadResponse(BaseModel):
     format: str = Field(..., description="Report format: json, html, csv")
 
 
+class ConversionStep(BaseModel):
+    """Individual step in the conversion pipeline."""
+
+    step_id: str = Field(..., description="Unique step identifier (e.g., 'step_1')")
+    step_name: str = Field(..., description="Human-readable step name")
+    status: str = Field(..., description="Status: pending, running, completed, failed")
+    started_at: Optional[datetime] = Field(None, description="Step start timestamp")
+    completed_at: Optional[datetime] = Field(None, description="Step completion timestamp")
+    duration_ms: Optional[float] = Field(None, description="Step duration in milliseconds")
+    message: Optional[str] = Field(None, description="Step status message")
+    details: Optional[str] = Field(None, description="Detailed information about the step")
+    error: Optional[str] = Field(None, description="Error message if step failed")
+    error_code: Optional[str] = Field(None, description="Error code if step failed")
+    artifacts: Optional[Dict[str, Any]] = Field(
+        None, description="Output artifacts produced by this step"
+    )
+
+
+class ConversionSummaryStats(BaseModel):
+    """Summary statistics for conversion report."""
+
+    total_steps: int = Field(..., description="Total number of steps in pipeline")
+    completed_steps: int = Field(..., description="Number of completed steps")
+    failed_steps: int = Field(..., description="Number of failed steps")
+    total_duration_ms: float = Field(..., description="Total conversion duration in ms")
+    success_rate: float = Field(..., description="Success rate percentage (0-100)")
+    features_total: int = Field(default=0, description="Total features analyzed")
+    features_converted: int = Field(default=0, description="Features successfully converted")
+    features_failed: int = Field(default=0, description="Features that failed conversion")
+    features_partial: int = Field(default=0, description="Partially converted features")
+    assumptions_used: int = Field(default=0, description="Number of smart assumptions applied")
+
+
+class ConversionStepByStepReportResponse(BaseModel):
+    """Response model for step-by-step conversion report (Issue #1548)."""
+
+    conversion_id: str = Field(..., description="UUID of the conversion job")
+    status: str = Field(..., description="Overall conversion status")
+    original_filename: str = Field(..., description="Original uploaded filename")
+    target_version: str = Field(..., description="Target Minecraft Bedrock version")
+    created_at: datetime = Field(..., description="Conversion start timestamp")
+    completed_at: Optional[datetime] = Field(None, description="Conversion completion timestamp")
+    steps: List[ConversionStep] = Field(..., description="Ordered list of conversion steps")
+    summary: ConversionSummaryStats = Field(..., description="Summary statistics")
+    errors: List[StructuredError] = Field(
+        default_factory=list, description="List of errors encountered"
+    )
+    warnings: List[str] = Field(default_factory=list, description="List of warnings")
+
+
 # Resumable Upload Models
 class ChunkUploadInitResponse(BaseModel):
     """Response for initializing a chunked upload."""
@@ -1417,6 +1467,218 @@ async def get_report_file(
         media_type=media_type,
         filename=download_filename,
     )
+
+
+@router.get(
+    "/api/v1/conversions/{conversion_id}/report/step-by-step",
+    response_model=ConversionStepByStepReportResponse,
+    tags=["conversions"],
+)
+async def get_conversion_step_by_step_report(
+    conversion_id: str,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    Get detailed step-by-step conversion report with failure details (Issue #1548).
+
+    Returns a comprehensive report showing:
+    - Each step of the conversion process
+    - What succeeded at each step with timestamps
+    - What failed at each step with reasons and error codes
+    - Summary statistics including success rate
+
+    **Response:**
+    ```json
+    {
+      "conversion_id": "uuid-v4",
+      "status": "completed",
+      "original_filename": "example_mod.jar",
+      "target_version": "1.20.0",
+      "created_at": "2025-02-12T10:30:00Z",
+      "completed_at": "2025-02-12T10:35:00Z",
+      "steps": [
+        {
+          "step_id": "step_1",
+          "step_name": "File Upload & Validation",
+          "status": "completed",
+          "started_at": "2025-02-12T10:30:00Z",
+          "completed_at": "2025-02-12T10:30:05Z",
+          "duration_ms": 5000,
+          "message": "File validated successfully",
+          "details": "File size: 15MB, Type: .jar"
+        },
+        {
+          "step_id": "step_2",
+          "step_name": "Java Code Analysis",
+          "status": "failed",
+          "started_at": "2025-02-12T10:30:05Z",
+          "completed_at": "2025-02-12T10:30:25Z",
+          "duration_ms": 20000,
+          "message": "Analysis failed",
+          "error": "Unable to parse Java class structure",
+          "error_code": "PARSE_ERROR",
+          "details": "Missing required dependencies detected"
+        }
+      ],
+      "summary": {
+        "total_steps": 5,
+        "completed_steps": 3,
+        "failed_steps": 1,
+        "total_duration_ms": 125000,
+        "success_rate": 60.0,
+        "features_total": 25,
+        "features_converted": 15,
+        "features_failed": 5,
+        "features_partial": 5,
+        "assumptions_used": 3
+      },
+      "errors": [
+        {
+          "error_code": "PARSE_ERROR",
+          "error_type": "conversion_error",
+          "message": "Unable to parse Java class structure",
+          "is_retryable": false,
+          "details": {"step": "step_2", "file": "com/example/Mod.java"}
+        }
+      ],
+      "warnings": [
+        "Custom biome detected - may require manual review",
+        "Complex redstone logic may not convert fully"
+      ]
+    }
+    ```
+
+    **Error Responses:**
+    - 404: Conversion not found
+    - 403: Not authorized to view this conversion
+    """
+    job = await crud.get_job(db, conversion_id)
+    if not _user_owns_job(job, current_user):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Conversion {conversion_id} not found",
+        )
+
+    input_data = job.input_data or {}
+    results = job.results[0].output_data if job.results else {}
+
+    steps_data = results.get("steps", input_data.get("steps", []))
+    steps = []
+
+    for i, step_data in enumerate(steps_data):
+        step = ConversionStep(
+            step_id=step_data.get("step_id", f"step_{i+1}"),
+            step_name=step_data.get("step_name", f"Step {i+1}"),
+            status=step_data.get("status", "pending"),
+            started_at=step_data.get("started_at"),
+            completed_at=step_data.get("completed_at"),
+            duration_ms=step_data.get("duration_ms"),
+            message=step_data.get("message"),
+            details=step_data.get("details"),
+            error=step_data.get("error"),
+            error_code=step_data.get("error_code"),
+            artifacts=step_data.get("artifacts"),
+        )
+        steps.append(step)
+
+    if not steps:
+        steps = _build_steps_from_job_status(job)
+
+    summary_data = results.get("summary", input_data.get("summary", {}))
+    summary = ConversionSummaryStats(
+        total_steps=summary_data.get("total_steps", len(steps) if steps else 1),
+        completed_steps=summary_data.get("completed_steps", 0),
+        failed_steps=summary_data.get("failed_steps", 0),
+        total_duration_ms=summary_data.get("total_duration_ms", 0.0),
+        success_rate=summary_data.get("success_rate", 0.0),
+        features_total=summary_data.get("features_total", results.get("total_features", 0)),
+        features_converted=summary_data.get(
+            "features_converted", results.get("converted_features", 0)
+        ),
+        features_failed=summary_data.get("features_failed", results.get("failed_features", 0)),
+        features_partial=summary_data.get(
+            "features_partial", results.get("partially_converted_features", 0)
+        ),
+        assumptions_used=summary_data.get("assumptions_used", results.get("assumptions_applied_count", 0)),
+    )
+
+    errors_data = input_data.get("structured_errors", results.get("errors", []))
+    errors = []
+    for err in errors_data:
+        if isinstance(err, dict):
+            errors.append(StructuredError(
+                error_code=err.get("error_code", "UNKNOWN_ERROR"),
+                error_type=err.get("error_type", "conversion_error"),
+                message=err.get("message", "An error occurred"),
+                is_retryable=err.get("is_retryable", False),
+                details=err.get("details"),
+            ))
+
+    warnings_list = input_data.get("warnings", results.get("warnings", []))
+
+    return ConversionStepByStepReportResponse(
+        conversion_id=conversion_id,
+        status=job.status,
+        original_filename=input_data.get("original_filename", "unknown"),
+        target_version=input_data.get("target_version", "1.20.0"),
+        created_at=job.created_at,
+        completed_at=job.completed_at if hasattr(job, "completed_at") else None,
+        steps=steps,
+        summary=summary,
+        errors=errors,
+        warnings=warnings_list,
+    )
+
+
+def _build_steps_from_job_status(job) -> List[ConversionStep]:
+    """Build steps list from job status when detailed steps not available."""
+    steps = []
+    status_flow = [
+        ("step_1", "File Upload & Validation", "queued"),
+        ("step_2", "Java Code Analysis", "queued"),
+        ("step_3", "Feature Extraction", "queued"),
+        ("step_4", "Bedrock Code Conversion", "queued"),
+        ("step_5", "Output Packaging", "queued"),
+    ]
+
+    job_status = job.status
+    progress = job.progress.progress if job.progress else 0
+
+    for step_id, step_name, default_status in status_flow:
+        if job_status == "completed":
+            status = "completed"
+        elif job_status == "failed":
+            status = "failed"
+        elif job_status == "processing":
+            status = "running" if progress > 0 else "pending"
+        elif job_status == "queued":
+            status = "pending"
+        else:
+            status = default_status
+
+        steps.append(ConversionStep(
+            step_id=step_id,
+            step_name=step_name,
+            status=status,
+            message=_get_step_message(step_id, status, progress),
+        ))
+
+    return steps
+
+
+def _get_step_message(step_id: str, status: str, progress: int) -> str:
+    """Generate appropriate message for a step based on status."""
+    if status == "completed":
+        return "Step completed successfully"
+    elif status == "failed":
+        return "Step failed - see error details"
+    elif status == "running":
+        return f"Step in progress ({progress}%)"
+    elif status == "pending":
+        return "Waiting to start"
+    else:
+        return "Unknown status"
 
 
 # Chunked/Resumable Upload Endpoints
