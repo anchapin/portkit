@@ -4,7 +4,7 @@
 # Build context must be repo root (not ai-engine/) so we can COPY ai-engine/.
 
 # Python dependencies build stage
-FROM python:3.12-slim AS python-builder
+FROM python:3.14-slim AS python-builder
 WORKDIR /tmp
 RUN apt-get update && apt-get install -y --no-install-recommends \
     gcc g++ && \
@@ -17,7 +17,7 @@ RUN pip install --no-cache-dir --upgrade pip setuptools wheel && \
     pip install --no-cache-dir -r /tmp/requirements.txt
 
 # Production stage
-FROM python:3.12-slim
+FROM python:3.14-slim
 WORKDIR /app
 
 RUN apt-get update && apt-get install -y --no-install-recommends \

@@ -46,8 +46,8 @@
   "author": "PortKit Team",
   "license": "MIT",
   "devDependencies": {
-    "@commitlint/cli": "^20.5.3",
-    "@commitlint/config-conventional": "^20.5.3",
+    "@commitlint/cli": "^21.0.1",
+    "@commitlint/config-conventional": "^21.0.1",
     "@composio/ao-core": "^0.2.0",
     "@composio/ao-web": "^0.2.2",
     "@eslint/js": "^10.0.1",

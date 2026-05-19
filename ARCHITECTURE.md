@@ -34,7 +34,7 @@ Target: automate 60-80% of a mod creator's conversion effort (B2B positioning).
                ┌────────────▼──────┐  ┌─────────▼────────┐  ┌──────────▼────────┐
                │   AI Engine        │  │   PostgreSQL 15   │  │    Redis 7         │
                │   FastAPI:8001     │  │   + pgvector      │  │    Celery broker  │
-               │   LangChain + LangGraph + RAG    │  │   port:5433       │  │    port:6379      │
+               │   CrewAI + RAG    │  │   port:5433       │  │    port:6379      │
                └────────────────────┘  └──────────────────┘  └───────────────────┘
 ```
 
@@ -46,7 +46,7 @@ Target: automate 60-80% of a mod creator's conversion effort (B2B positioning).
 |---------|-----------|------|-----------|
 | **Frontend** | React 18 + TypeScript + Vite + Nginx | 3000 | `frontend/src/` |
 | **Backend** | FastAPI + SQLAlchemy (async) + Celery | 8080 | `backend/src/` |
-| **AI Engine** | FastAPI + LangChain/LangGraph | 8001 | `ai-engine/` |
+| **AI Engine** | FastAPI + CrewAI + LangChain | 8001 | `ai-engine/` |
 | **PostgreSQL** | PostgreSQL 15 + pgvector | 5433 | `database/` |
 | **Redis** | Redis 7 | 6379 | Celery broker + session cache |
 
@@ -72,9 +72,9 @@ ai-engine/
 │   ├── loot_table_generator.py
 │   ├── sound_converter.py
 │   └── ...
-├── services/                  # LangChain LCEL chains and runnables
-│   ├── rag_service.py         # RAG search→synthesize chain (LCEL)
-│   └── report_formatter.py    # Conversion-report builder
+├── crew/                      # CrewAI crew definitions
+│   ├── conversion_crew.py     # Main PortkitConversionCrew
+│   └── rag_crew.py
 ├── orchestration/             # Parallel task orchestration
 │   ├── orchestrator.py        # ParallelOrchestrator (main entry)
 │   ├── strategy_selector.py   # Chooses sequential/parallel/hybrid
@@ -106,7 +106,7 @@ JAR Upload
 java_analyzer/ ──── tree-sitter AST ──→ JavaModAnalysis
     │                                        │
     ▼                                        ▼
-ConversionPipeline (LangGraph)          RAG Pipeline
+PortkitConversionCrew (CrewAI)          RAG Pipeline
     │  Agents run in parallel:          (pgvector + hybrid search)
     │  - entity_converter                    │
     │  - recipe_converter               Bedrock pattern retrieval
@@ -183,7 +183,7 @@ frontend/src/
 | Pattern | Where Used | Notes |
 |---------|-----------|-------|
 | **Async-first** | Backend + AI Engine | All I/O is `async def` + `await` |
-| **LangChain tools + LangGraph nodes** | `ai-engine/agents/`, `ai-engine/orchestration/langgraph_pipeline.py` | Each converter is a `@tool`-decorated function or LangGraph node |
+| **CrewAI agents** | `ai-engine/crew/` | Each converter is a CrewAI agent with tools |
 | **RAG retrieval** | `ai-engine/search/` | pgvector + BM25 hybrid; reranked by cross-encoder |
 | **Smart assumptions** | `ai-engine/models/smart_assumptions.py` | Fills Java→Bedrock gaps automatically |
 | **Celery queuing** | `backend/src/services/celery_tasks.py` | Long conversions run async; Redis broker |
@@ -196,7 +196,7 @@ frontend/src/
 
 | File/Module | Reason |
 |-------------|--------|
-| `ai-engine/search/rag_pipeline.py` | Tightly coupled with LangChain/LangGraph + Minecraft knowledge; LangChain/LlamaIndex swap would break agent tool interfaces |
+| `ai-engine/search/rag_pipeline.py` | Tightly coupled with CrewAI + Minecraft knowledge; LangChain/LlamaIndex swap would break agent tool interfaces |
 | `ai-engine/knowledge/patterns/` | Domain-specific Java→Bedrock pattern mappings; no external library covers these |
 | `ai-engine/orchestration/strategy_selector.py` | PortKit-specific orchestration logic; not generic |
 | `backend/src/db/models.py` | Core ORM models; schema changes require migrations |
@@ -250,4 +250,4 @@ Do not edit them manually — commit the generator script changes instead.
 - `backend/SKELETON.md`
 - `frontend/SKELETON.md`
 
-*Last generated: 2026-05-14*
+*Last generated: 2026-05-18*

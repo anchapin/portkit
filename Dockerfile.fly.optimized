@@ -6,7 +6,7 @@
 # =============================================================================
 # Stage 1: Frontend build (with cache mount for npm)
 # =============================================================================
-FROM node:25-alpine AS frontend-builder
+FROM node:26-alpine AS frontend-builder
 WORKDIR /app/frontend
 
 # Use cache mount for node_modules - persists between builds
@@ -28,7 +28,7 @@ RUN --mount=type=cache,target=/root/.npm \
 # =============================================================================
 # Stage 2: Python dependencies (with cache mount for pip)
 # =============================================================================
-FROM python:3.11-slim AS python-builder
+FROM python:3.14-slim AS python-builder
 WORKDIR /tmp
 
 RUN apt-get update && apt-get install -y --no-install-recommends \

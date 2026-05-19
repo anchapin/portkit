@@ -3,9 +3,9 @@ httpx>=0.25.0
 
 # Core Framework (updated for CI fix)
 fastapi==0.136.1
-uvicorn[standard]==0.46.0
-pydantic==2.13.3
-pydantic-settings==2.14.0
+uvicorn[standard]==0.47.0
+pydantic==2.13.4
+pydantic-settings==2.14.1
 python-dateutil==2.9.0.post0
 
 # Database
@@ -20,7 +20,7 @@ aiosqlite>=0.22.1  # For SQLite async support in tests
 redis>=7.4.0
 
 # File handling
-python-multipart==0.0.27
+python-multipart==0.0.29
 tomli==2.4.1  # TOML parsing for Python <3.11
 python-magic==0.4.27
 
@@ -34,8 +34,8 @@ pytest-cov==7.1.0
 pytest-timeout==2.4.0
 
 # Code Quality
-ruff==0.15.12
-black==26.3.1
+ruff==0.15.13
+black==26.5.0
 
 # Utilities
 python-dotenv==1.2.2
