@@ -14,13 +14,15 @@ Issue #1581: Complete packaging_agent.py split
 All real implementation now lives in agents.packaging subpackage.
 """
 
-# Re-export everything from the packaging subpackage for backward compatibility
+import logging
+
+logger = logging.getLogger(__name__)
+
 from agents.packaging import (
     Bundler,
     FolderBuilder,
     ManifestBuilder,
     PackagingAgent,
-    PackagingCoordinator,
     PackagingValidator,
     ResourceMapper,
     ValidationIssue,
@@ -29,9 +31,6 @@ from agents.packaging import (
     ZipAssembler,
     generate_validation_report,
 )
-
-# Also re-export from manifest module for any direct importers
-from agents.packaging.manifest import ManifestGenerator
 
 # Re-export typed tool classes for backward compatibility with tests
 from agents.packaging.agent import (
@@ -67,9 +66,7 @@ __all__ = [
     "Bundler",
     "FolderBuilder",
     "ManifestBuilder",
-    "ManifestGenerator",
     "PackagingAgent",
-    "PackagingCoordinator",
     "PackagingValidator",
     "ResourceMapper",
     "ValidationIssue",
