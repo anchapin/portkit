@@ -27,6 +27,15 @@ DEFAULT_TRACE_SIMILARITY_THRESHOLD = 0.75
 DEFAULT_MIN_CLUSTER_SIZE = 2
 DEFAULT_CONFIDENCE_WEIGHT = 0.4
 DEFAULT_CLUSTER_COHERENCE_WEIGHT = 0.6
+DEFAULT_ACCUMULATED_CONFIDENCE_THRESHOLD = 0.5
+DEFAULT_REASONING_TRACE_COUNT = 3
+
+
+class VecCISCSelectionMode(Enum):
+    """Mode for VecCISC selection."""
+    CLUSTER_COHERENCE = "cluster_coherence"
+    ACCUMULATED_CONFIDENCE = "accumulated_confidence"
+    HYBRID = "hybrid"
 
 
 class ClusteringAlgorithm(Enum):
@@ -715,3 +724,224 @@ def veccisc_consistency_check(
     )
     checker = VecCISCConsistencyChecker(config)
     return checker.analyze_consistency(traces)
+
+
+@dataclass
+class VecCISCCandidateResult:
+    """Result of VecCISC candidate selection with full metadata."""
+
+    selected_trace: ReasoningTrace
+    selected_candidate_id: int
+    accumulated_confidence: float
+    cluster_coherence: float
+    confidence_score: float
+    is_consistent: bool
+    needs_review: bool
+    alternative_traces: List[ReasoningTrace] = field(default_factory=list)
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "selected_candidate_id": self.selected_candidate_id,
+            "accumulated_confidence": round(self.accumulated_confidence, 3),
+            "cluster_coherence": round(self.cluster_coherence, 3),
+            "confidence_score": round(self.confidence_score, 3),
+            "is_consistent": self.is_consistent,
+            "needs_review": self.needs_review,
+            "alternative_count": len(self.alternative_traces),
+        }
+
+
+class VecCISCSelector:
+    """
+    High-level VecCISC selector for multi-candidate QA pipeline.
+
+    VecCISC (Vector-based Cross-Instance Self-Consistency) improves upon
+    standard Confidence-Informed Self-Consistency (CISC) by:
+
+    1. Clustering reasoning traces by semantic similarity using embeddings
+    2. Weighting candidates by accumulated cluster confidence
+    3. Selecting the answer with the highest accumulated confidence
+
+    This approach identifies candidates with coherent, converging reasoning
+    paths, which are more trustworthy than outliers.
+
+    Usage:
+        selector = VecCISCSelector(n_candidates=3)
+        result = selector.select(traces)
+    """
+
+    def __init__(
+        self,
+        n_candidates: int = DEFAULT_REASONING_TRACE_COUNT,
+        trace_similarity_threshold: float = DEFAULT_TRACE_SIMILARITY_THRESHOLD,
+        confidence_threshold: float = DEFAULT_CONFIDENCE_WEIGHT,
+        cluster_coherence_weight: float = DEFAULT_CLUSTER_COHERENCE_WEIGHT,
+        confidence_weight: float = DEFAULT_CONFIDENCE_WEIGHT,
+        selection_mode: VecCISCSelectionMode = VecCISCSelectionMode.HYBRID,
+        min_cluster_size: int = DEFAULT_MIN_CLUSTER_SIZE,
+    ):
+        """
+        Initialize VecCISC selector.
+
+        Args:
+            n_candidates: Number of candidate traces to generate/analyze
+            trace_similarity_threshold: Minimum similarity for clustering traces
+            confidence_threshold: Minimum confidence to avoid flagging
+            cluster_coherence_weight: Weight for cluster coherence in ranking
+            confidence_weight: Weight for confidence in ranking
+            selection_mode: Selection mode (cluster_coherence, accumulated_confidence, hybrid)
+            min_cluster_size: Minimum cluster size to be considered valid
+        """
+        self.n_candidates = n_candidates
+        self.selection_mode = selection_mode
+
+        self.config = VecCISCConfig(
+            trace_similarity_threshold=trace_similarity_threshold,
+            min_cluster_size=min_cluster_size,
+            confidence_weight=confidence_weight,
+            cluster_coherence_weight=cluster_coherence_weight,
+            confidence_threshold=confidence_threshold,
+            agreement_threshold=0.6,
+        )
+        self.checker = VecCISCConsistencyChecker(self.config)
+
+    def compute_accumulated_confidence(
+        self,
+        traces: List[ReasoningTrace],
+        candidate_id: int,
+        clusters: List[TraceCluster],
+    ) -> float:
+        """
+        Compute accumulated confidence for a candidate.
+
+        Accumulates confidence from all traces in the same cluster(s)
+        as the candidate, weighted by cluster coherence.
+
+        Args:
+            traces: All reasoning traces
+            candidate_id: ID of candidate to compute confidence for
+            clusters: Identified clusters
+
+        Returns:
+            Accumulated confidence score
+        """
+        candidate_to_cluster = {}
+        for cluster in clusters:
+            for trace in cluster.traces:
+                candidate_to_cluster[trace.candidate_id] = cluster
+
+        if candidate_id not in candidate_to_cluster:
+            return 0.0
+
+        cluster = candidate_to_cluster[candidate_id]
+        accumulated = 0.0
+
+        for trace in cluster.traces:
+            trace_cluster = candidate_to_cluster.get(trace.candidate_id)
+            if trace_cluster:
+                coherence_factor = trace_cluster.coherence_score
+                accumulated += trace.confidence * coherence_factor
+
+        return accumulated / len(cluster.traces) if cluster.traces else 0.0
+
+    def select(
+        self,
+        traces: List[ReasoningTrace],
+    ) -> VecCISCCandidateResult:
+        """
+        Select the best candidate using VecCISC.
+
+        Args:
+            traces: List of reasoning traces from multiple candidates
+
+        Returns:
+            VecCISCCandidateResult with selected candidate and metadata
+        """
+        if not traces:
+            raise ValueError("No traces provided for selection")
+
+        if len(traces) == 1:
+            return VecCISCCandidateResult(
+                selected_trace=traces[0],
+                selected_candidate_id=traces[0].candidate_id,
+                accumulated_confidence=traces[0].confidence,
+                cluster_coherence=1.0,
+                confidence_score=traces[0].confidence,
+                is_consistent=True,
+                needs_review=False,
+            )
+
+        clustered_result = self.checker.analyze_consistency(traces)
+
+        if not clustered_result.selected_candidate:
+            best_trace = max(traces, key=lambda t: t.confidence)
+            return VecCISCCandidateResult(
+                selected_trace=best_trace,
+                selected_candidate_id=best_trace.candidate_id,
+                accumulated_confidence=best_trace.confidence,
+                cluster_coherence=0.0,
+                confidence_score=best_trace.confidence,
+                is_consistent=False,
+                needs_review=True,
+            )
+
+        selected = clustered_result.selected_candidate
+        accumulated_conf = self.compute_accumulated_confidence(
+            traces, selected.candidate_id, clustered_result.clusters
+        )
+
+        alternative_traces = [
+            t for t in traces
+            if t.candidate_id != selected.candidate_id
+        ]
+
+        needs_review = (
+            clustered_result.needs_review
+            or accumulated_conf < DEFAULT_ACCUMULATED_CONFIDENCE_THRESHOLD
+            or len(clustered_result.clusters) > 2
+        )
+
+        return VecCISCCandidateResult(
+            selected_trace=selected,
+            selected_candidate_id=selected.candidate_id,
+            accumulated_confidence=accumulated_conf,
+            cluster_coherence=clustered_result.cluster_coherence_score,
+            confidence_score=clustered_result.confidence,
+            is_consistent=clustered_result.agreement_score >= 0.7 if hasattr(clustered_result, 'agreement_score') else True,
+            needs_review=needs_review,
+            alternative_traces=alternative_traces,
+        )
+
+    def select_with_fallback(
+        self,
+        traces: List[ReasoningTrace],
+        fallback_confidence: float = 0.5,
+    ) -> VecCISCCandidateResult:
+        """
+        Select best candidate with fallback to highest confidence on failure.
+
+        Args:
+            traces: List of reasoning traces
+            fallback_confidence: Confidence to assign if selection fails
+
+        Returns:
+            VecCISCCandidateResult with selection (never None)
+        """
+        try:
+            result = self.select(traces)
+            return result
+        except (ValueError, IndexError, KeyError) as e:
+            logger.warning(f"VecCISC selection failed, using fallback: {e}")
+            if not traces:
+                raise ValueError("Cannot select from empty traces even with fallback")
+
+            best_trace = max(traces, key=lambda t: t.confidence)
+            return VecCISCCandidateResult(
+                selected_trace=best_trace,
+                selected_candidate_id=best_trace.candidate_id,
+                accumulated_confidence=best_trace.confidence,
+                cluster_coherence=0.0,
+                confidence_score=fallback_confidence,
+                is_consistent=False,
+                needs_review=True,
+            )

@@ -15,9 +15,12 @@ and reduces manual review burden for beta users.
 import hashlib
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from typing import Any, Callable, Dict, List, Optional, Tuple, TYPE_CHECKING
 
 import structlog
+
+if TYPE_CHECKING:
+    from qa.veccisc import ReasoningTrace, VecCISCCandidateResult, VecCISCSelector
 
 logger = structlog.get_logger(__name__)
 
@@ -459,3 +462,100 @@ def dpc_consistency_check(
     )
     checker = MultiCandidateConsistencyChecker(config)
     return checker.check_consistency(candidates)
+
+
+def convert_candidates_to_traces(
+    candidates: List[ConversionCandidate],
+    traces_data: Optional[List[List[Dict[str, Any]]]] = None,
+    default_confidence: float = 0.7,
+) -> List["ReasoningTrace"]:
+    """
+    Convert ConversionCandidates to ReasoningTraces for VecCISC analysis.
+
+    Args:
+        candidates: List of conversion candidates from multi-candidate pipeline
+        traces_data: Optional list of reasoning traces (step content + embeddings)
+                     for each candidate. If not provided, generates synthetic
+                     traces from candidate code.
+        default_confidence: Default confidence for candidates without explicit traces
+
+    Returns:
+        List of ReasoningTrace objects for VecCISC analysis
+    """
+    from qa.veccisc import create_reasoning_trace
+
+    traces = []
+    for i, cand in enumerate(candidates):
+        if traces_data and i < len(traces_data) and traces_data[i]:
+            steps = traces_data[i]
+            confidence = cand.metadata.get("confidence", default_confidence)
+        else:
+            reasoning_content = (
+                f"Converting Java code with candidate {cand.candidate_id} "
+                f"(temp={cand.temperature}). "
+                f"Code structure: {cand.get_fingerprint()[:8]}"
+            )
+            steps = [
+                {"content": f"Step 1: Parse Java source structure"},
+                {"content": f"Step 2: Map Java patterns to Bedrock equivalents"},
+                {"content": f"Step 3: Generate Bedrock JSON and TypeScript"},
+                {"content": reasoning_content},
+            ]
+            confidence = cand.metadata.get("confidence", default_confidence)
+
+        trace = create_reasoning_trace(
+            candidate_id=cand.candidate_id,
+            steps=steps,
+            confidence=confidence,
+            final_answer=cand.code,
+            metadata=cand.metadata,
+        )
+        traces.append(trace)
+
+    return traces
+
+
+def veccisc_multi_candidate_selection(
+    candidates: List[ConversionCandidate],
+    traces_data: Optional[List[List[Dict[str, Any]]]] = None,
+    n_candidates: int = 3,
+    trace_similarity_threshold: float = 0.75,
+    confidence_threshold: float = 0.5,
+) -> Tuple[Optional[ConversionCandidate], "VecCISCCandidateResult"]:
+    """
+    Select best candidate using VecCISC on multi-candidate outputs.
+
+    Combines the multi-candidate generation pipeline with VecCISC reasoning
+    trace clustering for improved selection.
+
+    Args:
+        candidates: List of conversion candidates
+        traces_data: Optional reasoning traces for each candidate
+        n_candidates: Number of candidates (for selector config)
+        trace_similarity_threshold: Minimum similarity for clustering
+        confidence_threshold: Minimum confidence threshold
+
+    Returns:
+        Tuple of (selected ConversionCandidate, VecCISCCandidateResult)
+    """
+    from qa.veccisc import VecCISCSelector
+
+    if not candidates:
+        return None, None
+
+    traces = convert_candidates_to_traces(candidates, traces_data)
+
+    selector = VecCISCSelector(
+        n_candidates=n_candidates,
+        trace_similarity_threshold=trace_similarity_threshold,
+        confidence_threshold=confidence_threshold,
+    )
+
+    result = selector.select_with_fallback(traces)
+
+    selected_candidate = next(
+        (c for c in candidates if c.candidate_id == result.selected_candidate_id),
+        None,
+    )
+
+    return selected_candidate, result
