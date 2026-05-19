@@ -1,34 +1,34 @@
 # Core FastAPI for AI Engine API - align with backend version
 fastapi==0.136.1
-uvicorn[standard]==0.46.0
-python-multipart==0.0.28
+uvicorn[standard]==0.47.0
+python-multipart==0.0.29
 
 # AI Framework — LangChain/LangGraph stack (issue #1201 — legacy multi-agent framework removed)
 # Use Python >= 3.11 for langchain/langgraph compatibility.
-openai>=1.0.0,<3.0.0
-langgraph>=1.1.0
-langchain-core>=0.3
-langchain-openai>=0.3.35,<2.0
-langchain-ollama>=0.3.10
-langgraph-checkpoint-sqlite>=2.0.0
-sentence-transformers>=5.1.2,<6.0.0
+openai>=2.37.0,<3.0.0
+langgraph>=1.2.0
+langchain-core>=1.4.0
+langchain-openai>=1.2.1,<2.0
+langchain-ollama>=1.1.0
+langgraph-checkpoint-sqlite>=3.1.0
+sentence-transformers>=5.5.0,<6.0.0
 
 # Vector Database — pin relaxed after legacy framework removal (#1439, unblocked by #1201)
-chromadb>=1.5.8,<2.0
+chromadb>=1.5.9,<2.0
 
 # Data Processing - align with backend version
 numpy
-python-dotenv~=1.2.1
+python-dotenv~=1.2.2
 
 # Java analysis - tree-sitter for Java 17+ support
 # Note: javalang is still required by logic_translator.py
-tree-sitter>=0.23.2
+tree-sitter>=0.25.2
 tree-sitter-java
 javalang==0.13.0
 
 # File processing - align with backend version
 python-magic==0.4.27
-Pillow>=11.3.0
+Pillow>=12.2.0
 pydub
 jsonschema
 
@@ -48,15 +48,15 @@ duckduckgo-search>=8.1.1
 rank_bm25>=0.2.2
 
 # Redis for job management - align with backend version
-redis>=7.1.0
+redis>=7.4.0
 async-timeout>=5.0.1
 
 # Security overrides for transitive dependencies (CVE-2026-23949, Issue #1483)
-jaraco.context>=6.1.0
+jaraco.context>=6.1.2
 
 # Configuration Management - align with backend version
-pydantic~=2.13.3
-pydantic-settings~=2.14.0
+pydantic~=2.13.4
+pydantic-settings~=2.14.1
 
 # Monitoring - align with backend version
 prometheus_client>=0.25.0

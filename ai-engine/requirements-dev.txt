@@ -3,20 +3,20 @@
 # This file only contains dev-specific dependencies
 
 # Testing - align with backend version
-pytest>=8.4.2
+pytest>=9.0.3
 pytest-asyncio==1.3.0
 pytest-cov==7.1.0
 pytest-timeout==2.4.0
 pytest-mock>=3.15.1
 
 # Code Quality - align with backend version
-ruff==0.15.12
-black==26.3.1
-mypy>=1.19.1
+ruff==0.15.13
+black==26.5.0
+mypy>=2.1.0
 
 # Development Tools
-pre-commit>=4.3.0
+pre-commit>=4.6.0
 
 # Dependency checking
-pip-audit>=2.9.0
-pipdeptree>=2.28.0
+pip-audit>=2.10.0
+pipdeptree>=2.35.3
