@@ -563,4 +563,4 @@ class TestEmbeddingDimensionValidation:
         """Test that unsupported dimensions are rejected."""
         embedding = np.random.randn(999).astype(np.float32)
 
-        assert validate_embedding_dimensions(embedding_wrong, 3072) is False
+        assert validate_embedding_dimensions(embedding, 3072) is False
