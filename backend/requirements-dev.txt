@@ -16,4 +16,4 @@ structlog
 
 # Dependency checking
 pip-audit>=2.10.0
-pipdeptree>=2.35.2
+pipdeptree>=2.35.3

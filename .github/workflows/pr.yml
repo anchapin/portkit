@@ -539,7 +539,7 @@ jobs:
 
       - name: Dependency review (PR only)
         if: github.event_name == 'pull_request' && needs.changes.outputs.deps == 'true'
-        uses: actions/dependency-review-action@v4
+        uses: actions/dependency-review-action@v5
         with:
           fail-on-severity: critical
           comment-summary-in-pr: on-failure

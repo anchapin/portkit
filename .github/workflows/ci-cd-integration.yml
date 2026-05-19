@@ -168,7 +168,7 @@ jobs:
           echo "::notice::Artifact available as: $OUTPUT_FILE"
 
       - name: Upload converted artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: portkit-converted-mod
           path: converted_mod.mcaddon

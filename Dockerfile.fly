@@ -3,7 +3,7 @@
 # AI Engine can run in monolith mode or as a separate Fly.io app (portkit-ai-engine)
 
 # Frontend build stage
-FROM node:25-alpine AS frontend-builder
+FROM node:26-alpine AS frontend-builder
 WORKDIR /app/frontend
 COPY frontend/package*.json ./
 RUN npm ci --legacy-peer-deps
@@ -17,7 +17,7 @@ RUN npm run build
 # Python dependencies build stage (consolidates all Python deps)
 # Note: Using Python 3.11 to match Debian bookworm's Python version
 # Debian bookworm-slim ships with Python 3.11.2, so we must build packages for 3.11
-FROM python:3.11-slim AS python-builder
+FROM python:3.14-slim AS python-builder
 WORKDIR /tmp
 RUN apt-get update && apt-get install -y --no-install-recommends \
     gcc g++ curl libmagic1 ffmpeg && \

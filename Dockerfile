@@ -4,7 +4,7 @@
 # ============================================
 # Stage 1: Backend builder
 # ============================================
-FROM python:3.13-slim AS backend-builder
+FROM python:3.14-slim AS backend-builder
 
 WORKDIR /app/backend
 
@@ -24,7 +24,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 # ============================================
 # Stage 2: AI Engine builder
 # ============================================
-FROM python:3.13-slim AS ai-engine-builder
+FROM python:3.14-slim AS ai-engine-builder
 
 WORKDIR /app/ai-engine
 
@@ -43,7 +43,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 # ============================================
 # Stage 3: Production backend
 # ============================================
-FROM python:3.13-slim
+FROM python:3.14-slim
 
 WORKDIR /app
 

@@ -10,6 +10,8 @@ from qa.multi_candidate import (
     SelectionStrategy,
     create_candidate_result,
     dpc_consistency_check,
+    convert_candidates_to_traces,
+    veccisc_multi_candidate_selection,
 )
 from qa.orchestrator import QAOrchestrator
 from qa.reviewer import ReviewerAgent, review
@@ -19,6 +21,9 @@ from qa.validators import AgentOutput, validate_agent_output
 from qa.veccisc import (
     VecCISCConsistencyChecker,
     VecCISCConfig,
+    VecCISCSelector,
+    VecCISCCandidateResult,
+    VecCISCSelectionMode,
     ReasoningTrace,
     ReasoningStep,
     TraceCluster,
@@ -51,9 +56,14 @@ __all__ = [
     "SelectionStrategy",
     "create_candidate_result",
     "dpc_consistency_check",
+    "convert_candidates_to_traces",
+    "veccisc_multi_candidate_selection",
     # VecCISC
     "VecCISCConsistencyChecker",
     "VecCISCConfig",
+    "VecCISCSelector",
+    "VecCISCCandidateResult",
+    "VecCISCSelectionMode",
     "ReasoningTrace",
     "ReasoningStep",
     "TraceCluster",
