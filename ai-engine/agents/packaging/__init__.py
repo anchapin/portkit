@@ -3,18 +3,33 @@ Packaging subpackage for Bedrock addon packaging and validation.
 
 Split from packaging_agent.py (42K) and packaging_validator.py (31K) per issue #1278.
 Public API remains unchanged - callers import from agents.packaging.
+
+Module structure:
+- agent.py: PackagingAgent coordinator
+- manifest_builder.py: Manifest assembly
+- zip_assembler.py: Zip construction
+- resource_mapper.py: Resource mapping
+- bundler.py: High-level bundling (delegates to zip_assembler)
+- folder_builder.py: Folder structure (delegates to resource_mapper)
+- manifest.py: Manifest generation (delegates to manifest_builder)
+- validator.py: Package validation
+- pack_report.py: Validation reporting
 """
 
+from .agent import PackagingAgent
 from .bundler import Bundler
 from .folder_builder import FolderBuilder
 from .manifest import ManifestGenerator
+from .manifest_builder import ManifestBuilder
 from .pack_report import generate_validation_report
+from .resource_mapper import ResourceMapper
 from .validator import (
     PackagingValidator,
     ValidationIssue,
     ValidationResult,
     ValidationSeverity,
 )
+from .zip_assembler import ZipAssembler
 
 
 class PackagingCoordinator:
@@ -51,19 +66,21 @@ class PackagingCoordinator:
 
     def get_tools(self):
         """Get tools available to the packaging system."""
-        from agents.packaging_agent import PackagingAgent
-
         return PackagingAgent.get_instance().get_tools()
 
 
 __all__ = [
     "Bundler",
     "FolderBuilder",
+    "ManifestBuilder",
     "ManifestGenerator",
+    "PackagingAgent",
     "PackagingCoordinator",
     "PackagingValidator",
+    "ResourceMapper",
     "ValidationIssue",
     "ValidationResult",
     "ValidationSeverity",
+    "ZipAssembler",
     "generate_validation_report",
 ]
