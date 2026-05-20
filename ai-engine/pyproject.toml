@@ -370,6 +370,26 @@ omit = [
     "main.py",
     "__main__.py",
     "demo_*.py",
+    # Training infrastructure - excluded from coverage (dev/research code)
+    "mmsd/tinker/**",
+    "mmsd/tinker/grpo*.py",
+    "mmsd/tinker/sft_*.py",
+    "mmsd/tinker/hallucination_*.py",
+    "mmsd/tinker/evaluate*.py",
+    "mmsd/tinker/export_*.py",
+    "mmsd/tinker/test_*.py",
+    "mmsd/tinker/reward*.py",
+    "mmsd/tinker/curriculum.py",
+    "mmsd/tinker/synthetic_dataset.py",
+    "mmsd/tinker/bedrock_architect/**",
+    "mmsd/tinker/pivot_ir/**",
+    "mmsd/tinker/bedrock_architect_stub.py",
+    "mmsd/tinker/convert_data.py",
+    "mmsd/tinker/modal_merge.py",
+    "mmsd/tinker/run_*.sh",
+    "mmsd/tinker/validate_*.py",
+    # Prompt audit library - CI tooling, not runtime coverage
+    "prompt_audit_lib/**",
 ]
 
 [tool.coverage.report]
