@@ -1,0 +1,418 @@
+#!/usr/bin/env python3
+"""
+PivotIR → Bedrock Adapter — Emit Bedrock Add-on Code from IR
+============================================================
+
+This adapter takes a Pivot IR representation and emits Bedrock add-on code
+(manifest.json + JavaScript scripts).
+
+Supported Emitters:
+  - Manifest emitter: Generates addon.json manifest
+  - Script emitter: Generates .js files with event subscriptions
+  - Entity emitter: Generates entity definitions
+
+Output Structure:
+  manifest.json → Add-on metadata
+  scripts/main.js → Event handlers and logic
+
+Author: PortKit AI Engine
+Issues: #1578, #1600, #1618
+"""
+
+import json
+import uuid
+import re
+from typing import Optional
+
+from pivot_ir.schema import (
+    PivotIR,
+    Manifest,
+    BlockDef,
+    ItemDef,
+    EntityDef,
+    EventHandler,
+    APICall,
+)
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Bedrock Event Patterns (reverse of Java mappings)
+# ─────────────────────────────────────────────────────────────────────────────
+
+BEDROCK_EVENT_PATTERNS = {
+    # World events
+    "tick": "world.afterEvents.tick.subscribe",
+    "load": "world.afterEvents.load.subscribe",
+    "unload": "world.beforeEvents.unload.subscribe",
+    # Player events
+    "playerSpawn": "world.afterEvents.playerSpawn.subscribe",
+    "playerInteractWithBlock": "world.afterEvents.playerInteractWithBlock.subscribe",
+    "blockBreak": "world.afterEvents.blockBreak.subscribe",
+    "blockPlace": "world.afterEvents.blockPlace.subscribe",
+    "itemUse": "world.afterEvents.itemUse.subscribe",
+    "itemUseOn": "world.afterEvents.itemUseOn.subscribe",
+    "entityAttack": "world.afterEvents.entityAttack.subscribe",
+    # Entity events
+    "entityDie": "world.afterEvents.entityDie.subscribe",
+    "entitySpawn": "world.afterEvents.mobSpawn.subscribe",
+    "entityHealthChanged": "world.afterEvents.entityHealthChanged.subscribe",
+    # Block events
+    "blockChanged": "world.afterEvents.blockChanged.subscribe",
+    "blockPick": "world.afterEvents.blockPick.subscribe",
+    # Custom mapping
+    "custom": "world.afterEvents.customEvent.subscribe",
+}
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Bedrock API Emitters
+# ─────────────────────────────────────────────────────────────────────────────
+
+def emit_api_call(api: APICall) -> str:
+    """Emit a Bedrock API call from an APICall.
+    
+    Maps IR API chains to valid Bedrock Script API calls.
+    """
+    chain = api.chain
+    
+    # Direct mappings for common patterns
+    if chain == "player.sendMessage":
+        return "player.sendMessage('message')"
+    elif chain == "player.teleport":
+        return "player.teleport(location)"
+    elif chain == "player.getComponent":
+        return "player.getComponent('minecraft:inventory')"
+    elif chain == "world.getBlock":
+        return "world.getBlock(location)"
+    elif chain == "world.spawnEntity":
+        return "world.spawnEntity(entityType, location)"
+    elif chain == "world.getDimension":
+        return "world.getDimension(id)"
+    
+    # Generic fallback - use chain as-is but wrap if needed
+    return f"{chain}({', '.join([''] * (api.depth - 1))})"
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Manifest Emitter
+# ─────────────────────────────────────────────────────────────────────────────
+
+def emit_manifest(manifest: Manifest) -> str:
+    """Emit a Bedrock addon manifest.json.
+    
+    Args:
+        manifest: The manifest metadata
+        
+    Returns:
+        JSON string for manifest.json
+    """
+    manifest_dict = {
+        "format_version": manifest.format_version,
+        "header": {
+            "name": manifest.name,
+            "description": manifest.description or f"{manifest.name} for Minecraft Bedrock",
+            "uuid": manifest.uuid or str(uuid.uuid4()),
+            "version": manifest.version,
+            "min_engine_version": manifest.min_engine_version,
+        },
+        "modules": [
+            {
+                "type": "script",
+                "language": "javascript",
+                "uuid": str(uuid.uuid4()),
+                "entry": "scripts/main.js",
+                "version": manifest.version,
+            }
+        ],
+        "dependencies": [
+            {
+                "module_name": "@minecraft/server",
+                "version": "1.17.0",
+            }
+        ],
+    }
+    
+    return json.dumps(manifest_dict, indent=2)
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Script Emitter
+# ─────────────────────────────────────────────────────────────────────────────
+
+def emit_script(ir: PivotIR) -> str:
+    """Emit Bedrock script (.js) from Pivot IR.
+    
+    Generates a complete main.js with imports and event handlers.
+    
+    Args:
+        ir: The Pivot IR representation
+        
+    Returns:
+        JavaScript code string
+    """
+    lines = []
+    
+    # Header with imports
+    lines.append("// Generated by PortKit Pivot IR Transpiler")
+    lines.append('import { world, system, player, players, dimension } from "@minecraft/server";')
+    lines.append("")
+    
+    # Collect all event subscriptions
+    event_subscriptions = []
+    
+    # Global events
+    for event in ir.global_events:
+        sub = _emit_event_subscription(event)
+        if sub:
+            event_subscriptions.append(sub)
+    
+    # Block events
+    for name, block in ir.blocks.items():
+        for event in block.event_handlers:
+            sub = _emit_event_subscription(event, entity_name=name)
+            if sub:
+                event_subscriptions.append(sub)
+    
+    # Item events
+    for name, item in ir.items.items():
+        for event in item.event_handlers:
+            sub = _emit_event_subscription(event, entity_name=name)
+            if sub:
+                event_subscriptions.append(sub)
+    
+    # Entity events
+    for name, entity in ir.entities.items():
+        for event in entity.event_handlers:
+            sub = _emit_event_subscription(event, entity_name=name)
+            if sub:
+                event_subscriptions.append(sub)
+    
+    # Emit all subscriptions
+    if event_subscriptions:
+        lines.append("// Event Subscriptions")
+        lines.append("")
+        for sub in event_subscriptions:
+            lines.append(sub)
+            lines.append("")
+    
+    # Emit API calls
+    api_calls = list(ir.global_apis)
+    for block in ir.blocks.values():
+        api_calls.extend(block.api_calls)
+    for item in ir.items.values():
+        api_calls.extend(item.api_calls)
+    for entity in ir.entities.values():
+        api_calls.extend(entity.api_calls)
+    
+    if api_calls:
+        lines.append("// API Calls")
+        lines.append("")
+        for api in api_calls:
+            emitted = emit_api_call(api)
+            lines.append(f"// {api.source_java or api.chain} → {emitted}")
+    
+    return "\n".join(lines)
+
+
+def _emit_event_subscription(event: EventHandler, entity_name: Optional[str] = None) -> str:
+    """Emit a single event subscription.
+    
+    Args:
+        event: The event handler
+        entity_name: Optional entity name for context
+        
+    Returns:
+        JavaScript string for event subscription
+    """
+    # Get the Bedrock event subscription pattern
+    bedrock_pattern = BEDROCK_EVENT_PATTERNS.get(
+        event.bedrock_event, 
+        f"world.afterEvents.{event.bedrock_event}.subscribe"
+    )
+    
+    # Build callback parameters
+    params = event.callback_params or ["event"]
+    callback_params = ", ".join(params)
+    
+    # Build comment for original Java event
+    java_comment = f"// Java: {event.java_event}"
+    entity_comment = f"// Entity: {entity_name}" if entity_name else ""
+    
+    # Generate callback body
+    body_lines = []
+    if event.body_statements:
+        for stmt in event.body_statements:
+            body_lines.append(f"    {stmt}")
+    else:
+        # Default placeholder
+        if entity_name:
+            body_lines.append(f"    // {entity_name} handling")
+        body_lines.append(f"    console.warn('{event.bedrock_event} triggered');")
+    
+    body = "\n".join(body_lines)
+    
+    # Build full subscription
+    lines_out = []
+    if java_comment:
+        lines_out.append(java_comment)
+    if entity_comment:
+        lines_out.append(entity_comment)
+    
+    lines_out.append(f"{bedrock_pattern}(({callback_params}) => {{")
+    lines_out.append(body)
+    lines_out.append("});")
+    
+    return "\n".join(lines_out)
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Entity Definition Emitter
+# ─────────────────────────────────────────────────────────────────────────────
+
+def emit_entity_definition(entity: EntityDef) -> str:
+    """Emit a Bedrock entity definition JSON.
+    
+    Args:
+        entity: The entity definition
+        
+    Returns:
+        JSON string for entity definition
+    """
+    entity_json = {
+        "format_version": "1.17.0",
+        "minecraft:entity": {
+            "description": {
+                "identifier": entity.entity_type,
+                "is_spawnable": True,
+                "is_summonable": True,
+            },
+            "components": {},
+        },
+    }
+    
+    # Add basic properties
+    if entity.properties:
+        for key, value in entity.properties.items():
+            if key != "type":
+                entity_json["minecraft:entity"]["components"][key] = value
+    
+    return json.dumps(entity_json, indent=2)
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# PivotIR → Bedrock Adapter
+# ─────────────────────────────────────────────────────────────────────────────
+
+class PivotIRToBedrockAdapter:
+    """Adapt Pivot IR to Bedrock add-on code."""
+    
+    def __init__(self):
+        self.manifest_emitter = emit_manifest
+        self.script_emitter = emit_script
+        self.entity_emitter = emit_entity_definition
+        
+    def emit(self, ir: PivotIR) -> dict[str, str]:
+        """Emit Bedrock add-on files from Pivot IR.
+        
+        Args:
+            ir: The Pivot IR representation
+            
+        Returns:
+            Dictionary mapping filename → content
+        """
+        output = {}
+        
+        # Emit manifest
+        if ir.manifest:
+            output["manifest.json"] = emit_manifest(ir.manifest)
+        
+        # Emit main script
+        output["scripts/main.js"] = emit_script(ir)
+        
+        # Emit entity definitions
+        for name, entity in ir.entities.items():
+            filename = f"entities/{name}.json"
+            output[filename] = emit_entity_definition(entity)
+        
+        return output
+    
+    def emit_manifest(self, ir: PivotIR) -> str:
+        """Emit only the manifest.json."""
+        if not ir.manifest:
+            # Create default manifest
+            default_manifest = Manifest(
+                name="pivot_ir_addon",
+                uuid=str(uuid.uuid4()),
+                version=[1, 0, 0],
+            )
+            return emit_manifest(default_manifest)
+        return emit_manifest(ir.manifest)
+    
+    def emit_scripts(self, ir: PivotIR) -> str:
+        """Emit only the script file."""
+        return emit_script(ir)
+    
+    def emit_all(self, ir: PivotIR) -> tuple[str, str]:
+        """Emit manifest and scripts as tuple.
+        
+        Returns:
+            (manifest_json, script_js) tuple
+        """
+        manifest = self.emit_manifest(ir)
+        scripts = self.emit_scripts(ir)
+        return manifest, scripts
+
+
+def emit_pivot_ir_to_bedrock(ir: PivotIR) -> dict[str, str]:
+    """Convenience function to emit Bedrock add-on from Pivot IR.
+    
+    Args:
+        ir: The Pivot IR representation
+        
+    Returns:
+        Dictionary mapping filename → content
+    """
+    adapter = PivotIRToBedrockAdapter()
+    return adapter.emit(ir)
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Demo / Testing
+# ─────────────────────────────────────────────────────────────────────────────
+
+def demo_pivot_to_bedrock():
+    """Demo: Convert Pivot IR back to Bedrock code."""
+    from pivot_ir.java_parser import parse_java_to_pivot_ir, SAMPLE_JAVA_BLOCK
+    
+    print("Demo: Pivot IR → Bedrock")
+    print("=" * 60)
+    
+    # Parse Java to IR
+    ir = parse_java_to_pivot_ir(SAMPLE_JAVA_BLOCK)
+    
+    # Create a manifest
+    ir.manifest = Manifest(
+        name="SampleMod",
+        uuid=str(uuid.uuid4()),
+        version=[1, 0, 0],
+        description="Converted from Java using Pivot IR",
+    )
+    
+    # Emit Bedrock code
+    adapter = PivotIRToBedrockAdapter()
+    
+    print("\n--- manifest.json ---")
+    print(adapter.emit_manifest(ir))
+    
+    print("\n--- scripts/main.js ---")
+    print(adapter.emit_scripts(ir))
+    
+    print("\n--- Full Output ---")
+    output = adapter.emit(ir)
+    for filename, content in output.items():
+        print(f"\n=== {filename} ===")
+        print(content[:500] + "..." if len(content) > 500 else content)
+
+
+if __name__ == "__main__":
+    demo_pivot_to_bedrock()
