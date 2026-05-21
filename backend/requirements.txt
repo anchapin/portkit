@@ -80,7 +80,8 @@ opentelemetry-instrumentation-redis>=0.62b1
 # - AWS Secrets Manager: pip install boto3
 # - HashiCorp Vault: pip install hvac
 # - Doppler: pip install requests
-boto3>=1.43.9
-aiobotocore>=3.7.0
+# Note: version pins removed to avoid boto3/aiobotocore/botocore conflict (Issue #1673)
+boto3
+aiobotocore
 # hvac>=2.1.0
 # requests>=2.31.0
