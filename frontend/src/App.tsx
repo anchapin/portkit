@@ -45,6 +45,11 @@ const OAuthCallbackPage = lazy(() => import('./pages/OAuthCallbackPage'));
 const TermsPage = lazy(() => import('./pages/TermsPage'));
 const PrivacyPage = lazy(() => import('./pages/PrivacyPage'));
 const CookiesPage = lazy(() => import('./pages/CookiesPage'));
+const DataSubjectRequestPage = lazy(() =>
+  import('./pages/DataSubjectRequestPage').then((m) => ({
+    default: m.DataSubjectRequestPage as React.ComponentType<any>,
+  }))
+);
 const IPPolicyPage = lazy(() => import('./pages/IPPolicyPage'));
 const StatusPage = lazy(() => import('./pages/StatusPage'));
 const ShowcasePage = lazy(() => import('./pages/ShowcasePage'));
@@ -243,6 +248,14 @@ function App() {
                   element={
                     <Suspense fallback={<div>Loading...</div>}>
                       <PrivacyPage />
+                    </Suspense>
+                  }
+                />
+                <Route
+                  path="/privacy/request"
+                  element={
+                    <Suspense fallback={<div>Loading...</div>}>
+                      <DataSubjectRequestPage />
                     </Suspense>
                   }
                 />

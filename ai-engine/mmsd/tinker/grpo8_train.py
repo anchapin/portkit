@@ -450,16 +450,23 @@ def score_real_api_usage(completion: str, reference: str) -> float:
         elif 'ItemStack' in match:
             unique_chain_roots.add('ItemStack')
     
-    # Also check for standalone property accesses
-    if re.search(r"\bworld\b", js_code):
-        unique_chain_roots.add('world')
-    if re.search(r"\bplayer\b", js_code):
-        unique_chain_roots.add('player')
-    if re.search(r"\bsystem\b", js_code):
-        unique_chain_roots.add('system')
-    if re.search(r"\bdimension\b", js_code):
-        unique_chain_roots.add('dimension')
-    
+    # Only add standalone property accesses if no longer chain exists for that root
+    # This fixes double-counting: world.afterEvents.tick already counts as one usage
+    # so we shouldn't also add standalone 'world'
+    has_world_chain = any(m.startswith("world.") for m in api_chain_matches)
+    has_player_chain = any(m.startswith("player.") for m in api_chain_matches)
+    has_system_chain = any(m.startswith("system.") for m in api_chain_matches)
+    has_dimension_chain = any(m.startswith("dimension.") for m in api_chain_matches)
+
+    if not has_world_chain and re.search(r"\bworld\b", js_code):
+        unique_chain_roots.add("world")
+    if not has_player_chain and re.search(r"\bplayer\b", js_code):
+        unique_chain_roots.add("player")
+    if not has_system_chain and re.search(r"\bsystem\b", js_code):
+        unique_chain_roots.add("system")
+    if not has_dimension_chain and re.search(r"\bdimension\b", js_code):
+        unique_chain_roots.add("dimension")
+
     unique_api_usages = len(unique_chain_roots)
     
     if unique_api_usages >= 2:
@@ -667,7 +674,7 @@ def compute_grpo8_reward(completion: str, reference: str) -> Tuple[float, dict]:
     components["code_bleu"] = score_code_bleu(reference, completion)
     
     # Calculate weighted total
-    # Weights rebalanced per issue #1586:
+    # Issue #1658: Reward weight adjustments
     # - manifest: 0.20→0.10 (hallucinations caught via UUID/version/type validation)
     # - anti_hallucination: 0.20→0.25 (more critical with explicit format checks)
     total = (
@@ -913,7 +920,7 @@ def run_grpo8(args):
             continue
 
         fwd_bwd_future = training_client.forward_backward(
-            datums, loss_fn="clipped_surrogate"
+            datums, loss_fn="importance_sampling"
         )
         adam_params = tinker.types.AdamParams(
             learning_rate=args.lr, beta1=0.9, beta2=0.95, eps=1e-8

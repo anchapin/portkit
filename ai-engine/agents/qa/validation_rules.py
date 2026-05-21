@@ -6,9 +6,16 @@ VALIDATION_RULES = {
     "manifest": {
         "format_version": [1, 2],
         "required_fields": ["uuid", "name", "version", "description"],
-        "uuid_pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+        # Issue #1655: UUID v4 format validation
+        # UUID v4: xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx (version 4, variant 8/9/a/b)
+        "uuid_pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$",
         "version_format": "array_3_ints",
         "min_engine_version": [1, 21, 0],
+        # Issue #1657: Valid Bedrock module types
+        "valid_module_types": [
+            "client", "server", "resource", "data", "behavior",
+            "skin_pack", "world_template", "plugin", "javascript"
+        ],
     },
     "blocks": {
         "required_fields": ["format_version", "minecraft:block"],

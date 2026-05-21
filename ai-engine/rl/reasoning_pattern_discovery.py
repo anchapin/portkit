@@ -418,11 +418,11 @@ class ReasoningPatternDiscovery:
             base_step = self.grammar.get_step(step.step_id)
             if base_step and context.complexity_score > 0.7:
                 new_step = ReasoningStep(
-                    step_id=step.step_id,
-                    description=step.description,
+                    step_id=f"complex_{step.step_id}",
+                    description=f"Advanced: {step.description}",
                     agent_hint=step.agent_hint,
-                    focus_area=step.focus_area,
-                    success_indicator=step.success_indicator,
+                    focus_area=f"complex_{step.focus_area}",
+                    success_indicator=f"Detailed validation of {step.success_indicator}",
                 )
             else:
                 new_step = ReasoningStep(

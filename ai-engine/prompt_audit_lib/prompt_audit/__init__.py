@@ -20,6 +20,7 @@ from .round1 import Round1Auditor
 from .round2 import Round2Auditor, ConvergenceChecker
 from .defects import DefectTaxonomy, Defect, DefectSeverity, DefectType
 from .ci_gate import CIGate, RegressionCheck
+from .runner import PromptAuditRunner
 
 __all__ = [
     "PromptCollector",
@@ -36,4 +37,5 @@ __all__ = [
     "DefectType",
     "CIGate",
     "RegressionCheck",
+    "PromptAuditRunner",
 ]

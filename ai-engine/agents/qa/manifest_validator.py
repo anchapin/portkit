@@ -40,13 +40,16 @@ def validate_manifest(manifest: dict, path: str) -> Dict[str, Any]:
 
     checks += 1
     uuid_str = header.get("uuid", "")
-    if re.match(rules["uuid_pattern"], uuid_str.lower()):
+    # Issue #1655: UUID v4 format validation (xxxxxxxx-xxxx-4xxx-[89ab]xxx-xxxxxxxxxxxx)
+    uuid_pattern = rules["uuid_pattern"]
+    if re.match(uuid_pattern, uuid_str.lower()):
         passed += 1
     else:
-        errors.append(f"{path}: Invalid UUID format: {uuid_str}")
+        errors.append(f"{path}: Invalid UUID v4 format: {uuid_str}")
 
     checks += 1
     version = header.get("version", [])
+    # Issue #1656: Version array format [major, minor, patch] with numeric values
     if (
         isinstance(version, list)
         and len(version) == 3
@@ -54,7 +57,7 @@ def validate_manifest(manifest: dict, path: str) -> Dict[str, Any]:
     ):
         passed += 1
     else:
-        errors.append(f"{path}: Version must be array of 3 integers, got {version}")
+        errors.append(f"{path}: Version must be array of 3 integers [major, minor, patch], got {version}")
 
     checks += 1
     min_engine_version = header.get("min_engine_version", [])
@@ -72,6 +75,7 @@ def validate_manifest(manifest: dict, path: str) -> Dict[str, Any]:
 
     checks += 1
     modules = manifest.get("modules", [])
+    valid_types = rules.get("valid_module_types", [])
     if modules and isinstance(modules, list):
         passed += 1
         for i, module in enumerate(modules):
@@ -81,6 +85,16 @@ def validate_manifest(manifest: dict, path: str) -> Dict[str, Any]:
                 passed += 1
             else:
                 errors.append(f"{path}: Module {i} has invalid UUID: {module_uuid}")
+            # Issue #1657: Module type validity check against Bedrock module types
+            checks += 1
+            module_type = module.get("type", "")
+            if module_type in valid_types:
+                passed += 1
+            else:
+                errors.append(
+                    f"{path}: Module {i} has invalid type '{module_type}'. "
+                    f"Valid types: {valid_types}"
+                )
     else:
         errors.append(f"{path}: No modules defined or invalid modules format")
 

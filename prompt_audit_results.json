@@ -1,0 +1,57 @@
+{
+  "prompts_found": 13,
+  "files_with_prompts": 9,
+  "by_type": {
+    "template": 3,
+    "markdown": 2,
+    "system": 8
+  },
+  "by_agent": {
+    "logic_translator": 2,
+    "rag_agents.py": 2,
+    "logic_auditor_agent.py": 1,
+    "rag_service": 2,
+    "unknown": 6
+  },
+  "defect_stats": {
+    "total": 4,
+    "by_severity": {
+      "CRITICAL": 0,
+      "HIGH": 0,
+      "MEDIUM": 3,
+      "LOW": 1,
+      "INFO": 0
+    },
+    "by_type": {
+      "missing_name": 0,
+      "missing_description": 1,
+      "missing_examples": 0,
+      "missing_constraints": 0,
+      "inconsistent_terminology": 1,
+      "inconsistent_casing": 0,
+      "inconsistent_format": 0,
+      "contradictory_instructions": 0,
+      "unclear_task": 0,
+      "missing_output_format": 2,
+      "insufficient_context": 0,
+      "missing_edge_case_handling": 0,
+      "hardcoded_secret": 0,
+      "pii_leakage": 0,
+      "prompt_too_long": 0,
+      "poor_structure": 0,
+      "vague_instructions": 0
+    },
+    "by_status": {
+      "open": 4,
+      "in_progress": 0,
+      "fixed": 0,
+      "wont_fix": 0,
+      "verified": 0
+    },
+    "open": 4,
+    "fixed": 0,
+    "verified": 0
+  },
+  "ci_passed": true,
+  "baseline_version": "1.0.0"
+}

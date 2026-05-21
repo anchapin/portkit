@@ -34,6 +34,7 @@ class RewardCriterion(Enum):
     IDIOMATICITY = "idiomaticity"
     CONCISENESS = "conciseness"
     READABILITY = "readability"
+    PARTIAL_FUNCTIONAL = "partial_functional"
 
 
 @dataclass
@@ -339,6 +340,55 @@ class MinecraftSpecificIdiomDetector:
             constructs.append("has_material")
 
         return constructs
+    
+
+class PartialFunctionalRewardModel:
+    """
+    Evaluates how close code is to being functional.
+    
+    Awards rewards for:
+    - Correct Bedrock API namespace usage
+    - Presence of required components for the mod type
+    - Correct data structures even if some values are wrong
+    """
+
+    REQUIRED_COMPONENTS = {
+        "item": ["minecraft:item", "description", "components"],
+        "block": ["minecraft:block", "description", "components"],
+        "entity": ["minecraft:entity", "description", "components", "events"],
+        "recipe": ["minecraft:recipe", "description", "result"],
+    }
+
+    def score(self, code: str, feature_type: str = "item") -> float:
+        """Score how functionally complete the code is."""
+        score = 0.0
+        
+        # Check for core identifiers
+        if '"minecraft:' in code:
+            score += 0.2
+            
+        # Check for required components for this type
+        required = self.REQUIRED_COMPONENTS.get(feature_type, ["description"])
+        found_count = 0
+        for comp in required:
+            if f'"{comp}"' in code:
+                found_count += 1
+        
+        if required:
+            score += 0.5 * (found_count / len(required))
+            
+        # Check for schema version
+        if '"format_version"' in code:
+            score += 0.1
+            
+        # Check for syntax validity
+        try:
+            json.loads(code)
+            score += 0.2
+        except:
+            pass
+            
+        return min(1.0, score)
 
 
 class MultiCriteriaRewardModel:
@@ -363,6 +413,7 @@ class MultiCriteriaRewardModel:
         self.conciseness_scorer = ConcisenessScorer()
         self.readability_scorer = ReadabilityScorer()
         self.idiom_detector = MinecraftSpecificIdiomDetector()
+        self.partial_functional_rm = PartialFunctionalRewardModel()
         self.enable_repair = enable_repair
 
         self.reward_config = {
@@ -415,6 +466,7 @@ class MultiCriteriaRewardModel:
             "conciseness": conciseness_score,
             "readability": readability_score,
             "idiom_quality": idiom_quality,
+            "partial_functional": self.partial_functional_rm.score(code, context.get("feature_type", "item")),
         }
 
         total_reward = self._compute_total_reward(criteria_scores)
@@ -500,6 +552,7 @@ class MultiCriteriaRewardModel:
             + criteria_scores["idiomaticity"] * self.weights.idiomaticity
             + criteria_scores["conciseness"] * self.weights.conciseness
             + criteria_scores["readability"] * self.weights.readability
+            + criteria_scores.get("partial_functional", 0.0) * 0.1  # Add small weight for partial functional
         )
 
         if weighted >= 0.9:

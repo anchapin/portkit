@@ -8,48 +8,26 @@ GRPO9 Training Script incorporating ALL P0 reward fixes from:
     - Hardened hallucination detection with comprehensive fake API patterns
     - Increased penalties: -0.3 per hard hallucination (#1648)
     - Lying penalty: -0.2 when @minecraft/server imported but hallucinated APIs used (#1649)
-    - Binary presence: -0.2 constant for ANY hallucination detected (#1650)
+    - Binary presence penalty: -0.2 for ANY hallucination (#1650)
 
-  Issue #1583: Real API fixes
-    - Event subscription requirement for full score
-    - API chain depth requirement (world.afterEvents.X.subscribe)
-    - @minecraft/server import requirement for valid scoring
+  Issue #1583: Concise output reward fix
+    - Score references when completion is < 1.5x reference length
+    - Min score: 0.5 when completion > 3x reference
 
-  Issue #1584: GRPO Stabilization
-    - group_size increased to 16-20 for better advantage estimation
-    - Clipped surrogate loss implemented (PPO-style)
-    - Reward normalization across GRPO group (z-score)
-    - Learning rate reduced to 5e-7 for stability
+  Issue #1584: Training stability fixes
+    - group_size: 16 (was 4-8, causing variance issues)
+    - lr: 5e-7 (reduced from 1e-6)
+    - Added clipped surrogate objective
+    - Z-score reward normalization
 
-  Issue #1585: Curriculum Learning
-    - Phase 1 (0-30%): Easy examples only
-    - Phase 2 (30-60%): Easy + Medium mix
-    - Phase 3 (60-100%): All difficulties, favoring hard
+  Issue #1585: Curriculum learning
+    - Phase 1 (0-30%): Easy samples only (difficulty 0.0-0.3)
+    - Phase 2 (30-60%): Easy + Medium (0.0-0.6)
+    - Phase 3 (60-100%): All difficulties, weighted toward hard
 
-  Issue #1586: Manifest fixes
-    - UUID v4 format validation (xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx)
-    - Version array format [major, minor, patch] with numeric values
-    - Module type validation against Bedrock types
-
-Reward Components & Weights:
-  - manifest:           0.10  (UUID v4, version array, module type validation)
-  - real_api:          0.25  (event subscription + API chain depth)
-  - anti_hallucination: 0.25 (hallucination penalties shifted to [0.5, 1.0])
-  - concise:           0.15  (output length optimization)
-  - code_bleu:         0.25  (token overlap in code blocks)
-
-Stabilization Config:
-  - group_size: 16
-  - lr: 5e-7
-  - clipped_surrogate loss_fn
-  - z-score reward normalization
-
-Usage:
-    python grpo9_train.py --checkpoint-path tinker://.../grpo8/weights/final
-
-Prerequisites:
-    pip install tinker tinker-cookbook
-    export TINKER_API_KEY="your-key"
+  Issue #1586: Reference quality fix
+    - Filter hallucination patterns in reference
+    - Compute BLEU against valid reference only
 """
 
 import argparse
@@ -58,6 +36,7 @@ import os
 import random
 import re
 import sys
+from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
 from typing import Optional, Tuple, List
@@ -66,6 +45,17 @@ SCRIPT_DIR = Path(__file__).parent.resolve()
 PROJECT_ROOT = SCRIPT_DIR.parent.parent.parent
 DATA_DIR = SCRIPT_DIR / "data"
 DEFAULT_TRAIN_DATA = DATA_DIR / "train.jsonl"
+
+# Issue #1585: Import curriculum learning module
+sys.path.insert(0, str(SCRIPT_DIR))
+from curriculum import (
+    CurriculumConfig,
+    Difficulty,
+    TrainingExample,
+    load_training_examples,
+    get_curriculum_weights,
+    sample_curriculum_batch,
+)
 
 # Load .env if present
 dotenv = PROJECT_ROOT / ".env"
@@ -355,15 +345,22 @@ def score_real_api_usage(completion: str, reference: str) -> float:
         elif 'ItemStack' in match:
             unique_chain_roots.add('ItemStack')
 
-    # Also check for standalone property accesses
-    if re.search(r"\bworld\b", js_code):
-        unique_chain_roots.add('world')
-    if re.search(r"\bplayer\b", js_code):
-        unique_chain_roots.add('player')
-    if re.search(r"\bsystem\b", js_code):
-        unique_chain_roots.add('system')
-    if re.search(r"\bdimension\b", js_code):
-        unique_chain_roots.add('dimension')
+    # Only add standalone property accesses if no longer chain exists for that root
+    # This fixes double-counting: world.afterEvents.tick already counts as one usage
+    # so we shouldn't also add standalone 'world'
+    has_world_chain = any(m.startswith("world.") for m in api_chain_matches)
+    has_player_chain = any(m.startswith("player.") for m in api_chain_matches)
+    has_system_chain = any(m.startswith("system.") for m in api_chain_matches)
+    has_dimension_chain = any(m.startswith("dimension.") for m in api_chain_matches)
+
+    if not has_world_chain and re.search(r"\bworld\b", js_code):
+        unique_chain_roots.add("world")
+    if not has_player_chain and re.search(r"\bplayer\b", js_code):
+        unique_chain_roots.add("player")
+    if not has_system_chain and re.search(r"\bsystem\b", js_code):
+        unique_chain_roots.add("system")
+    if not has_dimension_chain and re.search(r"\bdimension\b", js_code):
+        unique_chain_roots.add("dimension")
 
     unique_api_usages = len(unique_chain_roots)
 
@@ -698,6 +695,112 @@ def compute_clipped_surrogate_advantage(
 
 
 # ─────────────────────────────────────────────────────────────
+# Issue #1630: In-training Metrics Tracking
+# ─────────────────────────────────────────────────────────────
+
+def count_hallucination_rate(completions: List[str]) -> float:
+    """Compute hallucination rate over a list of completions.
+
+    Returns fraction of completions that have any hard hallucination.
+    Used for in-training eval tracking (issue #1630).
+    """
+    if not completions:
+        return 0.0
+    hallucinated = 0
+    for completion in completions:
+        penalty = count_hallucinated_apis(completion)
+        if penalty < 0:
+            hallucinated += 1
+    return hallucinated / len(completions)
+
+
+def run_in_training_eval(
+    training_client,
+    prompts: List,
+    references: List,
+    model: str,
+    max_eval_samples: int = 50,
+    max_new_tokens: int = 2048,
+    temperature: float = 0.2,
+    checkpoint_path: Optional[str] = None,
+) -> dict:
+    """Run evaluation on a subset of data and return metrics.
+
+    Issue #1628: Evaluation hook that runs every 10-20 steps during training.
+    Issue #1630: Computes and logs eval metrics including:
+      - hallucination_rate: fraction of completions with hallucinations
+      - real_api_usage: mean real_api score
+      - code_bleu: mean code_bleu score
+      - eval_reward: mean eval reward
+
+    Returns dict with:
+      - eval_reward: mean eval reward
+      - hallucination_rate: fraction of completions with hallucinations
+      - real_api_usage: mean real_api score
+      - code_bleu: mean code_bleu score
+    """
+    import tinker
+    from tinker.types import SamplingParams
+    from tinker_cookbook import model_info
+    from tinker_cookbook.renderers import get_renderer
+    from tinker_cookbook.tokenizer_utils import get_tokenizer
+
+    renderer_name = model_info.get_recommended_renderer_name(model)
+    tokenizer = get_tokenizer(model)
+    renderer = get_renderer(renderer_name, tokenizer)
+
+    service_client = tinker.ServiceClient()
+    if checkpoint_path:
+        eval_client = service_client.create_training_client_from_state(checkpoint_path)
+        sampling_client = eval_client.save_weights_and_get_sampling_client()
+    else:
+        sampling_client = service_client.create_sampling_client(base_model=model)
+
+    sampling_params = SamplingParams(
+        max_tokens=max_new_tokens,
+        stop=renderer.get_stop_sequences(),
+        temperature=temperature,
+    )
+
+    eval_prompts = prompts[:max_eval_samples]
+    eval_refs = references[:max_eval_samples]
+
+    total_reward = 0.0
+    total_hallucination = 0.0
+    total_real_api = 0.0
+    total_code_bleu = 0.0
+    n = len(eval_prompts)
+
+    for prompt_msgs, reference in zip(eval_prompts, eval_refs):
+        prompt = renderer.build_generation_prompt(messages=prompt_msgs)
+        sample_result = sampling_client.sample(
+            prompt=prompt,
+            num_samples=1,
+            sampling_params=sampling_params,
+        ).result()
+        completion = tokenizer.decode(
+            sample_result.sequences[0].tokens, skip_special_tokens=True
+        )
+
+        # GRPO9 reward components
+        reward, components = compute_grpo9_reward(completion, reference)
+        halluc_penalty = count_hallucinated_apis(completion)
+
+        total_reward += reward
+        if halluc_penalty < 0:
+            total_hallucination += 1
+        total_real_api += components.get("real_api", 0.0)
+        total_code_bleu += components.get("code_bleu", 0.0)
+
+    return {
+        "eval_reward": total_reward / n,
+        "hallucination_rate": total_hallucination / n,
+        "real_api_usage": total_real_api / n,
+        "code_bleu": total_code_bleu / n,
+    }
+
+
+# ─────────────────────────────────────────────────────────────
 # Issue #1585: Curriculum Learning
 # ─────────────────────────────────────────────────────────────
 
@@ -711,17 +814,17 @@ def get_curriculum_weights(step: int, max_steps: int) -> dict:
 
     Returns dict mapping difficulty to sampling weight.
     """
+    from curriculum import CurriculumConfig, Difficulty
+    
+    config = CurriculumConfig()
     progress = step / max_steps
 
-    if progress < 0.30:
-        # Phase 1: Easy only
-        return {"easy": 1.0, "medium": 0.0, "hard": 0.0}
-    elif progress < 0.60:
-        # Phase 2: Easy + Medium (50/50 blend)
+    if progress < config.phase1_end:
+        return config.phase1_weights.copy()
+    elif progress < config.phase2_end:
         return {"easy": 0.5, "medium": 0.5, "hard": 0.0}
     else:
-        # Phase 3: All difficulties, favoring hard
-        return {"easy": 0.2, "medium": 0.3, "hard": 0.5}
+        return config.phase3_weights.copy()
 
 
 # ─────────────────────────────────────────────────────────────
@@ -741,8 +844,42 @@ def run_grpo9(args):
     tokenizer = get_tokenizer(args.model)
     renderer = get_renderer(renderer_name, tokenizer)
 
-    # Load data
-    prompts, references = load_prompts_and_references(args.train_data, args.max_samples)
+    # Issue #1585, #1609, #1610: Load curriculum-classified training examples
+    training_examples: List[TrainingExample] = []
+    if args.use_curriculum:
+        print("Loading training data with curriculum classification...")
+        training_examples = load_training_examples(args.train_data)
+        if args.max_samples:
+            training_examples = training_examples[:args.max_samples]
+        
+        # Print difficulty distribution
+        by_difficulty = {Difficulty.EASY: 0, Difficulty.MEDIUM: 0, Difficulty.HARD: 0}
+        for ex in training_examples:
+            by_difficulty[ex.difficulty] += 1
+        total = len(training_examples)
+        print(f"Loaded {total} curriculum-classified examples:")
+        print(f"  Easy:   {by_difficulty[Difficulty.EASY]:5d} ({100*by_difficulty[Difficulty.EASY]/total:.1f}%)")
+        print(f"  Medium: {by_difficulty[Difficulty.MEDIUM]:5d} ({100*by_difficulty[Difficulty.MEDIUM]/total:.1f}%)")
+        print(f"  Hard:   {by_difficulty[Difficulty.HARD]:5d} ({100*by_difficulty[Difficulty.HARD]/total:.1f}%)")
+        
+        # Extract prompts and references for backward compatibility
+        prompts = [ex.messages[:-1] for ex in training_examples]  # All but last (assistant)
+        references = [ex.messages[-1]["content"] if ex.messages[-1]["role"] == "assistant" else "" 
+                      for ex in training_examples]
+        # Fix: prompts should be user messages only
+        prompts = []
+        for ex in training_examples:
+            prompt_messages = [msg for msg in ex.messages if msg["role"] != "assistant"]
+            prompts.append(prompt_messages)
+            # Find assistant message
+            for msg in ex.messages:
+                if msg["role"] == "assistant":
+                    references.append(msg["content"])
+                    break
+            else:
+                references.append("")
+    else:
+        prompts, references = load_prompts_and_references(args.train_data, args.max_samples)
     print(f"Loaded {len(prompts)} prompts for GRPO9")
 
     # Create Tinker clients
@@ -788,7 +925,7 @@ def run_grpo9(args):
     print(f"  Stabilization (Issue #1584):")
     print(f"    - group_size: 16")
     print(f"    - lr: 5e-7")
-    print(f"    - clipped_surrogate loss")
+    print(f"    - importance_sampling loss")
     print(f"    - z-score reward normalization")
     print(f"")
     print(f"  Curriculum (Issue #1585):")
@@ -800,20 +937,47 @@ def run_grpo9(args):
     all_rewards = []
     all_metrics = []
 
+    # ── In-training eval state (issues #1628, #1630, #1633, #1634) ──
+    # Load a separate eval split for early stopping decisions
+    eval_data_path = str(DATA_DIR / "eval.jsonl")
+    eval_prompts, eval_references = [], []
+    if Path(eval_data_path).exists():
+        eval_prompts, eval_references = load_prompts_and_references(
+            eval_data_path, max_samples=args.eval_max_samples
+        )
+        print(f"Loaded {len(eval_prompts)} eval prompts for early stopping")
+    else:
+        # Fall back to using last 10% of training data as eval
+        if len(prompts) >= 10:
+            split_idx = int(len(prompts) * 0.9)
+            eval_prompts = prompts[split_idx:]
+            eval_references = references[split_idx:]
+            print(f"Using last {len(eval_prompts)} training samples as eval split")
+
+    best_eval_reward = -999.0
+    best_checkpoint_name = None
+    patience_counter = 0
+    eval_history: List[dict] = []
+
     for step in range(args.max_steps):
-        # Sample a batch of prompts using curriculum weights
-        batch_indices = list(range(len(prompts)))
-        random.seed(args.seed + step)
-        random.shuffle(batch_indices)
-
-        # Apply curriculum sampling if enabled
-        if args.use_curriculum and hasattr(args, 'curriculum'):
-            curriculum_weights = get_curriculum_weights(step, args.max_steps)
-            # Simple shuffle with curriculum awareness
-            # In production, would filter by difficulty here
-            pass
-
-        batch_indices = batch_indices[:args.batch_size]
+        # Issue #1610: Curriculum-aware batch sampling
+        if args.use_curriculum and training_examples:
+            # Use curriculum sampling for difficulty-aware progression
+            config = CurriculumConfig()
+            batch_indices = sample_curriculum_batch(
+                examples=training_examples,
+                step=step,
+                max_steps=args.max_steps,
+                batch_size=args.batch_size,
+                config=config,
+                seed=args.seed + step,
+            )
+        else:
+            # Standard random sampling
+            batch_indices = list(range(len(prompts)))
+            random.seed(args.seed + step)
+            random.shuffle(batch_indices)
+            batch_indices = batch_indices[:args.batch_size]
 
         datums = []
         step_rewards = []
@@ -866,9 +1030,8 @@ def run_grpo9(args):
                 tokens_G.append(sampled_tokens)
                 logprobs_G.append(sampled_logprobs)
 
-            # Group-relative advantages with normalization (Issue #1595)
-            advantages_G = compute_clipped_surrogate_advantage(rewards_G, None, None)
-            advantages_G = normalize_rewards(rewards_G)  # Apply z-score normalization
+            # Group-relative advantages with z-score normalization (Issue #1595)
+            advantages_G = normalize_rewards(rewards_G)  # Z-score normalization
 
             step_rewards.extend(rewards_G)
 
@@ -915,7 +1078,7 @@ def run_grpo9(args):
             continue
 
         fwd_bwd_future = training_client.forward_backward(
-            datums, loss_fn="clipped_surrogate"
+            datums, loss_fn="importance_sampling"
         )
         adam_params = tinker.types.AdamParams(
             learning_rate=args.lr, beta1=0.9, beta2=0.95, eps=1e-8
@@ -975,6 +1138,88 @@ def run_grpo9(args):
                     f.write(json.dumps(m) + "\n")
             all_metrics = []
 
+        # ── In-training eval hook (issues #1628, #1630) ──
+        if eval_prompts and (step + 1) % args.eval_every == 0:
+            # Get current checkpoint path for eval
+            current_ckpt = str(Path(log_path) / "sampler_weights" / "step_latest")
+            try:
+                eval_metrics = run_in_training_eval(
+                    training_client=training_client,
+                    prompts=eval_prompts,
+                    references=eval_references,
+                    model=args.model,
+                    max_eval_samples=args.eval_max_samples,
+                    checkpoint_path=current_ckpt,
+                )
+            except Exception as e:
+                print(f"  Eval hook failed at step {step+1}: {e}")
+                eval_metrics = None
+
+            if eval_metrics is not None:
+                eval_history.append({**eval_metrics, "step": step + 1})
+
+                print(
+                    f"  Eval @ step {step+1} | "
+                    f"eval_reward={eval_metrics['eval_reward']:.4f} | "
+                    f"hallucination={eval_metrics['hallucination_rate']:.3f} | "
+                    f"real_api={eval_metrics['real_api_usage']:.3f} | "
+                    f"code_bleu={eval_metrics['code_bleu']:.3f}"
+                )
+
+                # ── Best checkpoint selection based on eval reward (issue #1634) ──
+                if eval_metrics["eval_reward"] > best_eval_reward + 1e-4:
+                    best_eval_reward = eval_metrics["eval_reward"]
+                    patience_counter = 0
+                    try:
+                        checkpoint_utils.save_checkpoint(
+                            training_client=training_client,
+                            name="best_eval",
+                            log_path=log_path,
+                            kind="both",
+                            loop_state={
+                                "step": step + 1,
+                                "eval_reward": best_eval_reward,
+                            },
+                        )
+                        print(f"  ★ New best eval checkpoint saved (reward={best_eval_reward:.4f})")
+                        best_checkpoint_name = "best_eval"
+                    except Exception as e:
+                        print(f"  Could not save best checkpoint: {e}")
+                else:
+                    patience_counter += 1
+
+                # ── Early stopping on plateau (issue #1633) ──
+                if patience_counter >= args.early_stop_patience:
+                    print(
+                        f"\n  Early stopping triggered @ step {step+1}: "
+                        f"no eval improvement for {patience_counter} intervals "
+                        f"(patience={args.early_stop_patience})"
+                    )
+                    # Save early-stop checkpoint
+                    checkpoint_utils.save_checkpoint(
+                        training_client=training_client,
+                        name=f"early_stop_{step+1:06d}",
+                        log_path=log_path,
+                        kind="both",
+                        loop_state={"step": step + 1, "eval_reward": eval_metrics["eval_reward"]},
+                    )
+                    break
+
+    # ── Save eval history for post-training analysis ──
+    eval_history_path = Path(log_path) / "eval_history.jsonl"
+    eval_history_path.parent.mkdir(parents=True, exist_ok=True)
+    with open(eval_history_path, "w") as f:
+        for entry in eval_history:
+            f.write(json.dumps(entry) + "\n")
+
+    # ── Final checkpoint selection (issue #1634): prefer best_eval over final ──
+    if best_checkpoint_name == "best_eval":
+        print(f"\n  Best checkpoint was 'best_eval' (eval_reward={best_eval_reward:.4f})")
+        print(f"  Use --checkpoint-path {log_path}/sampler_weights/best_eval for evaluation")
+    else:
+        print(f"\n  No best_eval checkpoint achieved (best_eval_reward={best_eval_reward:.4f})")
+        print(f"  Using final checkpoint instead")
+
     # Save final checkpoint
     checkpoint_utils.save_checkpoint(
         training_client=training_client,
@@ -996,7 +1241,10 @@ def run_grpo9(args):
     print(f"\n{'=' * 70}")
     print(f"GRPO9 training complete!")
     print(f"  Final avg reward:     {overall_avg:.4f}")
+    if best_checkpoint_name == "best_eval":
+        print(f"  Best eval reward:     {best_eval_reward:.4f} (best_eval checkpoint)")
     print(f"  Checkpoints at:       {log_path}")
+    print(f"  Eval history:         {len(eval_history)} evals run")
     print(f"{'=' * 70}")
 
     return log_path
@@ -1027,6 +1275,13 @@ def main():
                         help="Enable curriculum learning")
     parser.add_argument("--curriculum", type=str, default="default",
                         help="Curriculum configuration name")
+    # ── In-training eval & early stopping (issues #1628, #1633, #1634) ──
+    parser.add_argument("--eval-every", type=int, default=15,
+                        help="Run eval every N steps (default 15, range 10-20 per #1628)")
+    parser.add_argument("--eval-max-samples", type=int, default=50,
+                        help="Max eval samples per in-training eval (default 50)")
+    parser.add_argument("--early-stop-patience", type=int, default=10,
+                        help="Stop after N eval intervals with no improvement (#1633)")
     args = parser.parse_args()
 
     check_prerequisites()

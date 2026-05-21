@@ -14,8 +14,8 @@ primary_region = 'iad'
 
 [env]
   PYTHONUNBUFFERED = '1'
-AI_ENGINE_EXTRACTED = '1'
-  AI_ENGINE_UPSTREAM = 'portkit-ai-engine.internal:8001'
+
+  # AI_ENGINE_EXTRACTED = '1'  # Removed - using monolith mode (AI engine in same container)
   # Set READONLY_DATABASE_URL as a secret for read replica:
   # fly secrets set READONLY_DATABASE_URL="postgresql://user:pass@host:5432/portkit"
 

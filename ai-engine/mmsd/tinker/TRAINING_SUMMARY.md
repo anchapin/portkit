@@ -128,11 +128,31 @@ Real Bedrock APIs (ALWAYS valid):
 - **Tinker Platform**: ~$88 remaining (estimated from recent runs)
 - **Total spent so far**: ~$30-40
 
+## Status Update (2026-05-20)
+
+### Anti-Hallucination Reward Debugging
+**Finding**: The `anti_hallucination` metric showing 0.0 in GRPO8 logs does NOT indicate a bug. The metric correctly returns -1.0 when hallucinations are detected. A 0.0 value means the model was generating clean code without hallucinated APIs in those samples.
+
+Evidence from test_rewards.py:
+- Hallucinated code (ServerPlayerAPI): anti_hallucination = -1.0
+- Clean code (real APIs): anti_hallucination = 0.0
+- Reference reward (eval): 0.5381
+
+### GRPO8 Training Complete
+- 50 steps completed with ~0.68 avg reward
+- Checkpoint at: `tinker://53f04f4a-b6c3-5721-961b-f404dfe3e1cb:train:0/weights/final`
+- Model published: `alexchapin/portkit-coder-8b-grpo8` (public, 0 downloads)
+
+### HF Token Fixed
+- Token `kaggle` has `repo.content.write` permission
+- Both GRPO7 and GRPO8 models are now on HF Hub
+
 ## Next Steps
 
 1. ✅ Research GRPO improvements → Completed
 2. ✅ Download GRPO7 adapter weights → Completed (local: `exports/grpo7_local`)
 3. ✅ Merge GRPO7 with base model → Completed (local: `exports/grpo7_merged`)
-4. ⚠️ Export GRPO7 to Hub → Blocked by fine-grained HF token (needs repo.content.write)
-5. ⏳ Run GRPO8 training → Ready when budget confirmed
-6. ⏳ Full evaluation → Pending GRPO8 training
+4. ✅ Export GRPO7 to Hub → Completed (`alexchapin/portkit-coder-8b-grpo7`)
+5. ✅ Debug anti_hallucination scoring → Completed (working as designed)
+6. ⏳ Run GRPO9 training → Ready when budget confirmed
+7. ⏳ Full evaluation → Pending GRPO9 training

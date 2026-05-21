@@ -84,13 +84,15 @@ async def train_model_with_feedback(training_data: List[AITrainingDataItem]):
 
     try:
         # Import RL components
-        from .rl.quality_scorer import create_quality_scorer
-        from .rl.reward_system import create_reward_generator
-        from .rl.training_loop import create_training_loop
+        from rl.quality_scorer import create_quality_scorer
+        from rl.reward_system import create_reward_generator
+        from rl.training_loop import create_training_loop
+        from rl.synthetic_quality_scorer import SyntheticQualityScorer
 
         # Initialize RL training components
         training_loop = await create_training_loop()
         quality_scorer = create_quality_scorer()
+        synthetic_scorer = SyntheticQualityScorer()
         reward_generator = create_reward_generator()
 
         logger.info("STEP 1: RL Training System Initialized")
@@ -127,7 +129,15 @@ async def train_model_with_feedback(training_data: List[AITrainingDataItem]):
                 }
 
                 quality_metrics = None
-                if output_path:
+                if item.get("java_source") and item.get("bedrock_source"):
+                    # Use synthetic scorer for source-based evaluation
+                    quality_metrics = synthetic_scorer.assess_synthetic_quality(
+                        java_source=item["java_source"],
+                        bedrock_source=item["bedrock_source"],
+                        instruction=item.get("instruction"),
+                        user_feedback=feedback_data
+                    )
+                elif output_path:
                     quality_metrics = quality_scorer.assess_conversion_quality(
                         original_mod_path=input_path,
                         converted_addon_path=output_path,

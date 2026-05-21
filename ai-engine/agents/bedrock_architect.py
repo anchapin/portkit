@@ -1,27 +1,26 @@
-"""bedrock_architect - Backward compatibility stub.
+"""bedrock_architect - Backward compatibility stub + subpackage coordinator.
 
-This file provides backward compatibility for code that imports from
-``agents.bedrock_architect`` (the old single-file module).
+This file provides:
+1. Backward compatibility for code that imports BedrockArchitectAgent
+   from the old single-file module.
+2. Re-exports from the new bedrock_architect/ subpackage.
 
-The actual implementation has been split into the ``bedrock_architect/``
-subpackage under mmsd/tinker/bedrock_architect/.
+Issue #1622 — Stub file for backward compatibility + package coordinator.
 
-Issue #1622 — Stub file for backward compatibility.
+New code should import from submodules directly:
+- ``from agents.bedrock_architect.namespace_mapper import NamespaceMapper``
+- ``from agents.bedrock_architect.manifest_generator import ManifestGenerator``
+- ``from agents.bedrock_architect.layout_planner import LayoutPlanner``
+- ``from agents.bedrock_architect.behavior_planner import BehaviorPlanner``
+- ``from agents.bedrock_architect.dimension_porter import DimensionPorter``
 
-For new code, import from submodules directly:
-- ``from mmsd.tinker.bedrock_architect.namespace_mapper import ...``
-- ``from mmsd.tinker.bedrock_architect.manifest_generator import ...``
-- ``from mmsd.tinker.bedrock_architect.layout_planner import ...``
-- ``from mmsd.tinker.bedrock_architect.behavior_planner import ...``
-- ``from mmsd.tinker.bedrock_architect.dimension_porter import ...``
-
-For backward compatibility, import BedrockArchitectAgent from:
-``from agents.bedrock_architect_original import BedrockArchitectAgent``
+Or use the package index:
+- ``from agents.bedrock_architect import NamespaceMapper, ManifestGenerator``
 """
 
 from __future__ import annotations
 
-# Re-export everything from the original module for backward compatibility
+# Re-export BedrockArchitectAgent from original for backward compatibility
 from agents.bedrock_architect_original import (
     BedrockArchitectAgent,
     _AnalyzeJavaFeatureInput,
@@ -46,7 +45,29 @@ from agents.bedrock_architect_original import (
     _CreateLlmConversionPlanTool,
 )
 
+# Re-export subpackage for convenience imports
+from agents.bedrock_architect import (
+    NamespaceMapper,
+    ManifestGenerator,
+    LayoutPlanner,
+    BehaviorPlanner,
+    DimensionPorter,
+    PackType,
+    FeatureType,
+    map_java_package,
+    map_java_class,
+    create_behavior_manifest,
+    create_resource_manifest,
+    create_addon,
+    plan_block,
+    plan_item,
+    plan_entity,
+    port_biome,
+    port_dimension,
+)
+
 __all__ = [
+    # Backward compatibility
     "BedrockArchitectAgent",
     "_AnalyzeJavaFeatureInput",
     "_AnalyzeJavaFeatureTool",
@@ -68,4 +89,22 @@ __all__ = [
     "_GenerateEntityDefinitionsTool",
     "_CreateLlmConversionPlanInput",
     "_CreateLlmConversionPlanTool",
+    # Subpackage exports
+    "NamespaceMapper",
+    "ManifestGenerator",
+    "LayoutPlanner",
+    "BehaviorPlanner",
+    "DimensionPorter",
+    "PackType",
+    "FeatureType",
+    "map_java_package",
+    "map_java_class",
+    "create_behavior_manifest",
+    "create_resource_manifest",
+    "create_addon",
+    "plan_block",
+    "plan_item",
+    "plan_entity",
+    "port_biome",
+    "port_dimension",
 ]

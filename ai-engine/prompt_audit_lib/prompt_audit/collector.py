@@ -71,10 +71,12 @@ class PromptCollector:
     }
     
     AGENT_DIRS = [
-        "ai-engine/agents",
-        "ai-engine/prompts",
-        "ai-engine/services",
-        "ai-engine/mmsd",
+        "agents",
+        "prompts",
+        "services",
+        "mmsd",
+        "qa",
+        "utils",
     ]
     
     AGENT_FILES = [
