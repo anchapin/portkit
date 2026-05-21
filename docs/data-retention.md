@@ -22,7 +22,7 @@ This policy applies to:
 
 **PortKit** ("we", "our", or "us") acts as the data controller for all personal data processed in connection with this service.
 
-**Contact**: privacy@portkit.example.com
+**Contact**: privacy@portkit.ai
 
 ---
 
@@ -93,7 +93,7 @@ Users have the right to request deletion of their personal data. We implement th
 #### 4.1.2 Manual Deletion Requests
 
 Users may submit deletion requests via:
-- **Email**: privacy@portkit.example.com
+- **Email**: privacy@portkit.ai
 - **GitHub Issue**: [New Issue](https://github.com/anchapin/portkit/issues/new/choose)
 
 For EU users, we will respond to erasure requests within **30 days** per GDPR Art. 17(3).
@@ -200,7 +200,7 @@ Hourly cron job `purge_orphaned_files()` identifies and deletes:
 ### 8.2 Contact Information
 
 **Data Protection Inquiries**:  
-📧 privacy@portkit.example.com
+📧 privacy@portkit.ai
 
 **GitHub Issues**:  
 [Open a new issue](https://github.com/anchapin/portkit/issues/new/choose) with the label `data-privacy`

@@ -109,7 +109,7 @@ Users agree to indemnify and hold harmless PortKit from any claims arising from 
 ### 5.1 DMCA Agent Information
 
 **Designated Agent:** Alex Chapin (PortKit Founder)
-**Email:** dmca@portkit.example-portkit.com
+**Email:** privacy@portkit.ai
 **Address:** Available upon formal written request
 
 *Note: DMCA agent registration with US Copyright Office is required before beta launch. Estimated cost: $6/year.*
@@ -185,7 +185,7 @@ All converted `.mcaddon` files include original mod attribution in `manifest.jso
 If the original license cannot be determined, the description reads:
 
 ```json
-"description": "Converted from [Mod Name] by [Author]. Original license: Unknown. Converted by PortKit. If you are the copyright holder and believe this conversion is unauthorized, contact dmca@portkit.example-portkit.com"
+"description": "Converted from [Mod Name] by [Author]. Original license: Unknown. Converted by PortKit. If you are the copyright holder and believe this conversion is unauthorized, contact privacy@portkit.ai"
 ```
 
 ---
@@ -260,6 +260,6 @@ Query API for author + license
 
 For IP-related inquiries, contact:
 
-- **General IP questions:** ip@portkit.example-portkit.com
-- **DMCA notices:** dmca@portkit.example-portkit.com
-- **Legal matters:** legal@portkit.example-portkit.com
+- **General IP questions:** privacy@portkit.ai
+- **DMCA notices:** privacy@portkit.ai
+- **Legal matters:** privacy@portkit.ai
