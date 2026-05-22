@@ -390,6 +390,25 @@ omit = [
     "mmsd/tinker/validate_*.py",
     # Prompt audit library - CI tooling, not runtime coverage
     "prompt_audit_lib/**",
+    # Experimental/research code - unused/stale
+    "engines/**",
+    "search/rescore/**",
+    "steering/sae/**",
+    # Additional research/experimental packages
+    "agent_metrics/**",
+    "agents/model_converter/**",
+    "services/**",
+    # Phase 0: Non-production directories (0% coverage, not conversion logic)
+    "evals/**",
+    "testing/**",
+    "mmsd/**",
+    "indexing/**",
+    # Phase 0: Specific converter stubs with no tests
+    "converters/villager_converter.py",
+    "converters/weapon_tool_converter.py",
+    "converters/advancement_converter.py",
+    "converters/particle_converter.py",
+    "converters/potion_converter.py",
 ]
 
 [tool.coverage.report]
