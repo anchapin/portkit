@@ -1,6 +1,6 @@
 [run]
-source = .
-omit = 
+source = ai-engine
+omit =
     */tests/*
     */test_*
     */__pycache__/*
@@ -49,11 +49,10 @@ omit =
 precision = 2
 show_missing = false
 skip_covered = false
-exclude_lines = [
-    pragma: no cover,
-    def __repr__,
-    raise NotImplementedError,
-    if __name__ == .__main__.,
-    if TYPE_CHECKING:,
-    @abstractmethod,
-]
+exclude_lines =
+    pragma: no cover
+    def __repr__
+    raise NotImplementedError
+    if __name__ == .__main__.
+    if TYPE_CHECKING:
+    @abstractmethod
