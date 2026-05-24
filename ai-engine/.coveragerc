@@ -1,0 +1,58 @@
+[run]
+source = ai-engine
+omit =
+    */tests/*
+    */test_*
+    */__pycache__/*
+    */node_modules/*
+    */.venv/*
+    */site-packages/*
+    */dist-packages/*
+    */egg-info/*
+    */htmlcov/*
+    */mutants/*
+    */examples/*
+    */templates/*
+    */docs/*
+    */scripts/*
+    */setup.py
+    */conftest.py
+    */mcp/**
+    */mcp_server/**
+    benchmarking/**
+    tracing.py
+    training_manager.py
+    main.py
+    __main__.py
+    demo_*.py
+    mmsd/**
+    mmsd/tinker/**
+    mmsd/tinker/grpo*.py
+    mmsd/tinker/sft_*.py
+    mmsd/tinker/hallucination_*.py
+    mmsd/tinker/evaluate*.py
+    mmsd/tinker/export_*.py
+    mmsd/tinker/test_*.py
+    mmsd/tinker/reward*.py
+    mmsd/tinker/curriculum.py
+    mmsd/tinker/synthetic_dataset.py
+    mmsd/tinker/bedrock_architect/**
+    mmsd/tinker/pivot_ir/**
+    mmsd/tinker/bedrock_architect_stub.py
+    mmsd/tinker/convert_data.py
+    mmsd/tinker/modal_merge.py
+    mmsd/tinker/run_*.sh
+    mmsd/tinker/validate_*.py
+    prompt_audit_lib/**
+
+[report]
+precision = 2
+show_missing = false
+skip_covered = false
+exclude_lines =
+    pragma: no cover
+    def __repr__
+    raise NotImplementedError
+    if __name__ == .__main__.
+    if TYPE_CHECKING:
+    @abstractmethod
