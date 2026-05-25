@@ -1,17 +1,17 @@
 # Core FastAPI for AI Engine API - align with backend version
-fastapi==0.136.1
-uvicorn[standard]==0.47.0
+fastapi==0.136.3
+uvicorn[standard]==0.48.0
 python-multipart==0.0.29
 
 # AI Framework — LangChain/LangGraph stack (issue #1201 — legacy multi-agent framework removed)
 # Use Python >= 3.11 for langchain/langgraph compatibility.
-openai>=2.37.0,<3.0.0
-langgraph>=1.2.0
+openai>=2.38.0,<3.0.0
+langgraph>=1.2.1
 langchain-core>=1.4.0
-langchain-openai>=1.2.1,<2.0
+langchain-openai>=1.2.2,<2.0
 langchain-ollama>=1.1.0
 langgraph-checkpoint-sqlite>=3.1.0
-sentence-transformers>=5.5.0,<6.0.0
+sentence-transformers>=5.5.1,<6.0.0
 
 # Vector Database — pin relaxed after legacy framework removal (#1439, unblocked by #1201)
 chromadb>=1.5.9,<2.0
@@ -33,7 +33,7 @@ pydub
 jsonschema
 
 # Database - used by learning/correction_store and knowledge/schema
-sqlalchemy>=2.0.49
+sqlalchemy>=2.0.50
 
 # HTTP Client - align with backend version
 httpx==0.28.1
@@ -66,9 +66,9 @@ structlog>=24.0.0
 # Note: chromadb provides opentelemetry-exporter-otlp-proto-grpc which conflicts
 # with opentelemetry-exporter-jaeger-proto-grpc on protobuf versions.
 # Using flexible versions and letting pip/legacy-resolver find a solution.
-opentelemetry-api>=1.41.1
-opentelemetry-sdk>=1.41.1
-opentelemetry-exporter-otlp>=1.41.1
-opentelemetry-instrumentation-fastapi>=0.62b1
-opentelemetry-instrumentation-httpx>=0.62b1
-opentelemetry-instrumentation-redis>=0.62b1
+opentelemetry-api>=1.42.1
+opentelemetry-sdk>=1.42.1
+opentelemetry-exporter-otlp>=1.42.1
+opentelemetry-instrumentation-fastapi>=0.63b1
+opentelemetry-instrumentation-httpx>=0.63b1
+opentelemetry-instrumentation-redis>=0.63b1
