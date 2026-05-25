@@ -390,6 +390,14 @@ omit = [
     "mmsd/tinker/validate_*.py",
     # Prompt audit library - CI tooling, not runtime coverage
     "prompt_audit_lib/**",
+    # Research/training infrastructure - not part of production conversion pipeline
+    "learning/**",              # RL correction store and validation workflow
+    "prototyping/**",           # Experimental prototypes
+    "rl/**",                    # Reinforcement learning training code
+    "evals/**",                 # Evaluation scenarios and rubrics
+    "steering/**",              # SAE feature steering vectors (research)
+    "evaluation/**",             # Evaluation metrics and performance systems
+    "reasoning_patterns/**",     # Pattern discovery (not integrated)
 ]
 
 [tool.coverage.report]
