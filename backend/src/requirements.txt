@@ -2,14 +2,14 @@
 httpx>=0.25.0
 
 # Core Framework (updated for CI fix)
-fastapi==0.136.1
-uvicorn[standard]==0.47.0
+fastapi==0.136.3
+uvicorn[standard]==0.48.0
 pydantic==2.13.4
 pydantic-settings==2.14.1
 python-dateutil==2.9.0.post0
 
 # Database
-sqlalchemy>=2.0.23
+sqlalchemy>=2.0.50
 asyncpg>=0.31.0
 psycopg2-binary>=2.9.12
 alembic==1.18.4
@@ -34,8 +34,8 @@ pytest-cov==7.1.0
 pytest-timeout==2.4.0
 
 # Code Quality
-ruff==0.15.13
-black==26.5.0
+ruff==0.15.14
+black==26.5.1
 
 # Utilities
 python-dotenv==1.2.2
