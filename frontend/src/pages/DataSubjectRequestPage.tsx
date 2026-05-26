@@ -18,7 +18,10 @@ interface FormState {
 
 export const DataSubjectRequestPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<RequestType>('access');
-  const [formState, setFormState] = useState<FormState>({ email: '', confirmation: '' });
+  const [formState, setFormState] = useState<FormState>({
+    email: '',
+    confirmation: '',
+  });
   const [status, setStatus] = useState<RequestStatus>('idle');
   const [message, setMessage] = useState('');
 
@@ -33,20 +36,24 @@ export const DataSubjectRequestPage: React.FC = () => {
       console.log(`Submitting ${activeTab} request for:`, formState.email);
 
       // Stub API endpoint - backend would handle actual data export/deletion
-      await apiClient.uploadFile(new File([], 'stub'), { onProgress: () => {} });
-      
+      await apiClient.uploadFile(new File([], 'stub'), {
+        onProgress: () => {},
+      });
+
       setStatus('success');
       setMessage(
         activeTab === 'access'
           ? 'Your data export request has been submitted. You will receive an email with your data within 30 days.'
           : activeTab === 'erasure'
-          ? 'Your account deletion request has been submitted. You will receive a confirmation email within 30 days.'
-          : 'Your AI training opt-out preference has been saved.'
+            ? 'Your account deletion request has been submitted. You will receive a confirmation email within 30 days.'
+            : 'Your AI training opt-out preference has been saved.'
       );
       setFormState({ email: '', confirmation: '' });
     } catch {
       setStatus('error');
-      setMessage('An error occurred. Please try again or contact privacy@portkit.cloud.');
+      setMessage(
+        'An error occurred. Please try again or contact privacy@portkit.cloud.'
+      );
     }
   };
 
@@ -61,7 +68,8 @@ export const DataSubjectRequestPage: React.FC = () => {
     {
       id: 'access',
       label: 'Right to Access',
-      description: 'Request a copy of all your personal data in a portable format.',
+      description:
+        'Request a copy of all your personal data in a portable format.',
     },
     {
       id: 'erasure',
@@ -80,8 +88,8 @@ export const DataSubjectRequestPage: React.FC = () => {
       <header className={styles.header}>
         <h1 className={styles.title}>Data Subject Request</h1>
         <p className={styles.subtitle}>
-          Exercise your privacy rights under GDPR and CCPA. We process requests within 30 days
-          as required by GDPR Article 17.
+          Exercise your privacy rights under GDPR and CCPA. We process requests
+          within 30 days as required by GDPR Article 17.
         </p>
       </header>
 
@@ -102,7 +110,9 @@ export const DataSubjectRequestPage: React.FC = () => {
       </nav>
 
       <section className={styles.section}>
-        <h2 className={styles.sectionTitle}>{tabs.find((t) => t.id === activeTab)?.label}</h2>
+        <h2 className={styles.sectionTitle}>
+          {tabs.find((t) => t.id === activeTab)?.label}
+        </h2>
         <p className={requestStyles.description}>
           {tabs.find((t) => t.id === activeTab)?.description}
         </p>
@@ -131,7 +141,9 @@ export const DataSubjectRequestPage: React.FC = () => {
                 type="email"
                 id="email"
                 value={formState.email}
-                onChange={(e) => setFormState({ ...formState, email: e.target.value })}
+                onChange={(e) =>
+                  setFormState({ ...formState, email: e.target.value })
+                }
                 placeholder="your@email.com"
                 required
                 className={requestStyles.input}
@@ -150,21 +162,22 @@ export const DataSubjectRequestPage: React.FC = () => {
                 type="text"
                 id="confirmation"
                 value={formState.confirmation}
-                onChange={(e) => setFormState({ ...formState, confirmation: e.target.value })}
+                onChange={(e) =>
+                  setFormState({ ...formState, confirmation: e.target.value })
+                }
                 placeholder={getConfirmationText()}
                 required
                 className={requestStyles.input}
                 disabled={status === 'loading'}
               />
               <p className={requestStyles.hint}>
-                Type &quot;{getConfirmationText()}&quot; to confirm your request.
+                Type &quot;{getConfirmationText()}&quot; to confirm your
+                request.
               </p>
             </div>
 
             {status === 'error' && (
-              <div className={requestStyles.errorMessage}>
-                {message}
-              </div>
+              <div className={requestStyles.errorMessage}>{message}</div>
             )}
 
             <button
@@ -176,8 +189,9 @@ export const DataSubjectRequestPage: React.FC = () => {
             </button>
 
             <p className={requestStyles.disclaimer}>
-              By submitting this request, you confirm that you are the account holder or authorized
-              to act on behalf of the account. We will verify your identity before processing.
+              By submitting this request, you confirm that you are the account
+              holder or authorized to act on behalf of the account. We will
+              verify your identity before processing.
             </p>
           </form>
         )}
@@ -191,8 +205,9 @@ export const DataSubjectRequestPage: React.FC = () => {
               How long does it take to process my request?
             </summary>
             <p className={requestStyles.faqAnswer}>
-              We process all data subject requests within 30 days as required by GDPR Article 17.
-              For complex requests, we may extend this by an additional 60 days with prior notice.
+              We process all data subject requests within 30 days as required by
+              GDPR Article 17. For complex requests, we may extend this by an
+              additional 60 days with prior notice.
             </p>
           </details>
           <details className={requestStyles.faqItem}>
@@ -200,9 +215,9 @@ export const DataSubjectRequestPage: React.FC = () => {
               What data will be included in my export?
             </summary>
             <p className={requestStyles.faqAnswer}>
-              Your data export includes: account information, profile data, conversion history,
-              uploaded files metadata, and settings. Actual uploaded mod files are not included
-              for storage reasons.
+              Your data export includes: account information, profile data,
+              conversion history, uploaded files metadata, and settings. Actual
+              uploaded mod files are not included for storage reasons.
             </p>
           </details>
           <details className={requestStyles.faqItem}>
@@ -210,9 +225,10 @@ export const DataSubjectRequestPage: React.FC = () => {
               Will deleting my account delete all my data?
             </summary>
             <p className={requestStyles.faqAnswer}>
-              Yes, account deletion removes your account, profile data, conversion history,
-              and associated metadata within 30 days. Some data may be retained in backups
-              for up to 90 days for disaster recovery purposes.
+              Yes, account deletion removes your account, profile data,
+              conversion history, and associated metadata within 30 days. Some
+              data may be retained in backups for up to 90 days for disaster
+              recovery purposes.
             </p>
           </details>
           <details className={requestStyles.faqItem}>
@@ -220,16 +236,18 @@ export const DataSubjectRequestPage: React.FC = () => {
               What does AI training opt-out mean?
             </summary>
             <p className={requestStyles.faqAnswer}>
-              Opting out ensures your mod files and conversion data are not used to train
-              or improve AI conversion models. Your data will still be used to process your
-              conversions.
+              Opting out ensures your mod files and conversion data are not used
+              to train or improve AI conversion models. Your data will still be
+              used to process your conversions.
             </p>
           </details>
         </div>
       </section>
 
       <section className={styles.section}>
-        <h2 className={styles.sectionTitle}>Contact Our Data Protection Officer</h2>
+        <h2 className={styles.sectionTitle}>
+          Contact Our Data Protection Officer
+        </h2>
         <p>
           If you have questions about your privacy rights or our data practices,
           please contact us:
