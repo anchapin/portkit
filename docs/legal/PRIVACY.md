@@ -66,7 +66,7 @@ We may update this privacy notice from time to time to reflect changes in our pr
 
 If you have any questions or concerns about this privacy notice or our data handling practices, please contact us:
 
-*   **Email**: [privacy@example-portkit.com](mailto:privacy@example-portkit.com) (Please replace with a real contact method if available)
+*   **Email**: [privacy@portkit.ai](mailto:privacy@portkit.ai)
 *   **Issue Tracker**: You can also raise an issue on our project's GitHub issue tracker (if applicable, provide link).
 
 We value your trust and are committed to handling your data responsibly.
