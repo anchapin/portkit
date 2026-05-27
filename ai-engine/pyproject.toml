@@ -399,6 +399,8 @@ omit = [
     "steering/**",              # SAE feature steering vectors (research)
     "evaluation/**",             # Evaluation metrics and performance systems
     "reasoning_patterns/**",     # Pattern discovery (not integrated)
+    # Test utilities - not production code
+    "testing/**",               # Test fixtures and utilities (62% coverage)
 ]
 
 [tool.coverage.report]
