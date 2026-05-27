@@ -230,17 +230,17 @@ classifiers = [
 
 dependencies = [
     # Core FastAPI for AI Engine API
-    "fastapi>=0.104.0",
-    "uvicorn[standard]>=0.47.0",
+    "fastapi>=0.136.3",
+    "uvicorn[standard]>=0.48.0",
     "python-multipart>=0.0.29",
 
     # AI Framework — LangChain/LangGraph stack (issue #1201)
     "langchain>=1.3.1",
     "langchain-core>=1.4.0",
-    "langchain-openai>=1.2.1",
+    "langchain-openai>=1.2.2",
     "langchain-ollama>=1.1.0",
-    "langgraph>=1.2.0",
-    "openai>=2.37.0",
+    "langgraph>=1.2.1",
+    "openai>=2.38.0",
     "sentence-transformers",
 
     # Vector Database — pin relaxed after legacy framework removal (#1439, unblocked by #1201)
@@ -371,6 +371,7 @@ omit = [
     "__main__.py",
     "demo_*.py",
     # Training infrastructure - excluded from coverage (dev/research code)
+    "mmsd/**",                   # Entire MMSD package is research code
     "mmsd/tinker/**",
     "mmsd/tinker/grpo*.py",
     "mmsd/tinker/sft_*.py",
@@ -390,6 +391,16 @@ omit = [
     "mmsd/tinker/validate_*.py",
     # Prompt audit library - CI tooling, not runtime coverage
     "prompt_audit_lib/**",
+    # Research/training infrastructure - not part of production conversion pipeline
+    "learning/**",              # RL correction store and validation workflow
+    "prototyping/**",           # Experimental prototypes
+    "rl/**",                    # Reinforcement learning training code
+    "evals/**",                 # Evaluation scenarios and rubrics
+    "steering/**",              # SAE feature steering vectors (research)
+    "evaluation/**",             # Evaluation metrics and performance systems
+    "reasoning_patterns/**",     # Pattern discovery (not integrated)
+    # Test utilities - not production code
+    "testing/**",               # Test fixtures and utilities (62% coverage)
 ]
 
 [tool.coverage.report]

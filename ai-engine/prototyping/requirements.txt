@@ -1,15 +1,15 @@
 # Requirements for Advanced RAG Prototype Environment
 
 # Core dependencies
-numpy>=2.4.5
+numpy>=2.4.6
 pydantic>=2.13.4
 httpx>=0.24.0
-sentence-transformers>=5.5.0
+sentence-transformers>=5.5.1
 
 # Multi-modal models
 torch>=2.12.0
 torchvision>=0.27.0
-transformers>=5.8.1
+transformers>=5.9.0
 pillow>=12.2.0
 
 # OpenCLIP for multi-modal embeddings
