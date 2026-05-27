@@ -371,6 +371,7 @@ omit = [
     "__main__.py",
     "demo_*.py",
     # Training infrastructure - excluded from coverage (dev/research code)
+    "mmsd/**",                   # Entire MMSD package is research code
     "mmsd/tinker/**",
     "mmsd/tinker/grpo*.py",
     "mmsd/tinker/sft_*.py",
