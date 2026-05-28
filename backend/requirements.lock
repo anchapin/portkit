@@ -43,7 +43,7 @@ beautifulsoup4==4.14.3
     # via -r requirements.txt
 billiard==4.2.4
     # via celery
-black==26.3.1
+black==26.5.0
     # via -r requirements.txt
 boolean-py==5.0
     # via license-expression
@@ -278,7 +278,7 @@ pip-audit==2.10.0
     # via -r requirements-dev.txt
 pip-requirements-parser==32.0.1
     # via pip-audit
-pipdeptree==2.35.2
+pipdeptree==2.35.3
     # via -r requirements-dev.txt
 platformdirs==4.9.6
     # via
@@ -365,7 +365,7 @@ python-dotenv==1.2.2
     #   uvicorn
 python-magic==0.4.27
     # via -r requirements.txt
-python-multipart==0.0.28
+python-multipart==0.0.29
     # via -r requirements.txt
 pytokens==0.4.1
     # via black
@@ -389,7 +389,7 @@ rich==15.0.0
     # via
     #   pip-audit
     #   textual
-ruff==0.15.12
+ruff==0.15.13
     # via -r requirements.txt
 s3transfer==0.17.0
     # via boto3
@@ -467,7 +467,7 @@ urllib3==2.7.0
     #   botocore
     #   requests
     #   sentry-sdk
-uvicorn==0.46.0
+uvicorn==0.47.0
     # via -r requirements.txt
 uvloop==0.22.1
     # via uvicorn
