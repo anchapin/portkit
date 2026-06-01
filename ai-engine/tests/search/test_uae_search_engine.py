@@ -153,6 +153,7 @@ class TestUAESearchEngine:
         assert isinstance(score, float)
         assert -1.0 <= score <= 1.0
 
+    @pytest.mark.slow
     def test_estimate_utility_weight(self):
         """Test utility weight estimation."""
         engine = UAESearchEngine()
