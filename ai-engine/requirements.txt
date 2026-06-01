@@ -1,12 +1,12 @@
 # Core FastAPI for AI Engine API - align with backend version
 fastapi==0.136.3
 uvicorn[standard]==0.48.0
-python-multipart==0.0.29
+python-multipart==0.0.30
 
 # AI Framework — LangChain/LangGraph stack (issue #1201 — legacy multi-agent framework removed)
 # Use Python >= 3.11 for langchain/langgraph compatibility.
 openai>=2.38.0,<3.0.0
-langgraph>=1.2.1
+langgraph>=1.2.2
 langchain-core>=1.4.0
 langchain-openai>=1.2.2,<2.0
 langchain-ollama>=1.1.0
@@ -48,7 +48,7 @@ duckduckgo-search>=8.1.1
 rank_bm25>=0.2.2
 
 # Redis for job management - align with backend version
-redis>=7.4.0
+redis>=8.0.0
 async-timeout>=5.0.1
 
 # Security overrides for transitive dependencies (CVE-2026-23949, Issue #1483)
