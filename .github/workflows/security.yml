@@ -229,7 +229,7 @@ jobs:
 
       - name: Run Gitleaks
         if: github.event_name == 'push'
-        uses: gitleaks/gitleaks-action@v2.3.9
+        uses: gitleaks/gitleaks-action@v3.0.0
 
   # =============================================================================
   # Dependency Review (check for vulnerable dependencies in PRs)
