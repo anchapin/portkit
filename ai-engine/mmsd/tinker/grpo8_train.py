@@ -913,7 +913,7 @@ def run_grpo8(args):
             continue
 
         fwd_bwd_future = training_client.forward_backward(
-            datums, loss_fn="clipped_surrogate"
+            datums, loss_fn="ppo"
         )
         adam_params = tinker.types.AdamParams(
             learning_rate=args.lr, beta1=0.9, beta2=0.95, eps=1e-8

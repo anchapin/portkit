@@ -17,7 +17,7 @@ GRPO9 Training Script incorporating ALL P0 reward fixes from:
 
   Issue #1584: GRPO Stabilization
     - group_size increased to 16-20 for better advantage estimation
-    - Clipped surrogate loss implemented (PPO-style)
+    - PPO loss implemented (clipped surrogate objective)
     - Reward normalization across GRPO group (z-score)
     - Learning rate reduced to 5e-7 for stability
 
@@ -41,7 +41,7 @@ Reward Components & Weights:
 Stabilization Config:
   - group_size: 16
   - lr: 5e-7
-  - clipped_surrogate loss_fn
+    - ppo loss_fn (clipped surrogate objective)
   - z-score reward normalization
 
 Usage:
@@ -788,7 +788,7 @@ def run_grpo9(args):
     print(f"  Stabilization (Issue #1584):")
     print(f"    - group_size: 16")
     print(f"    - lr: 5e-7")
-    print(f"    - clipped_surrogate loss")
+    print(f"    - ppo loss (clipped surrogate objective)")
     print(f"    - z-score reward normalization")
     print(f"")
     print(f"  Curriculum (Issue #1585):")
@@ -915,7 +915,7 @@ def run_grpo9(args):
             continue
 
         fwd_bwd_future = training_client.forward_backward(
-            datums, loss_fn="clipped_surrogate"
+            datums, loss_fn="ppo"
         )
         adam_params = tinker.types.AdamParams(
             learning_rate=args.lr, beta1=0.9, beta2=0.95, eps=1e-8

@@ -509,6 +509,7 @@ class TestAdvancedRAGTokenBudgeting:
         assert tokens > 0
         assert tokens < len(long_text)  # Tokens should be less than chars
 
+    @pytest.mark.slow
     def test_token_budget_calculation(self, rag_agent):
         """Test token budget calculation logic."""
         max_context_tokens = rag_agent.config["context_window_size"]
