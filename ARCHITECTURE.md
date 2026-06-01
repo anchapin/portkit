@@ -250,4 +250,4 @@ Do not edit them manually — commit the generator script changes instead.
 - `backend/SKELETON.md`
 - `frontend/SKELETON.md`
 
-*Last generated: 2026-05-18*
+*Last generated: 2026-06-01*
