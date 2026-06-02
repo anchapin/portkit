@@ -21,7 +21,6 @@ class TestLogicTranslatorCoverage:
     def test_get_tools(self, agent):
         tools = agent.get_tools()
         assert len(tools) > 0
-        # Typed BaseTool subclasses expose the legacy tool name via the .name attribute.
         assert any(getattr(t, "name", "") == "translate_java_method_tool" for t in tools)
 
     def test_get_javascript_type(self, agent):
@@ -156,6 +155,70 @@ class TestLogicTranslatorCoverage:
         """
         result = agent.generate_nl_summary_from_ast(java_code)
         assert result is not None
+
+    def test_logic_translator_tools(self, agent):
+        from agents.logic_translator.tools import LogicTranslatorTools
+
+        tools = LogicTranslatorTools()
+        assert tools.translate_java_method_tool is not None
+        assert tools.convert_java_class_tool is not None
+        assert tools.map_java_apis_tool is not None
+
+    def test_translate_java_method_error_path(self, agent):
+        result = agent.translate_java_method("not json at all")
+        res = json.loads(result)
+        assert res["success"] is False
+
+    def test_convert_java_class_error_path(self, agent):
+        result = agent.convert_java_class("not json at all")
+        res = json.loads(result)
+        assert res["success"] is False
+
+    def test_map_java_apis_error_path(self, agent):
+        result = agent.map_java_apis("not json")
+        res = json.loads(result)
+        assert res["success"] is False
+
+    def test_generate_event_handlers_error_path(self, agent):
+        result = agent.generate_event_handlers("not json")
+        res = json.loads(result)
+        assert res["success"] is False
+
+    def test_validate_javascript_syntax_error_path(self, agent):
+        result = agent.validate_javascript_syntax("not json")
+        res = json.loads(result)
+        assert res["success"] is False
+
+    def test_translate_crafting_recipe_unknown_type(self, agent):
+        data = {"type": "unknown_type"}
+        result = agent.translate_crafting_recipe_json(json.dumps(data))
+        res = json.loads(result)
+        assert res["success"] is False
+
+    def test_translate_crafting_recipe_error_path(self, agent):
+        result = agent.translate_crafting_recipe_json("not json")
+        res = json.loads(result)
+        assert res["success"] is False
+
+    def test_generate_bedrock_block_json_error(self, agent):
+        result = agent.generate_bedrock_block_json(None)
+        assert result["success"] is False
+
+    def test_validate_block_json_error_path(self, agent):
+        result = agent.validate_block_json("not json")
+        res = json.loads(result)
+        assert res["success"] is False
+
+    def test_map_block_properties(self, agent):
+        props = {"hardness": {"type": "number", "default": 3.0}, "material": {"type": "string"}}
+        result = agent.map_block_properties(json.dumps(props))
+        res = json.loads(result)
+        assert res["success"] is True
+
+    def test_map_block_properties_error(self, agent):
+        result = agent.map_block_properties("not json")
+        res = json.loads(result)
+        assert res["success"] is False
 
 
 if __name__ == "__main__":
