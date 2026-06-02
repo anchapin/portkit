@@ -62,11 +62,37 @@ We periodically review our data retention needs and may delete or anonymize olde
 
 We may update this privacy notice from time to time to reflect changes in our practices or for other operational, legal, or regulatory reasons. We will notify you of any significant changes by posting the new notice on our platform or through other appropriate communication channels.
 
-## 8. Contact Us
+## 8. California Consumer Privacy Act (CCPA) Disclosure
+
+### Right to Know
+California residents have the right to request that we disclose what categories of personal information we collect, use, disclose, and "sell." Under CCPA, "selling" includes making personal information available to third parties in exchange for money or other valuable consideration.
+
+### Our Practices
+**We do not sell your personal information** as defined under CCPA. The data we collect (input files, output files, feedback) is used solely for improving our AI conversion model. We do not receive monetary compensation for sharing this data with third parties.
+
+### Categories of Information
+We collect the following categories of personal information:
+- **Identifiers**: Job IDs, optional user-provided identifiers
+- **Internet Information**: IP addresses, browser type, device information
+- **Feedback Data**: Explicit ratings, textual comments, user preferences
+
+### Your Rights
+If you are a California resident, you have the right to:
+- Know what personal information is being collected about you
+- Know whether your personal information is sold or disclosed
+- Say no to the sale of personal information
+- Access your personal information
+- Request deletion of your personal information
+- Not be discriminated against for exercising your privacy rights
+
+### Do Not Sell My Personal Information
+To opt out of any potential sale of your personal information, please contact us at [privacy@example-portkit.com](mailto:privacy@example-portkit.com) with the subject line "Do Not Sell My Data."
+
+## 9. Contact Us
 
 If you have any questions or concerns about this privacy notice or our data handling practices, please contact us:
 
-*   **Email**: [privacy@portkit.ai](mailto:privacy@portkit.ai)
+*   **Email**: [privacy@example-portkit.com](mailto:privacy@example-portkit.com) (Please replace with a real contact method if available)
 *   **Issue Tracker**: You can also raise an issue on our project's GitHub issue tracker (if applicable, provide link).
 
 We value your trust and are committed to handling your data responsibly.
