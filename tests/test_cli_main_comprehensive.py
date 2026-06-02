@@ -240,7 +240,7 @@ class TestMainCLI:
 
     def test_main_help(self, capsys):
         """Test --help argument."""
-        with patch("sys.argv", ["portkit, "--help"]):
+        with patch("sys.argv", ["portkit", "--help"]):
             with pytest.raises(SystemExit) as exc_info:
                 main()
 
@@ -269,7 +269,7 @@ class TestMainCLI:
             "validation": {"valid": True},
         }
 
-        with patch("sys.argv", ["portkit, "convert", str(temp_jar_file)]):
+        with patch("sys.argv", ["portkit", "convert", str(temp_jar_file)]):
             with pytest.raises(SystemExit) as exc_info:
                 main()
 
@@ -288,7 +288,7 @@ class TestMainCLI:
         }
 
         with patch(
-            "sys.argv", ["portkit, "convert", str(temp_jar_file), "-o", str(temp_output_dir)]
+            "sys.argv", ["portkit", "convert", str(temp_jar_file), "-o", str(temp_output_dir)]
         ):
             with pytest.raises(SystemExit) as exc_info:
                 main()
@@ -305,7 +305,7 @@ class TestMainCLI:
         mock_fixer.return_value = mock_fixer_instance
         mock_fixer_instance.fix_failing_ci.return_value = True
 
-        with patch("sys.argv", ["portkit, "fix-ci"]):
+        with patch("sys.argv", ["portkit", "fix-ci"]):
             with pytest.raises(SystemExit) as exc_info:
                 main()
 
@@ -318,7 +318,7 @@ class TestMainCLI:
         mock_fixer.return_value = mock_fixer_instance
         mock_fixer_instance.fix_failing_ci.return_value = True
 
-        with patch("sys.argv", ["portkit, "fix-ci", "--repo-path", "/custom/repo"]):
+        with patch("sys.argv", ["portkit", "fix-ci", "--repo-path", "/custom/repo"]):
             with pytest.raises(SystemExit) as exc_info:
                 main()
 
@@ -327,7 +327,7 @@ class TestMainCLI:
 
     def test_main_no_command_shows_convert(self):
         """Test that no command defaults to showing help/error."""
-        with patch("sys.argv", ["portkit]):
+        with patch("sys.argv", ["portkit"]):
             with pytest.raises(SystemExit):
                 main()
 
@@ -342,7 +342,7 @@ class TestMainCLI:
             "validation": {"valid": True},
         }
 
-        with patch("sys.argv", ["portkit, "-v", "convert", str(temp_jar_file)]):
+        with patch("sys.argv", ["portkit", "-v", "convert", str(temp_jar_file)]):
             with pytest.raises(SystemExit) as exc_info:
                 main()
 
@@ -353,7 +353,7 @@ class TestMainCLI:
         """Test main handles convert failure."""
         mock_convert.return_value = {"success": False, "error": "Conversion failed"}
 
-        with patch("sys.argv", ["portkit, "convert", str(temp_jar_file)]):
+        with patch("sys.argv", ["portkit", "convert", str(temp_jar_file)]):
             with pytest.raises(SystemExit) as exc_info:
                 main()
 
@@ -366,7 +366,7 @@ class TestMainCLI:
         mock_fixer.return_value = mock_fixer_instance
         mock_fixer_instance.fix_failing_ci.return_value = False
 
-        with patch("sys.argv", ["portkit, "fix-ci"]):
+        with patch("sys.argv", ["portkit", "fix-ci"]):
             with pytest.raises(SystemExit) as exc_info:
                 main()
 
@@ -430,7 +430,7 @@ class TestCLIIntegration:
 
         # Simulate converting multiple files
         for i in range(3):
-            with patch("sys.argv", ["portkit, "convert", str(temp_jar_file)]):
+            with patch("sys.argv", ["portkit", "convert", str(temp_jar_file)]):
                 with pytest.raises(SystemExit):
                     main()
 
@@ -446,7 +446,7 @@ class TestCLIErrorMessages:
         """Test that error messages are displayed."""
         mock_convert.return_value = {"success": False, "error": "Test error message"}
 
-        with patch("sys.argv", ["portkit, "convert", str(temp_jar_file)]):
+        with patch("sys.argv", ["portkit", "convert", str(temp_jar_file)]):
             with pytest.raises(SystemExit):
                 main()
 
@@ -455,7 +455,7 @@ class TestCLIErrorMessages:
 
     def test_missing_jar_file_argument(self):
         """Test error when JAR file argument is missing."""
-        with patch("sys.argv", ["portkit, "convert"]):
+        with patch("sys.argv", ["portkit", "convert"]):
             with pytest.raises(SystemExit):
                 main()
 
@@ -469,7 +469,7 @@ class TestCLILogging:
         mock_logger = MagicMock()
         mock_get_logger.return_value = mock_logger
 
-        with patch("sys.argv", ["portkit, "--help"]):
+        with patch("sys.argv", ["portkit", "--help"]):
             with pytest.raises(SystemExit):
                 main()
 
