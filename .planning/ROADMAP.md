@@ -740,3 +740,90 @@ Phase 21.0 (Coverage Optimization)
 - *IRIS-14B: LLM IR-to-IR Translation* (65%) — neuro-symbolic interoperability layer concept has structural relevance to PortKit's AST translation, but too low-level for immediate application.
 
 *Full digest: [.planning/research/digest-2026-05-18.md](.planning/research/digest-2026-05-18.md)*
+---
+
+## 🔬 PortKit Research Scout — Week of 2026-05-25
+
+*(Manual web search sweep — arxiv API rate-limited; GitHub connection was down this run, issues created 2026-06-08)*
+
+### New Issues Created from Research Findings
+
+| Issue | Paper | Priority | Relevance |
+|-------|-------|----------|-----------| 
+| [#1721 — Add deterministic AST + Bedrock API KB post-processor](https://github.com/anchapin/portkit/issues/1721) | [Detecting and Correcting Hallucinations via Deterministic AST Analysis](https://arxiv.org/abs/2601.19106) | High | 85% |
+| [#1722 — Validate LangGraph behavioral assumptions vs cross-framework SE agent evidence](https://github.com/anchapin/portkit/issues/1722) | [Same Signal, Different Semantics: Cross-Framework Behavioral Analysis of SE Agents](https://arxiv.org/abs/2605.18332) | Medium | 80% |
+
+### Roadmap Implications
+
+**Phase 0.6 (AI Integration) — Hallucination Detection Layer**
+- The deterministic AST post-processor approach (100% precision, 87.6% recall, F1=0.934, 77% auto-correction) is directly applicable to PortKit's Bedrock Scripting API code generation. Building a KB from `@minecraft/server` TypeScript type definitions provides a deterministic, sub-second safety net that complements MMSD fine-tuning. (Issue #1721)
+
+**Phase 0.5b (Architecture Validation) — LangGraph Behavioral Audit**  
+- Framework identity explains 64% of behavioral variance vs LLM's 10% across 64K SWE-bench runs. Behavioral heuristics borrowed from non-LangGraph frameworks (SWE-Agent, OpenHands) may not generalize to PortKit. Audit and validate current pipeline assumptions against PortKit-specific empirical data before applying external findings. (Issue #1722)
+
+**Horizon Notes (not issues yet)**
+- *AstraAI RAG+AST HPC codebase assistant* (75%) — prompt construction strategy (RAG + structural context) relevant to PortKit's converter prompt design.
+- *Reinforced Graph of Thoughts* (70%) — adaptive graph-of-operations prompting could route simple mods through fewer pipeline nodes.
+- *LLM OOP design quality* (65%) — complex Java mods with rich OOP hierarchies may be over-simplified by the converter.
+
+*Full digest: [.planning/research/digest-2026-05-25.md](.planning/research/digest-2026-05-25.md)*
+
+---
+
+## 🔬 PortKit Research Scout — Week of 2026-06-01
+
+*(Manual web search sweep — arxiv API rate-limited third consecutive week; GitHub connection still down, issues created 2026-06-08)*
+
+### New Issues Created from Research Findings
+
+| Issue | Paper | Priority | Relevance |
+|-------|-------|----------|-----------| 
+| [#1723 — Apply vendor-translation formalism to formalize Java→Bedrock construct mapping](https://github.com/anchapin/portkit/issues/1723) | [Ladder Logic Translation using LLMs in Industrial Automation](https://arxiv.org/abs/2605.31458) | High | 90% |
+| [#1724 — Add Bedrock API knowledge boundary probing + demand-guided context injection](https://github.com/anchapin/portkit/issues/1724) | [Knowledge Boundary Probing and Demand-Guided Intervention for LLM-Based Code Generation](https://arxiv.org/abs/2605.31478) | High | 90% |
+| [#1725 — Apply operational failure taxonomy to converter and validator agents](https://github.com/anchapin/portkit/issues/1725) | [What Breaks When LLMs Code? Operational Safety Failures of Agentic Code Assistants](https://arxiv.org/abs/2605.30777) | Medium | 80% |
+
+### Roadmap Implications
+
+**Phase 0.2 (Core Architecture) — Formal Construct Mapping**
+- The vendor-translation formalism (PLC → PLC) provides a mathematical foundation for PortKit's Java→Bedrock mapping problem. Formalizing incompatible constructs, semantic expressiveness gaps, and no-direct-equivalent handling creates a principled foundation for all converter decisions. (Issue #1723)
+
+**Phase 0.6 (AI Integration) — Pre-Generation Hallucination Prevention**  
+- Demand-guided context injection (probe LLM knowledge boundary → inject missing API knowledge before generation) complements the AST post-processor (Issue #1721). Together: probe+inject (pre-generation) + AST validate (post-generation) = layered hallucination defense for Bedrock API calls. (Issue #1724)
+
+**Phase 0.3/0.7 (QA & Production) — Operational Safety Taxonomy**
+- The failure taxonomy (fabricated success, scope creep, silent data corruption) maps directly to PortKit's validator agent gaps. Improving failure classification and adding scope-boundary enforcement are critical for B2B trust. (Issue #1725)
+
+**Horizon Notes (not issues yet)**
+- *Redundancy-Aware RLVR* (75%) — correctness-only reward collapses strategy diversity in multi-sample code generation; relevant to MMSD fine-tuning reward design.
+- *LLM Agent Behavioral Consistency* (70%) — non-determinism in multi-step tool-calling pipelines; relevant to Phase 0.7 production hardening.
+
+*Full digest: [.planning/research/digest-2026-06-01.md](.planning/research/digest-2026-06-01.md)*
+
+---
+
+## 🔬 PortKit Research Scout — Week of 2026-06-08
+
+*(Manual web search sweep — arxiv API rate-limited; Semantic Scholar 429; GitHub RECONNECTED — 7 issues created this run: 5 backlogged + 2 new)*
+
+### New Issues Created from Research Findings
+
+| Issue | Paper | Priority | Relevance |
+|-------|-------|----------|-----------| 
+| [#1726 — Benchmark PortKit converter against CODEMENV-style code migration eval](https://github.com/anchapin/portkit/issues/1726) | [CODEMENV: Benchmarking LLMs on Code Migration](https://arxiv.org/abs/2506.00894) | Medium | 80% |
+| [#1727 — Add category-specific functional test validation to MMSD dataset](https://github.com/anchapin/portkit/issues/1727) | [Empirical Evaluation of LLMs for Migration of Code Fragments to Post-Quantum Cryptography](https://arxiv.org/abs/2606.07341) | Medium | 80% |
+
+### Roadmap Implications
+
+**Phase 0.3 (QA & Testing) — Code Migration Benchmarking**
+- CODEMENV's 3 code migration task types (incompatible function detection, API change detection, environment adaptation) map 1:1 to PortKit's conversion pipeline stages. GPT-4O baseline = 43.84% pass@1 on code migration; PortKit's MMSD fine-tuning should substantially exceed this — benchmarking confirms whether it does and identifies the weakest task type. (Issue #1726)
+
+**Phase 0.5b (MMSD Fine-Tuning) — Dataset Quality Gate**
+- Domain-specific fine-tuning on 800 functionally-tested pairs achieves 92.5% functional correctness. PortKit's 1400 MMSD pairs likely contain functionally-incorrect examples that pollute the training signal. Adding category-specific functional test validation quality-gates the dataset and aligns training with the metric that matters: functional conversion correctness. (Issue #1727)
+
+**Horizon Notes (not issues yet)**
+- *Multi-agent architecture vs code complexity* (75%) — leanest LangGraph configurations match or beat heavier ones on accuracy. Audit whether PortKit's analyst-coder-tester-debugger pipeline is over-engineered for the 60–80% of "easy" mods.
+- *Evidence Tracing and Execution Provenance* (75%) — provenance-bearing validation improves debuggability and user-facing error reporting; relevant to Phase 0.7 B2B transparency.
+- *CodegenBench cross-architecture* (70%) — LLMs degrade on low-resource architectures (Bedrock Scripting API is low-resource); reinforces MMSD fine-tuning priority.
+- *Cross-lingual token arbitrage* (65%) — pre-flight prompt rewriting reduces context by 34–47%; Phase 0.6 experiment for large mod files.
+
+*Full digest: [.planning/research/digest-2026-06-08.md](.planning/research/digest-2026-06-08.md)*
