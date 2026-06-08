@@ -6,7 +6,7 @@
 pytest-mock>=3.15.1
 
 # Mutation testing
-mutmut>=3.5.0
+mutmut>=3.6.0
 
 # Development Tools
 pre-commit>=4.6.0
@@ -16,4 +16,4 @@ structlog
 
 # Dependency checking
 pip-audit>=2.10.0
-pipdeptree>=2.35.3
+pipdeptree>=3.1.0
