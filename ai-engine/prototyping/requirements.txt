@@ -9,19 +9,19 @@ sentence-transformers>=5.5.1
 # Multi-modal models
 torch>=2.12.0
 torchvision>=0.27.0
-transformers>=5.9.0
+transformers>=5.12.0
 pillow>=12.2.0
 
 # OpenCLIP for multi-modal embeddings
 open-clip-torch>=3.3.0
 
 # Optional: Hugging Face models
-datasets>=4.8.5
-accelerate>=1.13.0
+datasets>=5.0.0
+accelerate>=1.14.0
 
 # Testing and development
-pytest>=9.0.3
+pytest>=9.1.0
 pytest-asyncio>=1.4.0
 
 # Logging and monitoring
-structlog>=22.0.0
+structlog>=26.1.0
