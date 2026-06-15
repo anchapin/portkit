@@ -827,3 +827,30 @@ Phase 21.0 (Coverage Optimization)
 - *Cross-lingual token arbitrage* (65%) — pre-flight prompt rewriting reduces context by 34–47%; Phase 0.6 experiment for large mod files.
 
 *Full digest: [.planning/research/digest-2026-06-08.md](.planning/research/digest-2026-06-08.md)*
+
+---
+
+## 🔬 PortKit Research Scout — Week of 2026-06-15
+
+*(Manual web search sweep — arxiv API rate-limited for 6th consecutive week; GitHub CONNECTED — 2 issues created)*
+
+### New Issues Created from Research Findings
+
+| Issue | Paper | Priority | Relevance |
+|-------|-------|----------|-----------| 
+| [#1738 — Apply Multisage multi-semantic augmentation to PortKit Java→Bedrock converter](https://github.com/anchapin/portkit/issues/1738) | [Enhancing LLM-Based Code Translation with Verified Multi-Semantic Representations](https://arxiv.org/abs/2606.11863) | High | 90% |
+| [#1737 — Adopt five-phase legacy translation pipeline: stub generation + compilation-driven repair](https://github.com/anchapin/portkit/issues/1737) | [Systematic LLM Translation of Legacy Scientific Code to Differentiable Frameworks](https://arxiv.org/abs/2606.07681) | High | 85% |
+
+### Roadmap Implications
+
+**Phase 0.2/0.6 (Core Architecture + AI Integration) — Multi-Semantic Pre-Translation Layer**
+- 70–90% of LLM code translation failures are *intervenable semantic errors* (API misuse, dependency/logic errors, type mismatches) — not model capacity limits. Multisage addresses this with three modules: AST/CFG + type constraint + API dependency extraction (parse), Bedrock API semantic descriptions + execution-validated test cases (augment), and cross-semantic consistency verification (calibrate). Expected: 2.22× improvement in translation success rate. Complements the AST post-processor from issue #1721 — this operates pre-generation; #1721 operates post-generation. (Issue #1738)
+
+**Phase 0.2/0.6 (Core Architecture + AI Integration) — Five-Phase Pipeline with Stub Generation**
+- PortKit's current pipeline is missing two phases: (1) static dependency ordering (translate leaf classes first to avoid partial-translation deadlocks) and (2) pre-translation stub generation (lock in correct Bedrock API signatures before the LLM runs). The five-phase pattern — dependency analysis → stub generation → LLM translation → compilation repair → behavioral validation — is validated on 73 module translation tasks. The compilation repair loop (iterative tsc feedback) is a free, fast correctness signal that doesn't require model changes. (Issue #1737)
+
+**Horizon Notes (not issues yet)**
+- *Latent PRM Guidance for Code Translation* (75%) — test-time Process Reward Model guidance steers LLM toward API-correct outputs without fine-tuning; worthwhile after MMSD dataset is available to train the PRM on PortKit-specific outcomes.
+- *FASE Semantic Entropy for Conversion Confidence* (70%) — fast uncertainty quantification for multi-agent code generation; could serve as a confidence signal for Phase 0.7 B2B transparency (complement to per-segment scoring from issue #1091).
+
+*Full digest: [.planning/research/digest-2026-06-15.md](.planning/research/digest-2026-06-15.md)*
