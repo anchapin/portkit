@@ -2,8 +2,8 @@
 httpx==0.28.1
 
 # Core Framework (updated for CI fix)
-fastapi==0.136.3
-uvicorn[standard]==0.48.0
+fastapi==0.137.0
+uvicorn[standard]==0.49.0
 pydantic~=2.13.4
 pydantic-settings~=2.14.1
 python-dateutil==2.9.0.post0
@@ -24,32 +24,32 @@ async-timeout>=5.0.1
 celery>=5.6.3
 
 # File handling
-python-multipart==0.0.30
+python-multipart==0.0.32
 tomli~=2.4.1  # TOML parsing for Python <3.11
 python-magic==0.4.27
 javalang==0.13.0  # Java source code parsing for JavaAnalyzerAgent
 
 # Document processing for ingestion pipeline
 markdown==3.10.2
-beautifulsoup4>=4.14.3
+beautifulsoup4>=4.15.0
 
 # HTTP Client for file downloads
 httpx==0.28.1
 
 # Monitoring
 prometheus_client>=0.25.0
-sentry-sdk[fastapi]>=2.61.1
-structlog>=25.5.0
+sentry-sdk[fastapi]>=2.62.0
+structlog>=26.1.0
 
 # Testing
-pytest>=9.0.3
+pytest>=9.1.0
 pytest-asyncio==1.4.0
 pytest-cov==7.1.0
 pytest-timeout==2.4.0
 pytest-xdist>=3.8.0
 
 # Code Quality
-ruff==0.15.15
+ruff==0.15.17
 black==26.5.1
 
 # Security overrides for transitive dependencies (CVE-2026-23949, Issue #1483)
@@ -59,12 +59,12 @@ jaraco.context>=6.1.2
 python-dotenv~=1.2.1
 PyJWT>=2.13.0
 bcrypt>=5.0.0
-cryptography>=48.0.0
+cryptography>=49.0.0
 psutil>=7.2.2
 email-validator>=2.3.0
 Pillow>=12.2.0
 setuptools>=82.0.1  # Required by opentelemetry-instrumentation packages for pkg_resources
-stripe>=15.2.0  # Stripe payment integration (Issue #970)
+stripe>=15.2.1  # Stripe payment integration (Issue #970)
 resend>=2.30.1  # Transactional email sending (switched from SendGrid)
 
 # Distributed Tracing - OpenTelemetry
