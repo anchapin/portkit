@@ -18,7 +18,7 @@ setup(
         "aiosqlite>=0.19.0",
         "redis>=7.1.0",
         "celery>=5.3.0",
-        "python-multipart==0.0.30",
+        "python-multipart==0.0.31",
         "tomli==2.4.1",
         "python-magic==0.4.27",
         "httpx==0.28.1",
