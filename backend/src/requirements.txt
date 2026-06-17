@@ -20,7 +20,7 @@ aiosqlite>=0.22.1  # For SQLite async support in tests
 redis>=8.0.0
 
 # File handling
-python-multipart==0.0.30
+python-multipart==0.0.31
 tomli==2.4.1  # TOML parsing for Python <3.11
 python-magic==0.4.27
 

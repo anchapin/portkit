@@ -1,7 +1,7 @@
 # Core FastAPI for AI Engine API - align with backend version
 fastapi==0.136.3
 uvicorn[standard]==0.48.0
-python-multipart==0.0.30
+python-multipart==0.0.31
 
 # AI Framework — LangChain/LangGraph stack (issue #1201 — legacy multi-agent framework removed)
 # Use Python >= 3.11 for langchain/langgraph compatibility.
