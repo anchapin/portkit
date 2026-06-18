@@ -6,7 +6,7 @@ settings:
 
 overrides:
   form-data@>=4.0.0 <4.0.4: '>=4.0.4'
-  dompurify: 3.4.3
+  dompurify: 3.4.11
   uuid: 11.1.1
   postcss: 8.5.10
   lodash-es: 4.18.1
@@ -79,8 +79,8 @@ importers:
         specifier: ^4.4.0
         version: 4.4.0
       dompurify:
-        specifier: 3.4.3
-        version: 3.4.3
+        specifier: 3.4.11
+        version: 3.4.11
       mermaid:
         specifier: ^11.15.0
         version: 11.15.0
@@ -3134,8 +3134,8 @@ packages:
   dom-helpers@5.2.1:
     resolution: {integrity: sha512-nRCa7CK3VTrM2NmGkIy4cbK7IZlgBE/PYMn55rrXefr5xXDP0LdtfPnblFDoVdcAfslJ7or6iqAUnx0CCGIWQA==}
 
-  dompurify@3.4.3:
-    resolution: {integrity: sha512-VVwJidIJcp1hpg2OMXML3ZVRPYSZiq4aX7qBh83BSIpOaRDqI+qxhXjjIWnpzkOXhmp0L81lnoME1mnCc9H48A==}
+  dompurify@3.4.11:
+    resolution: {integrity: sha512-zhlUV12GsaRzMsf9q5M254YhA4+VuF0fG+QFqu6aYpoGlKtz+w8//jBcGVYBgQkR5GHjUomejY84AV+/uPbWdw==}
 
   dot-prop@5.3.0:
     resolution: {integrity: sha512-QM8q3zDe58hqUqjraQOmzZ1LIH9SWQJTlEKCH4kJ2oQvLZk7RbQXvtDM2XEq3fwkV9CCvvH4LA0AV+ogFsBM2Q==}
@@ -7410,7 +7410,7 @@ snapshots:
 
   '@types/dompurify@3.2.0':
     dependencies:
-      dompurify: 3.4.3
+      dompurify: 3.4.11
 
   '@types/esrecurse@4.3.1': {}
 
@@ -8495,7 +8495,7 @@ snapshots:
       '@babel/runtime': 7.29.2
       csstype: 3.2.3
 
-  dompurify@3.4.3:
+  dompurify@3.4.11:
     optionalDependencies:
       '@types/trusted-types': 2.0.7
 
@@ -9726,7 +9726,7 @@ snapshots:
       d3-sankey: 0.12.3
       dagre-d3-es: 7.0.14
       dayjs: 1.11.20
-      dompurify: 3.4.3
+      dompurify: 3.4.11
       es-toolkit: 1.46.1
       katex: 0.16.47
       khroma: 2.1.0
@@ -9769,7 +9769,7 @@ snapshots:
 
   monaco-editor@0.55.1:
     dependencies:
-      dompurify: 3.4.3
+      dompurify: 3.4.11
       marked: 14.0.0
 
   mrmime@2.0.1: {}
