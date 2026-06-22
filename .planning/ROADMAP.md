@@ -854,3 +854,24 @@ Phase 21.0 (Coverage Optimization)
 - *FASE Semantic Entropy for Conversion Confidence* (70%) — fast uncertainty quantification for multi-agent code generation; could serve as a confidence signal for Phase 0.7 B2B transparency (complement to per-segment scoring from issue #1091).
 
 *Full digest: [.planning/research/digest-2026-06-15.md](.planning/research/digest-2026-06-15.md)*
+---
+
+## 🔬 PortKit Research Scout — Week of 2026-06-22
+
+*(Manual web search sweep — arxiv API rate-limited 7th consecutive week; GitHub CONNECTED via orchestrator — 1 issue created)*
+
+### New Issues Created from Research Findings
+
+| Issue | Paper | Priority | Relevance |
+|-------|-------|----------|-----------|
+| [#1765 — Adopt SwiftTrans Dual-Stage Strategy for Runtime-Efficient Bedrock Code Generation](https://github.com/anchapin/portkit/issues/1765) | [SwiftTrans: Bridging Functional Correctness and Runtime Efficiency Gaps in LLM-Based Code Translation](https://arxiv.org/abs/2606.17683) | High | 90% |
+
+### Roadmap Implications
+
+**Phase 0.5b/0.6 (MMSD Fine-Tuning + AI Integration) — Runtime Efficiency as a First-Class Translation Metric**
+- LLM-translated code is consistently slower than human-written equivalents, and prompt engineering alone cannot close this gap (SwiftTrans empirical finding). PortKit currently has no efficiency optimization stage — the first-pass LLM translation is used as-is. SwiftTrans's dual-stage approach maps directly to PortKit's LangGraph architecture: MpTranslator (parallel translation agents with varied prompting strategies) → DiffSelector (comparative ranking by correctness + Bedrock efficiency estimate). Bedrock JavaScript runs in a tick-constrained scripting environment; runtime lag is a B2B rejection criterion even for functionally correct conversions. Also enriches MMSD training data by adding an efficiency tier label to training pairs. (Issue #1765)
+
+**Horizon Notes (not issues yet)**
+- *Beyond Pass Rate: Multilingual, Execution-Grounded Eval* (75%) — 63.25% of open LLM code failures are compile errors before semantic correctness is even tested; reinforces #1268 (contract-repair loop) as high-ROI. Also informs MMSD model selection: Qwen2.5-Coder-14B strongest on hard/complex problems, relevant to selecting the base model for MMSD fine-tuning.
+
+*Full digest: [.planning/research/digest-2026-06-22.md](.planning/research/digest-2026-06-22.md)*
