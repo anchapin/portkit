@@ -280,6 +280,31 @@ rate_limit_active_clients = Gauge(
     registry=registry,
 )
 
+# ============================================
+# Synthetic Canary Metrics (Issue #1782)
+# ============================================
+
+# Synthetic conversion success gauge (1 = success, 0 = failure)
+synthetic_conversion_success = Gauge(
+    "portkit_synthetic_conversion_success",
+    "Synthetic conversion canary result (1=success, 0=failure)",
+    registry=registry,
+)
+
+# Synthetic conversion duration gauge
+synthetic_conversion_duration_seconds = Gauge(
+    "portkit_synthetic_conversion_duration_seconds",
+    "Duration of the synthetic conversion canary in seconds",
+    registry=registry,
+)
+
+# Synthetic conversion last run timestamp
+synthetic_conversion_last_run_timestamp = Gauge(
+    "portkit_synthetic_conversion_last_run_timestamp",
+    "Unix timestamp of the last synthetic conversion canary run",
+    registry=registry,
+)
+
 
 # ============================================
 # Authentication / Migration Metrics (Issue #1428)
@@ -586,6 +611,26 @@ def record_legacy_api_key_rehashed(old_format: str) -> None:
             dashboards can split the migration drain by source format.
     """
     legacy_api_key_rehashed_total.labels(old_format=old_format).inc()
+
+
+# ============================================
+# Synthetic Canary Functions (Issue #1782)
+# ============================================
+
+
+def record_synthetic_conversion_run(success: bool, duration_seconds: float) -> None:
+    """
+    Record the result of a synthetic conversion canary run.
+
+    Args:
+        success: Whether the synthetic conversion succeeded
+        duration_seconds: Duration of the conversion attempt in seconds
+    """
+    import time
+
+    synthetic_conversion_success.set(1 if success else 0)
+    synthetic_conversion_duration_seconds.set(duration_seconds)
+    synthetic_conversion_last_run_timestamp.set(int(time.time()))
 
 
 def get_metrics() -> bytes:
