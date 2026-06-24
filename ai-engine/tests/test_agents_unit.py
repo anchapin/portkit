@@ -471,8 +471,8 @@ class TestMockedDependencies:
         # Agent should work with mocked LLM
         assert agent is not None
 
-    @patch("agents.java_analyzer.feature_extractor.Parser")
-    @patch("agents.java_analyzer.feature_extractor.ts_java")
+    @patch("agents.java_analyzer._constants.Parser")
+    @patch("agents.java_analyzer._constants.ts_java")
     def test_java_parsing_mocked(self, mock_ts_java, mock_parser):
         """Test Java parsing with mocked tree-sitter parser"""
         mock_lang = Mock()
