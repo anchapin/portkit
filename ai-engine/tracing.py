@@ -11,7 +11,6 @@ from typing import Optional
 
 from opentelemetry import trace
 from opentelemetry.context import Context
-from opentelemetry.exporter.jaeger.thrift import JaegerExporter
 from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
 from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
 from opentelemetry.instrumentation.httpx import HTTPXClientInstrumentor
@@ -74,8 +73,15 @@ def _create_resource() -> Resource:
 
 
 def _setup_jaeger_exporter() -> Optional[BatchSpanProcessor]:
-    """Setup Jaeger exporter."""
+    """Setup Jaeger exporter.
+
+    The ``opentelemetry-exporter-jaeger`` package is optional (it is deprecated
+    and conflicts with protobuf pins). Import lazily so a missing package never
+    breaks module collection or OTLP-based deployments.
+    """
     try:
+        from opentelemetry.exporter.jaeger.thrift import JaegerExporter
+
         jaeger_exporter = JaegerExporter(
             agent_host_name=get_jaeger_host(),
             agent_port=get_jaeger_port(),
