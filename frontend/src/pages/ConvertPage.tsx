@@ -17,6 +17,7 @@ import {
 import { ErrorBoundary } from '../components/ErrorBoundary/ErrorBoundary';
 import { OnboardingFlow } from '../components/Onboarding/OnboardingFlow';
 import { processError } from '../utils/conversionErrors';
+import { ConfidenceBadge } from '../components/ui/confidence-badge';
 import './ConvertPage.css';
 
 const DEFAULT_ADVANCED_OPTIONS: AdvancedOptions = {
@@ -37,6 +38,8 @@ export interface ConversionSummary {
   assetsConverted?: number;
   assetsTotal?: number;
   manualReviewFeatures?: string[];
+  /** Aggregate confidence score computed from assumption data (0-1) */
+  confidence?: number;
 }
 
 export const ConvertPage: React.FC = () => {
@@ -187,6 +190,20 @@ export const ConvertPage: React.FC = () => {
                 {lastConversionSummary.status === 'partial' && '⚠ Partial'}
               </span>
             </div>
+            {lastConversionSummary.confidence !== undefined && (
+              <div className="summary-item">
+                <span className="summary-label">Confidence:</span>
+                <div
+                  style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
+                >
+                  <ConfidenceBadge
+                    score={lastConversionSummary.confidence}
+                    showPercentage={true}
+                    size="sm"
+                  />
+                </div>
+              </div>
+            )}
             {lastConversionSummary.filesProcessed !== undefined && (
               <div className="summary-item">
                 <span className="summary-label">Files Processed:</span>

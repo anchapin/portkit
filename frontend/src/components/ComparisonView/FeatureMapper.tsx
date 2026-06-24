@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { ConfidenceBadge } from '../ui/confidence-badge';
 
 interface FeatureMappingData {
   id: string;
@@ -15,20 +16,6 @@ interface FeatureMapperProps {
 const FeatureMapper: React.FC<FeatureMapperProps> = ({ features }) => {
   const [selectedMapping, setSelectedMapping] = useState<string | null>(null);
   const [filterType, setFilterType] = useState<string>('all');
-
-  const getConfidenceColor = (score: number | null) => {
-    if (!score) return '#gray';
-    if (score >= 0.8) return '#4ade80'; // green
-    if (score >= 0.6) return '#fbbf24'; // yellow
-    return '#f87171'; // red
-  };
-
-  const getConfidenceLabel = (score: number | null) => {
-    if (!score) return 'Unknown';
-    if (score >= 0.8) return 'High';
-    if (score >= 0.6) return 'Medium';
-    return 'Low';
-  };
 
   const filteredFeatures = features.filter((feature) => {
     if (filterType === 'all') return true;
@@ -142,21 +129,11 @@ const FeatureMapper: React.FC<FeatureMapperProps> = ({ features }) => {
                       gap: '5px',
                     }}
                   >
-                    <span
-                      style={{
-                        width: '8px',
-                        height: '8px',
-                        borderRadius: '50%',
-                        backgroundColor: getConfidenceColor(
-                          feature.confidence_score
-                        ),
-                      }}
-                    ></span>
-                    <span style={{ fontSize: '12px', color: '#6b7280' }}>
-                      {getConfidenceLabel(feature.confidence_score)}
-                      {feature.confidence_score &&
-                        ` (${(feature.confidence_score * 100).toFixed(0)}%)`}
-                    </span>
+                    <ConfidenceBadge
+                      score={feature.confidence_score}
+                      showPercentage={true}
+                      size="sm"
+                    />
                   </div>
                 </div>
 
