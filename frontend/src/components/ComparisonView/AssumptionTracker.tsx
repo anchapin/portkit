@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ConfidenceBadge } from '../ui/confidence-badge';
+import { ConfidenceBadge, ConfidenceMeter } from '../ui/confidence-badge';
 import styles from './AssumptionTracker.module.css';
 
 interface SmartAssumption {

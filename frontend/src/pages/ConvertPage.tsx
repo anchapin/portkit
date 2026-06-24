@@ -17,10 +17,7 @@ import {
 import { ErrorBoundary } from '../components/ErrorBoundary/ErrorBoundary';
 import { OnboardingFlow } from '../components/Onboarding/OnboardingFlow';
 import { processError } from '../utils/conversionErrors';
-import {
-  ConfidenceBadge,
-  ConfidenceMeter,
-} from '../components/ui/confidence-badge';
+import { ConfidenceBadge } from '../components/ui/confidence-badge';
 import './ConvertPage.css';
 
 const DEFAULT_ADVANCED_OPTIONS: AdvancedOptions = {

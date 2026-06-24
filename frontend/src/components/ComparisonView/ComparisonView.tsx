@@ -3,7 +3,7 @@ import { useParams } from 'react-router-dom';
 import DiffViewer from './DiffViewer';
 import FeatureMapper from './FeatureMapper';
 import AssumptionTracker from './AssumptionTracker';
-import { ConfidenceBadge, ConfidenceMeter } from '../ui/confidence-badge';
+import { ConfidenceMeter } from '../ui/confidence-badge';
 
 // Interface matching the backend response structure for a single comparison result
 interface FeatureMappingData {
