@@ -66,6 +66,8 @@ export interface ConversionProgressProps {
   progress?: number;
   message?: string;
   stage?: string | null;
+  /** Fires when conversion reaches a terminal state (completed/failed/cancelled). */
+  onTerminalState?: (jobId: string, status: 'completed' | 'failed' | 'cancelled', error?: string) => void;
 }
 
 const ConversionProgress: React.FC<ConversionProgressProps> = ({
@@ -74,6 +76,7 @@ const ConversionProgress: React.FC<ConversionProgressProps> = ({
   progress,
   message,
   stage,
+  onTerminalState,
 }) => {
   // Define the steps for the conversion process
   const conversionSteps = ['Queued', 'Processing', 'Completed'];
@@ -160,8 +163,17 @@ const ConversionProgress: React.FC<ConversionProgressProps> = ({
         pollingIntervalRef.current = null;
       }
       setUsingWebSocket(false); // Ensure this is reset
+
+      // Fire terminal state callback so parent can handle completion/failure
+      if (onTerminalState) {
+        onTerminalState(
+          jobId || newData.job_id,
+          newData.status,
+          newData.error || newData.message
+        );
+      }
     }
-  }, []);
+  }, [jobId, onTerminalState]);
 
   const startPolling = useCallback(() => {
     // Prevent multiple polling intervals
