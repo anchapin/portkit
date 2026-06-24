@@ -309,6 +309,25 @@ class RecipeConverterAgent:
         elif "create:item_application" in recipe_type:
             normalized["recipe_category"] = "item_application"
             normalized["ingredients"] = recipe_data.get("ingredients", [])
+        elif "immersiveengineering:crusher" in recipe_type:
+            normalized["recipe_category"] = "ie_crusher"
+            normalized["ingredients"] = self._normalize_ie_input(recipe_data)
+            normalized["secondary_outputs"] = self._normalize_ie_secondaries(recipe_data)
+            normalized["energy"] = recipe_data.get("energy")
+        elif "immersiveengineering:metalpress" in recipe_type:
+            normalized["recipe_category"] = "ie_metalpress"
+            normalized["ingredients"] = self._normalize_ie_input(recipe_data)
+            normalized["mold"] = recipe_data.get("mold")
+            normalized["energy"] = recipe_data.get("energy")
+        elif "immersiveengineering:arc_furnace" in recipe_type:
+            normalized["recipe_category"] = "ie_arc_furnace"
+            normalized["ingredients"] = self._normalize_ie_input(recipe_data)
+            normalized["secondary_outputs"] = self._normalize_ie_secondaries(recipe_data)
+            normalized["energy"] = recipe_data.get("energy")
+        elif "immersiveengineering:refinery" in recipe_type:
+            normalized["recipe_category"] = "ie_refinery"
+            normalized["ingredients"] = self._normalize_ie_input(recipe_data)
+            normalized["energy"] = recipe_data.get("energy")
         elif is_custom_recipe_type(recipe_type):
             normalized["recipe_category"] = "custom"
             normalized["requires_manual_review"] = True
@@ -330,6 +349,49 @@ class RecipeConverterAgent:
             if isinstance(inner, dict):
                 return inner
         return recipe_data
+
+    @staticmethod
+    def _normalize_ie_input(recipe_data: Dict) -> list:
+        """Normalize an ImmersiveEngineering ``input`` field into a list of ingredients.
+
+        IE recipes use a single ``input`` key (an ingredient dict, a tag string,
+        or a list of alternative ingredients) rather than the vanilla
+        ``ingredient``/``ingredients`` keys. This helper wraps it into the list
+        shape the rest of the converter pipeline expects.
+        """
+        raw = recipe_data.get("input")
+        if raw is None:
+            return []
+        if isinstance(raw, list):
+            return raw
+        return [raw]
+
+    @staticmethod
+    def _normalize_ie_secondaries(recipe_data: Dict) -> list:
+        """Normalize an ImmersiveEngineering ``secondaries`` array.
+
+        IE ``secondaries`` entries look like ``{"chance": 0.1, "output": {...}}``;
+        downstream converters only care about the ``output`` item/count, so each
+        entry is flattened to ``{"item", "count", "chance"}``. Returns an empty
+        list when there are no secondaries.
+        """
+        secondaries = recipe_data.get("secondaries") or []
+        normalized = []
+        for entry in secondaries:
+            if not isinstance(entry, dict):
+                continue
+            output = entry.get("output", entry)
+            if isinstance(output, dict):
+                item = output.get("item", output.get("id", ""))
+                count = output.get("count", 1)
+            else:
+                item = output
+                count = 1
+            secondary = {"item": item, "count": count}
+            if "chance" in entry:
+                secondary["chance"] = entry["chance"]
+            normalized.append(secondary)
+        return normalized
 
     def _convert_shaped_to_bedrock(
         self, normalized_recipe: Dict, namespace: str, recipe_name: str
@@ -509,6 +571,38 @@ class RecipeConverterAgent:
             normalized_recipe, namespace, recipe_name
         )
 
+    def _convert_ie_crusher_to_bedrock(
+        self, normalized_recipe: Dict, namespace: str, recipe_name: str
+    ) -> Dict:
+        """Convert an ImmersiveEngineering crusher recipe to Bedrock format."""
+        return self._custom_converter.convert_ie_crusher_to_bedrock(
+            normalized_recipe, namespace, recipe_name
+        )
+
+    def _convert_ie_metalpress_to_bedrock(
+        self, normalized_recipe: Dict, namespace: str, recipe_name: str
+    ) -> Dict:
+        """Convert an ImmersiveEngineering metal press recipe to Bedrock format."""
+        return self._custom_converter.convert_ie_metalpress_to_bedrock(
+            normalized_recipe, namespace, recipe_name
+        )
+
+    def _convert_ie_arc_furnace_to_bedrock(
+        self, normalized_recipe: Dict, namespace: str, recipe_name: str
+    ) -> Dict:
+        """Convert an ImmersiveEngineering arc furnace recipe to Bedrock format."""
+        return self._custom_converter.convert_ie_arc_furnace_to_bedrock(
+            normalized_recipe, namespace, recipe_name
+        )
+
+    def _convert_ie_refinery_to_bedrock(
+        self, normalized_recipe: Dict, namespace: str, recipe_name: str
+    ) -> Dict:
+        """Convert an ImmersiveEngineering refinery recipe to Bedrock format."""
+        return self._custom_converter.convert_ie_refinery_to_bedrock(
+            normalized_recipe, namespace, recipe_name
+        )
+
     def _create_manual_review_result(self, namespace: str, recipe_name: str, reason: str) -> Dict:
         """Create a result indicating the recipe requires manual review."""
         return {
@@ -585,6 +679,14 @@ class RecipeConverterAgent:
             return self._convert_sandpaper_polishing_to_bedrock(normalized, namespace, recipe_name)
         elif category == "item_application":
             return self._convert_item_application_to_bedrock(normalized, namespace, recipe_name)
+        elif category == "ie_crusher":
+            return self._convert_ie_crusher_to_bedrock(normalized, namespace, recipe_name)
+        elif category == "ie_metalpress":
+            return self._convert_ie_metalpress_to_bedrock(normalized, namespace, recipe_name)
+        elif category == "ie_arc_furnace":
+            return self._convert_ie_arc_furnace_to_bedrock(normalized, namespace, recipe_name)
+        elif category == "ie_refinery":
+            return self._convert_ie_refinery_to_bedrock(normalized, namespace, recipe_name)
         elif category == "custom":
             reason = normalized.get("manual_review_reason", "Unknown custom Forge recipe type")
             return self._create_manual_review_result(namespace, recipe_name, reason)
