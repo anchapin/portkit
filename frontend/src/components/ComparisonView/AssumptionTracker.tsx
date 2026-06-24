@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { ConfidenceBadge } from '../ui/confidence-badge';
 import styles from './AssumptionTracker.module.css';
 
 interface SmartAssumption {
@@ -26,13 +27,7 @@ const AssumptionTracker: React.FC<AssumptionTrackerProps> = ({
     return '✅';
   };
 
-  const getConfidenceIcon = (confidence?: string) => {
-    if (!confidence) return '❓';
-    const conf = parseFloat(confidence);
-    if (conf >= 0.8) return '🎯';
-    if (conf >= 0.6) return '🎲';
-    return '❌';
-  };
+
 
   return (
     <div className={styles.container}>
@@ -114,15 +109,11 @@ const AssumptionTracker: React.FC<AssumptionTrackerProps> = ({
                         )}
                         {assumption.confidence && (
                           <div className={styles.confidenceBadge}>
-                            <span>
-                              {getConfidenceIcon(assumption.confidence)}
-                            </span>
-                            <span className={styles.confidenceText}>
-                              {(
-                                parseFloat(assumption.confidence) * 100
-                              ).toFixed(0)}
-                              % confidence
-                            </span>
+                            <ConfidenceBadge
+                              score={parseFloat(assumption.confidence)}
+                              showPercentage={true}
+                              size="sm"
+                            />
                           </div>
                         )}
                       </div>
@@ -166,10 +157,15 @@ const AssumptionTracker: React.FC<AssumptionTrackerProps> = ({
 
                       {assumption.confidence && (
                         <div className={styles.confidenceDetail}>
-                          <strong>Confidence Level:</strong>{' '}
-                          {(parseFloat(assumption.confidence) * 100).toFixed(1)}
-                          %
-                          <br />
+                          <strong>Confidence Level:</strong>
+                          <div style={{ marginTop: '8px' }}>
+                            <ConfidenceMeter
+                              score={parseFloat(assumption.confidence)}
+                              showLabel={true}
+                              showPercentage={true}
+                              height={6}
+                            />
+                          </div>
                           <span className={styles.confidenceSubtext}>
                             Higher confidence indicates more reliable conversion
                             accuracy.
