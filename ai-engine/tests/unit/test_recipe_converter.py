@@ -1228,3 +1228,250 @@ class TestTagResolution:
 
         assert result.get("manual_review_required") is not True
         assert "minecraft:recipe_shaped" in result
+
+
+class TestImmersiveEngineeringRecipeTypes:
+    """Test cases for ImmersiveEngineering recipe converters (issue #1771).
+
+    Bedrock has no ImmersiveEngineering, so crusher/metalpress/arc_furnace/
+    refinery recipes are approximated as vanilla shapeless recipes with the
+    machine-specific metadata (energy, secondaries, mold) carried through the
+    ``portkit:approximated_from`` annotation channel.
+    """
+
+    @pytest.fixture
+    def agent(self):
+        return RecipeConverterAgent()
+
+    # -- type registry / dispatch ----------------------------------------
+
+    def test_ie_types_registered_as_custom(self):
+        """All four IE recipe types must be recognised by is_custom_recipe_type."""
+        from agents.recipe.custom_types import is_custom_recipe_type
+
+        assert is_custom_recipe_type("immersiveengineering:crusher")
+        assert is_custom_recipe_type("immersiveengineering:metalpress")
+        assert is_custom_recipe_type("immersiveengineering:arc_furnace")
+        assert is_custom_recipe_type("immersiveengineering:refinery")
+
+    # -- crusher: single output ------------------------------------------
+
+    def test_parse_ie_crusher_single_output(self, agent):
+        """Crusher normalization maps IE input/result/energy to the common shape."""
+        recipe = {
+            "type": "immersiveengineering:crusher",
+            "energy": 3200,
+            "input": {"item": "minecraft:iron_ore"},
+            "result": {"item": "minecraft:iron_ingot", "count": 2},
+        }
+        parsed = agent._parse_java_recipe(recipe)
+
+        assert parsed["recipe_category"] == "ie_crusher"
+        assert parsed["ingredients"] == [{"item": "minecraft:iron_ore"}]
+        assert parsed["result_item"] == "minecraft:iron_ingot"
+        assert parsed["result_count"] == 2
+        assert parsed["energy"] == 3200
+        assert parsed.get("secondary_outputs", []) == []
+
+    def test_convert_ie_crusher_single_output(self, agent):
+        """Single-output crusher emits a shapeless Bedrock approximation."""
+        recipe = {
+            "type": "immersiveengineering:crusher",
+            "energy": 3200,
+            "input": {"item": "minecraft:iron_ore"},
+            "result": {"item": "minecraft:iron_ingot", "count": 2},
+        }
+        result = agent.convert_recipe(recipe, namespace="immersiveengineering", recipe_name="iron")
+
+        assert result["format_version"] == "1.20.10"
+        block = result["minecraft:recipe_shapeless"]
+        assert "_converted_from_immersiveengineering" in block["description"]["identifier"]
+        assert "immersiveengineering_crusher" in block["tags"]
+        assert block["result"]["item"] == "minecraft:iron_ingot"
+        assert block["result"]["count"] == 2
+        assert block["portkit:approximated_from"] == "immersiveengineering:crusher"
+        assert "Energy: 3200" in block["备注"]
+        # Single-output crusher must not claim secondaries
+        assert "Secondary outputs" not in block["备注"]
+
+    # -- crusher: multi-output (secondaries preserved) -------------------
+
+    def test_parse_ie_crusher_secondaries_preserved(self, agent):
+        """Crusher ``secondaries`` are flattened into secondary_outputs."""
+        recipe = {
+            "type": "immersiveengineering:crusher",
+            "energy": 3200,
+            "input": {"item": "minecraft:iron_ore"},
+            "result": {"item": "minecraft:iron_nugget", "count": 2},
+            "secondaries": [
+                {"chance": 0.1, "output": {"item": "minecraft:iron_nugget"}},
+                {"chance": 0.05, "output": {"item": "minecraft:flint", "count": 1}},
+            ],
+        }
+        parsed = agent._parse_java_recipe(recipe)
+
+        assert parsed["recipe_category"] == "ie_crusher"
+        assert len(parsed["secondary_outputs"]) == 2
+        assert parsed["secondary_outputs"][0] == {
+            "item": "minecraft:iron_nugget",
+            "count": 1,
+            "chance": 0.1,
+        }
+        assert parsed["secondary_outputs"][1]["item"] == "minecraft:flint"
+
+    def test_convert_ie_crusher_secondaries_in_note(self, agent):
+        """Byproducts are preserved in the annotation note (not dropped)."""
+        recipe = {
+            "type": "immersiveengineering:crusher",
+            "energy": 3200,
+            "input": {"item": "minecraft:iron_ore"},
+            "result": {"item": "minecraft:iron_nugget", "count": 2},
+            "secondaries": [
+                {"chance": 0.1, "output": {"item": "minecraft:iron_nugget"}},
+            ],
+        }
+        result = agent.convert_recipe(recipe, namespace="immersiveengineering", recipe_name="iron")
+
+        block = result["minecraft:recipe_shapeless"]
+        # Primary output remains the first result
+        assert block["result"]["item"] == "minecraft:iron_nugget"
+        assert block["result"]["count"] == 2
+        # Secondary outputs surfaced in the note (fan-out preservation)
+        assert "Secondary outputs" in block["备注"]
+        assert "minecraft:iron_nugget" in block["备注"]
+
+    # -- crusher: no input -> manual review ------------------------------
+
+    def test_convert_ie_crusher_no_input_manual_review(self, agent):
+        """Crusher with no input falls back to manual review."""
+        recipe = {
+            "type": "immersiveengineering:crusher",
+            "energy": 3200,
+            "result": {"item": "minecraft:iron_ingot"},
+        }
+        result = agent.convert_recipe(recipe, namespace="immersiveengineering", recipe_name="iron")
+
+        assert result["manual_review_required"] is True
+        assert "no input" in result["reason"].lower()
+
+    # -- metalpress: mold recipe -----------------------------------------
+
+    def test_parse_ie_metalpress_mold(self, agent):
+        """Metal press normalization preserves the mold field."""
+        recipe = {
+            "type": "immersiveengineering:metalpress",
+            "energy": 2400,
+            "input": {"item": "minecraft:iron_ingot"},
+            "mold": {"item": "immersiveengineering:mold_plate"},
+            "result": {"item": "immersiveengineering:plate_iron"},
+        }
+        parsed = agent._parse_java_recipe(recipe)
+
+        assert parsed["recipe_category"] == "ie_metalpress"
+        assert parsed["ingredients"] == [{"item": "minecraft:iron_ingot"}]
+        assert parsed["mold"] == {"item": "immersiveengineering:mold_plate"}
+        assert parsed["energy"] == 2400
+
+    def test_convert_ie_metalpress(self, agent):
+        """Metal press emits a shapeless recipe with mold annotated as reusable."""
+        recipe = {
+            "type": "immersiveengineering:metalpress",
+            "energy": 2400,
+            "input": {"item": "minecraft:iron_ingot"},
+            "mold": {"item": "immersiveengineering:mold_plate"},
+            "result": {"item": "immersiveengineering:plate_iron"},
+        }
+        result = agent.convert_recipe(recipe, namespace="immersiveengineering", recipe_name="plate")
+
+        block = result["minecraft:recipe_shapeless"]
+        assert "_converted_from_immersiveengineering" in block["description"]["identifier"]
+        assert "immersiveengineering_metalpress" in block["tags"]
+        assert block["result"]["item"] == "immersiveengineering:plate_iron"
+        assert block["portkit:approximated_from"] == "immersiveengineering:metalpress"
+        # Mold carried in the note as reusable
+        assert "Mold: immersiveengineering:mold_plate" in block["备注"]
+        assert "reusable" in block["备注"]
+        assert "Energy: 2400" in block["备注"]
+
+    def test_convert_ie_metalpress_no_input_manual_review(self, agent):
+        """Metal press with no input falls back to manual review."""
+        recipe = {
+            "type": "immersiveengineering:metalpress",
+            "result": {"item": "immersiveengineering:plate_iron"},
+        }
+        result = agent.convert_recipe(recipe, namespace="immersiveengineering", recipe_name="plate")
+
+        assert result["manual_review_required"] is True
+
+    # -- arc_furnace + refinery (acceptance: all four converted) ---------
+
+    def test_convert_ie_arc_furnace(self, agent):
+        """Arc furnace emits a shapeless approximation with energy note."""
+        recipe = {
+            "type": "immersiveengineering:arc_furnace",
+            "energy": 51200,
+            "input": {"item": "minecraft:iron_ingot"},
+            "result": {"item": "minecraft:diamond"},
+        }
+        result = agent.convert_recipe(
+            recipe, namespace="immersiveengineering", recipe_name="diamond"
+        )
+
+        block = result["minecraft:recipe_shapeless"]
+        assert "immersiveengineering_arc_furnace" in block["tags"]
+        assert block["portkit:approximated_from"] == "immersiveengineering:arc_furnace"
+        assert "Energy: 51200" in block["备注"]
+        assert result.get("manual_review_required") is not True
+
+    def test_convert_ie_refinery(self, agent):
+        """Refinery emits a shapeless approximation (fluid I/O is lossy)."""
+        recipe = {
+            "type": "immersiveengineering:refinery",
+            "energy": 80,
+            "input": {"item": "immersiveengineering:diesel_bucket"},
+            "result": {"item": "immersiveengineering:biodiesel_bucket"},
+        }
+        result = agent.convert_recipe(
+            recipe, namespace="immersiveengineering", recipe_name="biodiesel"
+        )
+
+        block = result["minecraft:recipe_shapeless"]
+        assert "immersiveengineering_refinery" in block["tags"]
+        assert block["portkit:approximated_from"] == "immersiveengineering:refinery"
+        assert result.get("manual_review_required") is not True
+
+    # -- input shape variants --------------------------------------------
+
+    def test_parse_ie_input_as_tag(self, agent):
+        """IE input using a forge tag is normalised into the ingredients list."""
+        recipe = {
+            "type": "immersiveengineering:crusher",
+            "input": {"tag": "forge:ores/iron"},
+            "result": {"item": "minecraft:iron_ingot"},
+        }
+        parsed = agent._parse_java_recipe(recipe)
+
+        assert parsed["ingredients"] == [{"tag": "forge:ores/iron"}]
+
+    def test_ie_recipes_not_in_manual_review_bucket(self, agent):
+        """Acceptance signal: none of the four IE subtypes hit manual_review
+        when given a well-formed recipe (issue #1771 acceptance criterion).
+        """
+        for recipe_type, tag_suffix in [
+            ("immersiveengineering:crusher", "crusher"),
+            ("immersiveengineering:metalpress", "metalpress"),
+            ("immersiveengineering:arc_furnace", "arc_furnace"),
+            ("immersiveengineering:refinery", "refinery"),
+        ]:
+            recipe = {
+                "type": recipe_type,
+                "energy": 1000,
+                "input": {"item": "minecraft:iron_ingot"},
+                "result": {"item": "minecraft:iron_block"},
+            }
+            result = agent.convert_recipe(recipe, namespace="ie", recipe_name="block")
+            assert result.get("manual_review_required") is not True, recipe_type
+            assert "minecraft:recipe_shapeless" in result, recipe_type
+            assert (
+                f"immersiveengineering_{tag_suffix}" in result["minecraft:recipe_shapeless"]["tags"]
+            )
