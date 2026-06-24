@@ -84,7 +84,7 @@ jobs:
       workflows:  ${{ steps.f.outputs.workflows }}
       deps:       ${{ steps.f.outputs.deps }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - id: f
         uses: dorny/paths-filter@v4
         with:
@@ -131,7 +131,7 @@ jobs:
     timeout-minutes: 3
     continue-on-error: true
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: actions/setup-python@v6
         with:
           python-version: ${{ env.PYTHON_VERSION }}
@@ -171,7 +171,7 @@ jobs:
     if: needs.changes.outputs.python == 'true' || needs.changes.outputs.frontend == 'true'
     timeout-minutes: 6
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - uses: actions/setup-python@v6
         with:
@@ -248,7 +248,7 @@ jobs:
     if: needs.changes.outputs.backend == 'true'
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - uses: actions/setup-python@v6
         with:
@@ -309,7 +309,7 @@ jobs:
     if: needs.changes.outputs.ai_engine == 'true'
     timeout-minutes: 25
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - uses: actions/setup-python@v6
         with:
@@ -361,7 +361,7 @@ jobs:
       VITE_API_BASE_URL: http://localhost:8000
       NODE_ENV: test
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - uses: pnpm/action-setup@v6
         with:
@@ -424,7 +424,7 @@ jobs:
       OPENAI_API_KEY: test_key
       ANTHROPIC_API_KEY: test_key
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - uses: actions/setup-python@v6
         with:
@@ -488,7 +488,7 @@ jobs:
       security-events: write
       pull-requests: write
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - uses: actions/setup-python@v6
         if: needs.changes.outputs.python == 'true'
@@ -554,7 +554,7 @@ jobs:
     if: needs.changes.outputs.workflows == 'true'
     timeout-minutes: 3
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - name: Validate YAML syntax
         run: |
           python3 - <<'PY'

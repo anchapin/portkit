@@ -62,7 +62,7 @@ jobs:
 
       - name: Checkout code
         if: steps.should_deploy.outputs.deploy == 'true'
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Initialize deployment performance tracking
         if: steps.should_deploy.outputs.deploy == 'true'

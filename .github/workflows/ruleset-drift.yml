@@ -36,7 +36,7 @@ jobs:
     if: ${{ github.event_name != 'schedule' || vars.ENABLE_RULESET_DRIFT_CHECK == 'true' }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Set up Python
         uses: actions/setup-python@v6

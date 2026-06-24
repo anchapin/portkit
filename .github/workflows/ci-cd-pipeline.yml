@@ -34,7 +34,7 @@ jobs:
       conversion_id: ${{ steps.upload.outputs.conversion_id }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Validate mod file exists
         id: validate
