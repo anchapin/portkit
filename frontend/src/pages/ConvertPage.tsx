@@ -3,7 +3,7 @@
  * Clean upload-to-download experience
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   useSuccessNotification,
   useErrorNotification,
@@ -15,6 +15,7 @@ import {
   AdvancedOptions,
 } from '../components/AdvancedOptions';
 import { ErrorBoundary } from '../components/ErrorBoundary/ErrorBoundary';
+import { OnboardingFlow } from '../components/Onboarding/OnboardingFlow';
 import { processError } from '../utils/conversionErrors';
 import './ConvertPage.css';
 
@@ -47,9 +48,26 @@ export const ConvertPage: React.FC = () => {
   );
   const [lastConversionSummary, setLastConversionSummary] =
     useState<ConversionSummary | null>(null);
+  const [showOnboarding, setShowOnboarding] = useState(false);
+
+  // Show onboarding for first-time visitors
+  useEffect(() => {
+    const completed = localStorage.getItem('onboarding_completed');
+    if (completed !== 'true') {
+      setShowOnboarding(true);
+    }
+  }, []);
 
   const successNotification = useSuccessNotification();
   const errorNotification = useErrorNotification();
+
+  const handleOnboardingComplete = () => {
+    setShowOnboarding(false);
+  };
+
+  const handleOnboardingClose = () => {
+    setShowOnboarding(false);
+  };
 
   const handleComplete = (jobId: string, filename: string) => {
     successNotification(
@@ -238,6 +256,13 @@ export const ConvertPage: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Onboarding Flow for first-time visitors */}
+      <OnboardingFlow
+        isOpen={showOnboarding}
+        onComplete={handleOnboardingComplete}
+        onClose={handleOnboardingClose}
+      />
     </div>
   );
 };
