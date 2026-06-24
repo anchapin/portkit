@@ -23,6 +23,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from agents.recipe.tag_resolver import (
     FORGE_TAG_MAPPINGS,
     JAVA_TO_BEDROCK_ITEM_MAP,
+    resolve_tag_to_bedrock,
 )
 
 from agents.recipe.shaped import ShapedRecipeConverter
@@ -85,7 +86,20 @@ class RecipeConverterAgent:
         ]
 
     def _map_java_item_to_bedrock(self, java_item_id: str) -> str:
-        """Map a Java item ID to its Bedrock equivalent."""
+        """Map a Java item ID to its Bedrock equivalent.
+
+        For tag ingredients (starting with #), this method attempts to resolve them
+        using FORGE_TAG_MAPPINGS first, then falls back to pattern-based resolution
+        via resolve_tag_to_bedrock(). If resolution fails, returns None to signal
+        that the recipe should be routed to manual review.
+
+        Args:
+            java_item_id: A Java item ID or tag like "minecraft:iron_ingot" or
+                "#forge:ingots/iron"
+
+        Returns:
+            A Bedrock item ID string, or None if a tag could not be resolved.
+        """
         if java_item_id in self.custom_mappings:
             return self.custom_mappings[java_item_id]
         if java_item_id in FORGE_TAG_MAPPINGS:
@@ -96,6 +110,13 @@ class RecipeConverterAgent:
         for key, value in self.item_mapping.items():
             if key.lower() == java_lower:
                 return value
+        if java_item_id.startswith("#"):
+            resolved = resolve_tag_to_bedrock(java_item_id)
+            if resolved is not None:
+                logger.debug(f"Resolved tag {java_item_id} to {resolved}")
+                return resolved
+            logger.warning(f"Unresolved Forge tag: {java_item_id}")
+            return None
         logger.warning(f"No mapping found for item: {java_item_id}")
         return java_item_id
 

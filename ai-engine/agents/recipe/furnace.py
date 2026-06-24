@@ -43,13 +43,30 @@ class FurnaceRecipeConverter:
             item_data = ingredient
             item_data_val = 0
 
+        bedrock_item = self._map_java_item(item_data)
+        if bedrock_item is None:
+            return self._create_manual_review_result(
+                namespace,
+                recipe_name,
+                f"Unresolved tag ingredient: {item_data}",
+            )
+
         bedrock_ingredient = {
-            "item": self._map_java_item(item_data),
+            "item": bedrock_item,
             "data": item_data_val,
         }
 
+        result_item = normalized_recipe.get("result_item", "")
+        bedrock_result_item = self._map_java_item(result_item)
+        if bedrock_result_item is None:
+            return self._create_manual_review_result(
+                namespace,
+                recipe_name,
+                f"Unresolved tag ingredient: {result_item}",
+            )
+
         bedrock_result = {
-            "item": self._map_java_item(normalized_recipe.get("result_item", "")),
+            "item": bedrock_result_item,
             "data": normalized_recipe.get("result_data", 0),
             "count": normalized_recipe.get("result_count", 1),
         }
@@ -100,13 +117,30 @@ class FurnaceRecipeConverter:
             item_data = ingredient
             item_data_val = 0
 
+        bedrock_item = self._map_java_item(item_data)
+        if bedrock_item is None:
+            return self._create_manual_review_result(
+                namespace,
+                recipe_name,
+                f"Unresolved tag ingredient: {item_data}",
+            )
+
         bedrock_ingredient = {
-            "item": self._map_java_item(item_data),
+            "item": bedrock_item,
             "data": item_data_val,
         }
 
+        result_item = normalized_recipe.get("result_item", "")
+        bedrock_result_item = self._map_java_item(result_item)
+        if bedrock_result_item is None:
+            return self._create_manual_review_result(
+                namespace,
+                recipe_name,
+                f"Unresolved tag ingredient: {result_item}",
+            )
+
         bedrock_result = {
-            "item": self._map_java_item(normalized_recipe.get("result_item", "")),
+            "item": bedrock_result_item,
             "data": normalized_recipe.get("result_data", 0),
             "count": normalized_recipe.get("result_count", 1),
         }
@@ -127,8 +161,17 @@ class FurnaceRecipeConverter:
         self, normalized_recipe: Dict, namespace: str, recipe_name: str
     ) -> Dict:
         """Convert a smithing recipe to Bedrock format."""
+        result_item = normalized_recipe.get("result_item", "")
+        bedrock_result_item = self._map_java_item(result_item)
+        if bedrock_result_item is None:
+            return self._create_manual_review_result(
+                namespace,
+                recipe_name,
+                f"Unresolved tag ingredient: {result_item}",
+            )
+
         bedrock_result = {
-            "item": self._map_java_item(normalized_recipe.get("result_item", "")),
+            "item": bedrock_result_item,
             "data": normalized_recipe.get("result_data", 0),
             "count": normalized_recipe.get("result_count", 1),
         }
@@ -155,6 +198,7 @@ class FurnaceRecipeConverter:
             "reason": reason,
             "original_recipe": f"{namespace}:{recipe_name}",
             "description": {"identifier": f"{namespace}:{recipe_name}"},
+            "portkit:unresolved_tag": True,
         }
 
 
