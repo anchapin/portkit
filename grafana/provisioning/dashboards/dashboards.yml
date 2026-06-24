@@ -1,0 +1,15 @@
+# Grafana Dashboard Provisioning
+# Resolves: #1780 — auto-load JSON dashboards from /etc/grafana/provisioning/dashboards/json
+
+apiVersion: 1
+
+providers:
+  - name: "Portkit Dashboards"
+    orgId: 1
+    folder: ""
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 10
+    allowUiUpdates: true
+    options:
+      path: /etc/grafana/provisioning/dashboards/json
