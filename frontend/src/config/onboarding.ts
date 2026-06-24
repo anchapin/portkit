@@ -7,14 +7,15 @@
 export const ONBOARDING_CONFIG = {
   branding: {
     productName: 'PortKit',
-    tagline: 'Convert your Minecraft Java mods to Bedrock add-ons in minutes, not months.',
+    tagline:
+      'Convert your Minecraft Java mods to Bedrock add-ons in minutes, not months.',
   },
 
   // Conversion statistics (update from real metrics before public launch)
   stats: {
-    automationRange: '60-80%',       // Expected automation rate range
+    automationRange: '60-80%', // Expected automation rate range
     conversionTimeRange: '5-30 min', // Typical conversion time range
-    modsConvertedCount: '1000+',     // Total mods converted (launch metric)
+    modsConvertedCount: '1000+', // Total mods converted (launch metric)
   },
 
   // Free tier limits (synced with PricingPage.tsx and ConversionUpload.tsx)
