@@ -48,3 +48,58 @@ groups:
         annotations:
           summary: "Conversion success rate is below 90%"
           description: "The conversion success rate has dropped below 90% for 5 minutes. Check error rates and ai-engine logs."
+
+      # Issue #1779 SLO rules
+      - alert: ConversionSuccessRateDrop
+        expr: portkit_conversion_success_rate < 70
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Conversion success rate SLO breach (warning)"
+          description: "Conversion success rate is {{ $value }}%, below 70% SLO threshold for 10 minutes. Investigate conversion pipeline health."
+
+      - alert: ConversionSuccessRateCritical
+        expr: portkit_conversion_success_rate < 60
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Conversion success rate SLO breach (critical)"
+          description: "Conversion success rate is {{ $value }}%, below 60% SLO threshold for 5 minutes. Immediate investigation required."
+
+      - alert: ConversionP95LatencyBreach
+        expr: histogram_quantile(0.95, rate(portkit_conversion_duration_seconds_bucket[10m])) > 600
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Conversion p95 latency exceeds 10 minutes"
+          description: "95th percentile conversion latency is {{ $value | humanizeDuration }}, exceeding 600s threshold. Check ai-engine and conversion pipeline bottlenecks."
+
+      - alert: LLMCostSpike
+        expr: rate(portkit_llm_cost_dollars[1h]) > 10
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "LLM cost rate unusually high"
+          description: "LLM cost rate is ${{ $value }}/hour, exceeding $10/hour threshold for 10 minutes. Review token usage and prompt efficiency."
+
+      - alert: AgentFailureStorm
+        expr: rate(portkit_agent_executions_total{status="failed"}[5m]) > 0.5
+        for: 3m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Agent failure rate elevated"
+          description: "Agent failure rate is {{ $value }}/s over 5 minutes, exceeding 0.5/s threshold. Check agent logs for failure patterns."
+
+      - alert: ConversionQueueDepth
+        expr: portkit_conversion_queue_size > 50
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Conversion queue depth high"
+          description: "Conversion queue has {{ $value }} jobs queued, exceeding 50 job threshold for 5 minutes. Consider scaling ai-engine or investigating processing bottlenecks."

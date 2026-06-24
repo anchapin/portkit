@@ -11,6 +11,7 @@ scrape_configs:
       - targets: [localhost:9090]
 
   - job_name: backend
+    metrics_path: /api/v1/metrics
     static_configs:
       - targets: [backend:8080]
 
