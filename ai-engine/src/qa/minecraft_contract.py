@@ -137,6 +137,175 @@ COORDINATE_SCHEMA = {
     "z": {"type": "number", "min": -30000000, "max": 30000000},
 }
 
+VALID_BEDROCK_BEHAVIORS: set = {
+    "minecraft:behavior.acquiring_target",
+    "minecraft:behavior.admire_item",
+    "minecraft:behavior.avoid_block",
+    "minecraft:behavior.avoid_entity",
+    "minecraft:behavior.barter",
+    "minecraft:behavior.behavior",
+    "minecraft:behavior.beg",
+    "minecraft:behavior.break_door",
+    "minecraft:behavior.breed",
+    "minecraft:behavior.celebrate",
+    "minecraft:behavior.charge",
+    "minecraft:behavior.claim",
+    "minecraft:behavior.tempt",
+    "minecraft:behavior.look_at",
+    "minecraft:behavior.look_at_player",
+    "minecraft:behavior.look_at_trading",
+    "minecraft:behavior.melee_attack",
+    "minecraft:behavior.mount_pathing",
+    "minecraft:behavior.move_to_land",
+    "minecraft:behavior.move_through_village",
+    "minecraft:behavior.move_towards_target",
+    "minecraft:behavior.nectar_gathering",
+    "minecraft:behavior.nearest_attackable",
+    "minecraft:behavior.nearest_entity",
+    "minecraft:behavior.ocelot_sneeze",
+    "minecraft:behavior.offer_flower",
+    "minecraft:behavior.open_door",
+    "minecraft:behavior.parent",
+    "minecraft:behavior.panic",
+    "minecraft:behavior.parrot_poop",
+    "minecraft:behavior.perch",
+    "minecraft:behavior.pet_sleep_with_owner",
+    "minecraft:behavior.pickup_items",
+    "minecraft:behavior.player_water_transport",
+    "minecraft:behavior.raid_garden",
+    "minecraft:behavior.random_look_around",
+    "minecraft:behavior.random_stroll",
+    "minecraft:behavior.ride_tamed_horse",
+    "minecraft:behavior.skeleton_ride",
+    "minecraft:behavior.sleep",
+    "minecraft:behavior.slime_attack",
+    "minecraft:behavior.spin_attack",
+    "minecraft:behavior.stay_while_sitting",
+    "minecraft:behavior.stomp",
+    "minecraft:behavior.strider_wander",
+    "minecraft:behavior.swell",
+    "minecraft:behavior.take_flower",
+    "minecraft:behavior.tame",
+    "minecraft:behavior.target_nearest",
+    "minecraft:behavior.target_when_pushed",
+    "minecraft:behavior.trade_interest",
+    "minecraft:behavior.trade_with_player",
+    "minecraft:behavior.villager_baby",
+    "minecraft:behavior.villager_work",
+    "minecraft:behavior.walk_towards_point",
+    "minecraft:behavior.walk_back_home",
+    "minecraft:behavior.wander",
+    "minecraft:behavior.wolf_defend_owner",
+    "minecraft:behavior.vex_copy_owner_target",
+    "minecraft:behavior.jump_to_block",
+    "minecraft:behavior.lay_spawn",
+    "minecraft:behavior.lay_egg",
+    "minecraft:behavior.item_consume",
+    "minecraft:behavior.interact",
+    "minecraft:behavior.fish_jump",
+    "minecraft:behavior.flop",
+    "minecraft:behavior.float",
+    "minecraft:behavior.fly",
+    "minecraft:behavior.follow_entity",
+    "minecraft:behavior.follow_owner",
+    "minecraft:behavior.follow_player",
+    "minecraft:behavior.flee_sun",
+    "minecraft:behavior.freeze",
+    "minecraft:behavior.get_angry",
+    "minecraft:behavior.graze",
+    "minecraft:behavior.guardian_attack",
+    "minecraft:behavior.hero_of_the_village",
+    "minecraft:behavior.honey_consume",
+    "minecraft:behavior.horse_walk",
+    "minecraft:behavior.hunt",
+    "minecraft:behavior.investigate_suspicious",
+    "minecraft:behavior.irongolem_walk",
+    "minecraft:behavior.jump",
+    "minecraft:behavior.leap_at_target",
+    "minecraft:behavior.leash",
+    "minecraft:behavior.leave_water",
+    "minecraft:behavior.limited_water_temperature",
+    "minecraft:behavior.llama_trade",
+    "minecraft:behavior.love",
+    "minecraft:behavior.mark_territory",
+    "minecraft:behavior.mate",
+    "minecraft:behavior.minecd",
+    "minecraft:behavior.modify_sentence",
+    "minecraft:behavior.mount_pathing",
+    "minecraft:behavior.move_towards_target",
+    "minecraft:behavior.nearest_prioritized",
+    "minecraft:behavior.neighbor_check",
+    "minecraft:behavior.npc_work",
+    "minecraft:behavior.ocelot_sneeze",
+    "minecraft:behavior.other_selected",
+    "minecraft:behavior.owner_hurt_by_target",
+    "minecraft:behavior.owner_hurt_target",
+    "minecraft:behavior.panic",
+    "minecraft:behavior.parent",
+    "minecraft:behavior.peak",
+    "minecraft:behavior.people_automation",
+    "minecraft:behavior.pet_sleep_with_owner",
+    "minecraft:behavior.pickup_items",
+    "minecraft:behavior.play_dead",
+    "minecraft:behavior.player_water_transport",
+    "minecraft:behavior.raid_garden",
+    "minecraft:behavior.random_look_around",
+    "minecraft:behavior.random_sitting",
+    "minecraft:behavior.random_stroll",
+    "minecraft:behavior.receive_love",
+    "minecraft:behavior.relax_on_owner",
+    "minecraft:behavior.ride_tamed_horse",
+    "minecraft:behavior.rise_and_walk",
+    "minecraft:behavior.sandstorm",
+    "minecraft:behavior.search_for_interesting_door_to_open",
+    "minecraft:behavior.seek_shelter",
+    "minecraft:behavior.shared_pathing",
+    "minecraft:behavior.shear",
+    "minecraft:behavior.shelter",
+    "minecraft:behavior.silverfish_wake_up_friends",
+    "minecraft:behavior.skeleton_ranged_attack",
+    "minecraft:behavior.sleep",
+    "minecraft:behavior.slime_float",
+    "minecraft:behavior.smooth_sitting",
+    "minecraft:behavior.snacking",
+    "minecraft:behavior.sneak",
+    "minecraft:behavior.sniff",
+    "minecraft:behavior.stalk",
+    "minecraft:behavior.stay_while_sitting",
+    "minecraft:behavior.stomp",
+    "minecraft:behavior.strider_wander",
+    "minecraft:behavior.swim",
+    "minecraft:behavior.swim_in_water",
+    "minecraft:behavior.take_flower",
+    "minecraft:behavior.tame",
+    "minecraft:behavior.target_nearest",
+    "minecraft:behavior.target_when_pushed",
+    "minecraft:behavior.tempt",
+    "minecraft:behavior.trade_interest",
+    "minecraft:behavior.trade_with_player",
+    "minecraft:behavior.unequip",
+    "minecraft:behavior.unleash",
+    "minecraft:behavior.vex_copy_owner_target",
+    "minecraft:behavior.walk_back_home",
+    "minecraft:behavior.walk_towards_point",
+    "minecraft:behavior.wander",
+    "minecraft:behavior.warden_walk",
+    "minecraft:behavior.wolf_defend_owner",
+    "minecraft:behavior.wolf_seduce",
+    "minecraft:behavior.zombie_attack",
+    "minecraft:behavior.door_interact",
+    "minecraft:behavior.strafe",
+    "minecraft:behavior.siege",
+    "minecraft:behavior.nudge",
+    "minecraft:behavior.become_angry",
+    "minecraft:behavior.equipped_item_chance",
+    "minecraft:behavior.find_mount",
+    "minecraft:behavior.ram_attack",
+    "minecraft:behavior.spit",
+    "minecraft:behavior.swell",
+    "Offers:behavior.trade_with_player",
+}
+
 SPAWN_RULE_COORDS = {
     "x": {"type": "integer", "min": -30000000, "max": 30000000},
     "y": {"type": "integer", "min": -64, "max": 320},
@@ -159,6 +328,7 @@ class MinecraftContract:
         self._validate_component_fields(data, file_path)
         self._validate_numeric_ranges(data, file_path)
         self._validate_coordinate_semantics(data, file_path)
+        self._validate_entity_behaviors(data, file_path)
         passed = len(self.violations) == 0
         return passed, self.violations
 
@@ -264,6 +434,42 @@ class MinecraftContract:
                 for item in value:
                     if isinstance(item, dict):
                         self._validate_entity_nesting(item, file_path)
+
+    def _validate_entity_behaviors(self, data: Dict[str, Any], file_path: str) -> None:
+        if not isinstance(data, dict):
+            return
+        if "minecraft:entity" in data:
+            entity = data["minecraft:entity"]
+            if isinstance(entity, dict):
+                components = entity.get("components", {})
+                if isinstance(components, dict):
+                    self._check_behavior_components(components, file_path)
+                component_groups = entity.get("component_groups", {})
+                if isinstance(component_groups, dict):
+                    for group in component_groups.values():
+                        if isinstance(group, dict):
+                            group_components = group.get("components", {})
+                            if isinstance(group_components, dict):
+                                self._check_behavior_components(group_components, file_path)
+        for value in data.values():
+            if isinstance(value, dict):
+                self._validate_entity_behaviors(value, file_path)
+            elif isinstance(value, list):
+                for item in value:
+                    if isinstance(item, dict):
+                        self._validate_entity_behaviors(item, file_path)
+
+    def _check_behavior_components(self, components: Dict[str, Any], file_path: str) -> None:
+        for key in components:
+            if key.startswith("minecraft:behavior."):
+                if key not in VALID_BEDROCK_BEHAVIORS:
+                    self.violations.append(ContractViolation(
+                        severity=Severity.HIGH,
+                        message=f"Unknown entity behavior '{key}' is not a valid Bedrock behavior",
+                        location=f"{file_path}:{key}",
+                        suggestion=f"Remove '{key}' or replace with a valid Bedrock behavior component. See Bedrock entity behavior documentation.",
+                        rule_id="entity_behavior_contract",
+                    ))
 
     def _validate_component_fields(self, data: Dict[str, Any], file_path: str) -> None:
         if not isinstance(data, dict):
