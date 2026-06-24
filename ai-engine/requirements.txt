@@ -56,7 +56,7 @@ jaraco.context>=6.1.2
 
 # Configuration Management - align with backend version
 pydantic~=2.13.4
-pydantic-settings~=2.14.1
+pydantic-settings~=2.14.2
 
 # Monitoring - align with backend version
 prometheus_client>=0.25.0
