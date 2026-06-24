@@ -30,6 +30,10 @@ services:
       - TRACING_EXPORTER=jaeger
       - JAEGER_HOST=jaeger
       - JAEGER_PORT=14268
+      - AI_ENGINE_URL=http://ai-engine:8001
+      - SYNTHETIC_CANARY_ENABLED=true
+      - SYNTHETIC_CANARY_INTERVAL_MINUTES=10
+      - SYNTHETIC_CANARY_TIMEOUT_SECONDS=300
     depends_on:
       redis:
         condition: service_healthy
@@ -84,10 +88,15 @@ services:
       - PYTHONPATH=/app
       - REDIS_URL=redis://redis:6379/0
       - LOG_LEVEL=INFO
+      - TRACING_EXPORTER=jaeger
+      - JAEGER_HOST=jaeger
+      - JAEGER_PORT=14268
     depends_on:
       redis:
         condition: service_healthy
       postgres:
+        condition: service_healthy
+      jaeger:
         condition: service_healthy
     volumes:
       - ./backend/src:/app/src

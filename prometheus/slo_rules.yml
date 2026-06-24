@@ -1,0 +1,50 @@
+# SLO Rules for PortKit
+# These rules define alerting conditions for critical service level objectives
+#
+# Issue: #1782 - Add ai-engine dependency probe to readiness check + periodic synthetic conversion smoke test
+
+groups:
+  - name: synthetic_canary_alerts
+    interval: 1m
+    rules:
+      - alert: SyntheticConversionFailing
+        expr: portkit_synthetic_conversion_success == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Synthetic conversion canary is failing"
+          description: "The synthetic conversion canary has failed for 2 consecutive runs. The full conversion path (upload -> queue -> ai-engine -> packaging -> download) may be broken. Check ai-engine logs and conversion service."
+
+      - alert: SyntheticConversionNotRunning
+        expr: (time() - portkit_synthetic_conversion_last_run_timestamp) > 1800
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Synthetic conversion canary has not run recently"
+          description: "The synthetic conversion canary has not run in over 30 minutes. The canary service may be down."
+
+  - name: conversion_health_alerts
+    interval: 1m
+    rules:
+      - alert: AIEngineUnhealthy
+        expr: |
+          sum by (status) (up{job="ai-engine"}) == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "AI Engine is down"
+          description: "The AI Engine service is not responding to health checks. Conversions will fail."
+
+      - alert: ConversionSuccessRateLow
+        expr: |
+          rate(portkit_conversion_jobs_total{status="completed"}[5m]) /
+          rate(portkit_conversion_jobs_total[5m]) < 0.9
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Conversion success rate is below 90%"
+          description: "The conversion success rate has dropped below 90% for 5 minutes. Check error rates and ai-engine logs."

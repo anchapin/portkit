@@ -77,6 +77,9 @@ except ImportError:
     create_progress_callback = None
     cleanup_progress_callback = None
 
+# Import tracing
+from tracing import init_tracing, get_trace_id
+
 # Initialize GPU configuration
 gpu_config = get_gpu_config()
 optimize_for_inference()
@@ -307,6 +310,10 @@ async def startup_event():
         assumption_engine = SmartAssumptionEngine()
         logger.info("SmartAssumptionEngine initialized")
 
+        # Initialize OpenTelemetry tracing with Jaeger/OTLP exporters
+        init_tracing(app)
+        logger.info("OpenTelemetry tracing initialized")
+
         logger.info("Portkit Engine startup complete")
 
     except Exception as e:
@@ -429,6 +436,8 @@ async def liveness_check():
 @app.post("/api/v1/convert", response_model=ConversionResponse, tags=["conversion"])
 async def start_conversion(request: ConversionRequest, background_tasks: BackgroundTasks):
     """Start a new mod conversion job"""
+    trace_id = get_trace_id()
+    logger.info(f"Received conversion request for job {request.job_id}, trace_id={trace_id}")
 
     if not job_manager or not job_manager.available:
         raise HTTPException(status_code=503, detail="Job state storage unavailable")
