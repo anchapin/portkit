@@ -27,8 +27,6 @@ const AssumptionTracker: React.FC<AssumptionTrackerProps> = ({
     return '✅';
   };
 
-
-
   return (
     <div className={styles.container}>
       <h2 className={styles.title}>

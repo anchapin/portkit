@@ -25,7 +25,9 @@ export const CONFIDENCE_THRESHOLDS = {
   MEDIUM: 0.6,
 } as const;
 
-const getConfidenceConfig = (score: number | null | undefined): ConfidenceConfig => {
+const getConfidenceConfig = (
+  score: number | null | undefined
+): ConfidenceConfig => {
   if (score === null || score === undefined) {
     return {
       level: 'unknown',
@@ -84,7 +86,8 @@ export const ConfidenceBadge: React.FC<ConfidenceBadgeProps> = ({
   className = '',
 }) => {
   const config = getConfidenceConfig(score);
-  const percentage = score !== null && score !== undefined ? Math.round(score * 100) : null;
+  const percentage =
+    score !== null && score !== undefined ? Math.round(score * 100) : null;
 
   const sizeStyles = {
     sm: { fontSize: '10px', padding: '2px 6px' },
@@ -147,12 +150,18 @@ export const ConfidenceMeter: React.FC<ConfidenceMeterProps> = ({
   className = '',
 }) => {
   const config = getConfidenceConfig(score);
-  const percentage = score !== null && score !== undefined ? Math.round(score * 100) : 0;
+  const percentage =
+    score !== null && score !== undefined ? Math.round(score * 100) : 0;
 
   return (
     <div
       className={className}
-      style={{ display: 'flex', flexDirection: 'column', gap: '4px', width: '100%' }}
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '4px',
+        width: '100%',
+      }}
       role="progressbar"
       aria-valuenow={percentage}
       aria-valuemin={0}
@@ -205,7 +214,9 @@ export const ConfidenceMeter: React.FC<ConfidenceMeterProps> = ({
  * getConfidenceLevel - Utility function to get just the confidence level from a score.
  * Useful for conditional rendering based on confidence level.
  */
-export const getConfidenceLevel = (score: number | null | undefined): ConfidenceLevel => {
+export const getConfidenceLevel = (
+  score: number | null | undefined
+): ConfidenceLevel => {
   return getConfidenceConfig(score).level;
 };
 
@@ -213,6 +224,8 @@ export const getConfidenceLevel = (score: number | null | undefined): Confidence
  * getConfidenceColor - Utility function to get the color for a confidence score.
  * Useful for inline styling in components that need custom rendering.
  */
-export const getConfidenceColor = (score: number | null | undefined): string => {
+export const getConfidenceColor = (
+  score: number | null | undefined
+): string => {
   return getConfidenceConfig(score).color;
 };

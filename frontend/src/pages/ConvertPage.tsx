@@ -17,7 +17,10 @@ import {
 import { ErrorBoundary } from '../components/ErrorBoundary/ErrorBoundary';
 import { OnboardingFlow } from '../components/Onboarding/OnboardingFlow';
 import { processError } from '../utils/conversionErrors';
-import { ConfidenceBadge, ConfidenceMeter } from '../components/ui/confidence-badge';
+import {
+  ConfidenceBadge,
+  ConfidenceMeter,
+} from '../components/ui/confidence-badge';
 import './ConvertPage.css';
 
 const DEFAULT_ADVANCED_OPTIONS: AdvancedOptions = {
@@ -193,7 +196,9 @@ export const ConvertPage: React.FC = () => {
             {lastConversionSummary.confidence !== undefined && (
               <div className="summary-item">
                 <span className="summary-label">Confidence:</span>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <div
+                  style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
+                >
                   <ConfidenceBadge
                     score={lastConversionSummary.confidence}
                     showPercentage={true}

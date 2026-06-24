@@ -111,7 +111,9 @@ const ComparisonView: React.FC = () => {
         <h2>Confidence Scores</h2>
         {data.confidence_scores ? (
           typeof data.confidence_scores === 'object' ? (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <div
+              style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}
+            >
               {Object.entries(data.confidence_scores).map(([key, value]) => (
                 <div
                   key={key}
@@ -132,7 +134,11 @@ const ComparisonView: React.FC = () => {
                     {key.replace(/_/g, ' ')}
                   </div>
                   {typeof value === 'number' ? (
-                    <ConfidenceMeter score={value} showLabel={false} height={6} />
+                    <ConfidenceMeter
+                      score={value}
+                      showLabel={false}
+                      height={6}
+                    />
                   ) : (
                     <pre
                       style={{
