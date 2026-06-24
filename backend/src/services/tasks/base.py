@@ -1,13 +1,33 @@
 """
-Base types and constants for Celery tasks.
+Base types, constants, and shared helpers for Celery tasks.
 
-Issue: #1098 - Consolidate task queues
+Holds the Celery task base class, retry policies, task data structures,
+queue constants, and the shared sync-Redis / async-bridge helpers used by
+every task domain module.
+
+Issue: #1098 - Consolidate task queues: remove task_queue.py duplicate, migrate to Celery
+Issue: #1743 - Split celery_tasks.py into task domain modules
 """
 
-from datetime import datetime, timedelta, timezone
+import asyncio
+import logging
+from datetime import datetime, timezone
 from enum import Enum, IntEnum
-from typing import Dict, Any, Optional, List
+from typing import Any, Dict, List, Optional
 from dataclasses import dataclass, field
+
+import redis
+import sentry_sdk
+from celery import Task
+
+from services.celery_config import REDIS_URL
+from services.sentry_config import init_celery_sentry
+
+logger = logging.getLogger(__name__)
+
+# Initialize Sentry for Celery workers (import-time side effect preserved from
+# the original celery_tasks.py so workers are instrumented on import).
+init_celery_sentry()
 
 
 class TaskStatus(Enum):
@@ -62,11 +82,18 @@ class RetryPolicy:
     initial_delay_seconds: float = 1.0
     max_delay_seconds: float = 300.0
     backoff_multiplier: float = 2.0
+    retryable_errors: List[str] = field(default_factory=list)  # Added for backward compat
 
     def calculate_delay(self, retry_count: int) -> float:
         """Calculate delay for exponential backoff."""
         delay = self.initial_delay_seconds * (self.backoff_multiplier**retry_count)
         return min(delay, self.max_delay_seconds)
+
+    def should_retry(self, error_type: str, retry_count: int) -> bool:
+        """Determine if a task should be retried based on error and retry count."""
+        if retry_count >= self.max_retries:
+            return False
+        return not (self.retryable_errors and error_type not in self.retryable_errors)
 
 
 DEFAULT_RETRY_POLICY = RetryPolicy()
@@ -152,3 +179,62 @@ PROCESSING_SET = "portkit:processing"
 METRICS_KEY = "portkit:metrics"
 RETRY_QUEUE = "portkit:retry"
 TASK_KEY_PREFIX = "portkit:task:"
+
+
+def _get_redis_sync():
+    """Get synchronous Redis client for Celery tasks."""
+    return redis.from_url(REDIS_URL, decode_responses=True)
+
+
+def _run_async(coro):
+    """Run an async coroutine from synchronous context.
+
+    This is used by Celery task handlers (which run synchronously) to call
+    async service functions.
+
+    When no event loop exists, creates a new one and runs the coroutine.
+    When called from an already-running async context, runs in a separate
+    thread with its own event loop to avoid blocking.
+    """
+    try:
+        loop = asyncio.get_running_loop()
+    except RuntimeError:
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        return loop.run_until_complete(coro)
+
+    import concurrent.futures
+
+    with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
+        future = executor.submit(asyncio.run, coro)
+        return future.result(timeout=300)
+
+
+class CeleryTaskBase(Task):
+    """Base class for Celery tasks with retry logic."""
+
+    def on_failure(self, exc, task_id, args, kwargs, einfo):
+        """Handle task failure."""
+        logger.error(f"Task {task_id} failed: {exc}")
+        sentry_sdk.capture_exception(
+            exc,
+            scope={
+                "task_id": task_id,
+                "task_name": self.name,
+                "args": args,
+                "kwargs": kwargs,
+            },
+        )
+
+    def on_retry(self, exc, task_id, args, kwargs, einfo):
+        """Handle task retry."""
+        logger.info(f"Task {task_id} retrying: {exc}")
+        sentry_sdk.capture_message(
+            f"Task retry: {task_id}",
+            level="warning",
+            scope={
+                "task_id": task_id,
+                "task_name": self.name,
+                "retry_count": self.request.retries,
+            },
+        )
