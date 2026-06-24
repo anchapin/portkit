@@ -160,13 +160,18 @@ class RecipeConverterAgent:
                 secondary_outputs = []
                 for r in result[1:]:
                     if isinstance(r, dict):
-                        secondary_outputs.append(
-                            {
-                                "item": r.get("item", r.get("id", "")),
-                                "count": r.get("count", 1),
-                                "data": r.get("data", 0),
-                            }
-                        )
+                        # Each secondary may carry a ``chance`` probability weight
+                        # (Create crushing/milling/splashing/compacting result-object
+                        # format). Preserved here so the converter can fan it out via
+                        # the ``portkit:output_chance`` annotation (issue #1770).
+                        secondary = {
+                            "item": r.get("item", r.get("id", "")),
+                            "count": r.get("count", 1),
+                            "data": r.get("data", 0),
+                        }
+                        if "chance" in r:
+                            secondary["chance"] = r["chance"]
+                        secondary_outputs.append(secondary)
                     elif isinstance(r, str):
                         secondary_outputs.append({"item": r, "count": 1, "data": 0})
                 if secondary_outputs:

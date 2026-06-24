@@ -7,6 +7,7 @@ Handles:
 - Generic Forge patterns
 """
 
+import copy
 import json
 import logging
 from pathlib import Path
@@ -302,6 +303,8 @@ class CustomTypesConverter:
 
         Milling recipes use Millstone to crush ores into materials.
         Converted to a shaped recipe approximating the crushing operation.
+        Secondary outputs are fanned out via ``portkit:additional_recipes``
+        (issue #1770) instead of being dropped into a human-readable note.
         """
         ingredients = normalized_recipe.get("ingredients", [])
         if not ingredients:
@@ -328,35 +331,20 @@ class CustomTypesConverter:
             "count": normalized_recipe.get("result_count", 1),
         }
 
-        secondary_note = ""
-        secondary_outputs = normalized_recipe.get("secondary_outputs", [])
-        if secondary_outputs:
-            secondary_items = [o.get("item", "") for o in secondary_outputs]
-            secondary_note = f" | Secondary outputs: {secondary_items}"
-
-        heat_note = ""
-        if normalized_recipe.get("heat_requirement"):
-            heat_note = f" | Heat: {normalized_recipe.get('heat_requirement')}"
-
-        rpm_note = ""
-        if normalized_recipe.get("min_rpm") or normalized_recipe.get("max_rpm"):
-            min_rpm = normalized_recipe.get("min_rpm", "?")
-            max_rpm = normalized_recipe.get("max_rpm", "?")
-            rpm_note = f" | RPM: {min_rpm}-{max_rpm}"
-
-        bedrock_recipe = {
-            "format_version": "1.20.10",
-            "minecraft:recipe_shaped": {
-                "description": {"identifier": f"{namespace}:{recipe_name}_converted_from_create"},
-                "tags": ["crafting_table", "milling"],
-                "pattern": ["A"],
-                "key": {"A": bedrock_ingredient},
-                "result": bedrock_result,
-                "备注": f"Create milling recipe (Millstone) - approximated{secondary_note}{heat_note}{rpm_note}",
-            },
+        block = {
+            "description": {"identifier": f"{namespace}:{recipe_name}_converted_from_create"},
+            "tags": ["crafting_table", "milling"],
+            "pattern": ["A"],
+            "key": {"A": bedrock_ingredient},
+            "result": bedrock_result,
         }
 
-        return bedrock_recipe
+        return self._assemble_create_recipe(
+            "minecraft:recipe_shaped",
+            block,
+            normalized_recipe,
+            machine="create:milling",
+        )
 
     def convert_crushing_to_bedrock(
         self, normalized_recipe: Dict, namespace: str, recipe_name: str
@@ -365,6 +353,8 @@ class CustomTypesConverter:
 
         Crushing recipes use Crushing Wheels for ore doubling.
         Converted to a shaped recipe approximating the crushing operation.
+        Secondary outputs are fanned out via ``portkit:additional_recipes``
+        (issue #1770) instead of being dropped into a human-readable note.
         """
         ingredients = normalized_recipe.get("ingredients", [])
         if not ingredients:
@@ -391,35 +381,20 @@ class CustomTypesConverter:
             "count": normalized_recipe.get("result_count", 1),
         }
 
-        secondary_note = ""
-        secondary_outputs = normalized_recipe.get("secondary_outputs", [])
-        if secondary_outputs:
-            secondary_items = [o.get("item", "") for o in secondary_outputs]
-            secondary_note = f" | Secondary outputs: {secondary_items}"
-
-        heat_note = ""
-        if normalized_recipe.get("heat_requirement"):
-            heat_note = f" | Heat: {normalized_recipe.get('heat_requirement')}"
-
-        rpm_note = ""
-        if normalized_recipe.get("min_rpm") or normalized_recipe.get("max_rpm"):
-            min_rpm = normalized_recipe.get("min_rpm", "?")
-            max_rpm = normalized_recipe.get("max_rpm", "?")
-            rpm_note = f" | RPM: {min_rpm}-{max_rpm}"
-
-        bedrock_recipe = {
-            "format_version": "1.20.10",
-            "minecraft:recipe_shaped": {
-                "description": {"identifier": f"{namespace}:{recipe_name}_converted_from_create"},
-                "tags": ["crafting_table", "crushing"],
-                "pattern": ["A"],
-                "key": {"A": bedrock_ingredient},
-                "result": bedrock_result,
-                "备注": f"Create crushing recipe (Crushing Wheels) - approximated{secondary_note}{heat_note}{rpm_note}",
-            },
+        block = {
+            "description": {"identifier": f"{namespace}:{recipe_name}_converted_from_create"},
+            "tags": ["crafting_table", "crushing"],
+            "pattern": ["A"],
+            "key": {"A": bedrock_ingredient},
+            "result": bedrock_result,
         }
 
-        return bedrock_recipe
+        return self._assemble_create_recipe(
+            "minecraft:recipe_shaped",
+            block,
+            normalized_recipe,
+            machine="create:crushing",
+        )
 
     def convert_deploying_to_bedrock(
         self, normalized_recipe: Dict, namespace: str, recipe_name: str
@@ -532,34 +507,19 @@ class CustomTypesConverter:
             "count": normalized_recipe.get("result_count", 1),
         }
 
-        secondary_note = ""
-        secondary_outputs = normalized_recipe.get("secondary_outputs", [])
-        if secondary_outputs:
-            secondary_items = [o.get("item", "") for o in secondary_outputs]
-            secondary_note = f" | Secondary outputs: {secondary_items}"
-
-        heat_note = ""
-        if normalized_recipe.get("heat_requirement"):
-            heat_note = f" | Heat: {normalized_recipe.get('heat_requirement')}"
-
-        rpm_note = ""
-        if normalized_recipe.get("min_rpm") or normalized_recipe.get("max_rpm"):
-            min_rpm = normalized_recipe.get("min_rpm", "?")
-            max_rpm = normalized_recipe.get("max_rpm", "?")
-            rpm_note = f" | RPM: {min_rpm}-{max_rpm}"
-
-        bedrock_recipe = {
-            "format_version": "1.20.10",
-            "minecraft:recipe_shapeless": {
-                "description": {"identifier": f"{namespace}:{recipe_name}_converted_from_create"},
-                "tags": ["crafting_table", "splashing"],
-                "ingredients": bedrock_ingredients,
-                "result": bedrock_result,
-                "备注": f"Create splashing recipe (Water) - approximated{secondary_note}{heat_note}{rpm_note}",
-            },
+        block = {
+            "description": {"identifier": f"{namespace}:{recipe_name}_converted_from_create"},
+            "tags": ["crafting_table", "splashing"],
+            "ingredients": bedrock_ingredients,
+            "result": bedrock_result,
         }
 
-        return bedrock_recipe
+        return self._assemble_create_recipe(
+            "minecraft:recipe_shapeless",
+            block,
+            normalized_recipe,
+            machine="create:splashing",
+        )
 
     def convert_compacting_to_bedrock(
         self, normalized_recipe: Dict, namespace: str, recipe_name: str
@@ -606,35 +566,20 @@ class CustomTypesConverter:
         for i, char in enumerate(["A", "B", "C"][: len(bedrock_ingredients)]):
             key[char] = bedrock_ingredients[i]
 
-        secondary_note = ""
-        secondary_outputs = normalized_recipe.get("secondary_outputs", [])
-        if secondary_outputs:
-            secondary_items = [o.get("item", "") for o in secondary_outputs]
-            secondary_note = f" | Secondary outputs: {secondary_items}"
-
-        heat_note = ""
-        if normalized_recipe.get("heat_requirement"):
-            heat_note = f" | Heat: {normalized_recipe.get('heat_requirement')}"
-
-        rpm_note = ""
-        if normalized_recipe.get("min_rpm") or normalized_recipe.get("max_rpm"):
-            min_rpm = normalized_recipe.get("min_rpm", "?")
-            max_rpm = normalized_recipe.get("max_rpm", "?")
-            rpm_note = f" | RPM: {min_rpm}-{max_rpm}"
-
-        bedrock_recipe = {
-            "format_version": "1.20.10",
-            "minecraft:recipe_shaped": {
-                "description": {"identifier": f"{namespace}:{recipe_name}_converted_from_create"},
-                "tags": ["crafting_table", "compacting"],
-                "pattern": pattern,
-                "key": key,
-                "result": bedrock_result,
-                "备注": f"Create compacting recipe - approximated{secondary_note}{heat_note}{rpm_note}",
-            },
+        block = {
+            "description": {"identifier": f"{namespace}:{recipe_name}_converted_from_create"},
+            "tags": ["crafting_table", "compacting"],
+            "pattern": pattern,
+            "key": key,
+            "result": bedrock_result,
         }
 
-        return bedrock_recipe
+        return self._assemble_create_recipe(
+            "minecraft:recipe_shaped",
+            block,
+            normalized_recipe,
+            machine="create:compacting",
+        )
 
     def convert_mixing_to_bedrock(
         self, normalized_recipe: Dict, namespace: str, recipe_name: str
@@ -1038,6 +983,75 @@ class CustomTypesConverter:
                 "备注": "Create item application recipe - approximated",
             },
         }
+
+    def _build_create_conversion_note(self, normalized_recipe: Dict) -> str:
+        """Compose the namespaced conversion note for a Create approximation.
+
+        Only carries heat/RPM context; secondary outputs are no longer baked
+        into the note since they are fanned out via ``portkit:additional_recipes``
+        (issue #1770). Returns an empty string when there is no such context.
+        """
+        parts = []
+        heat = normalized_recipe.get("heat_requirement")
+        if heat:
+            parts.append(f"Heat: {heat}")
+        min_rpm = normalized_recipe.get("min_rpm")
+        max_rpm = normalized_recipe.get("max_rpm")
+        if min_rpm or max_rpm:
+            parts.append(f"RPM: {min_rpm or '?'}-{max_rpm or '?'}")
+        return " | ".join(parts)
+
+    def _assemble_create_recipe(
+        self,
+        block_key: str,
+        block: Dict,
+        normalized_recipe: Dict,
+        machine: str,
+    ) -> Dict:
+        """Assemble a Create Bedrock recipe with namespaced annotations.
+
+        Replaces the legacy schema-invalid ``备注`` key with the namespaced
+        annotation channel so emitted JSON only carries ``minecraft:``/
+        ``portkit:`` keys (issue #1770):
+
+        - ``portkit:approximated_from`` — the Create machine type
+          (e.g. ``create:crushing``).
+        - ``portkit:conversion_note`` — heat/RPM context (omitted when empty).
+        - ``portkit:additional_recipes`` — one fully-formed Bedrock recipe
+          per secondary output, each with a ``_outN`` identifier suffix and
+          a ``portkit:output_chance`` annotation when the source recorded a
+          probability weight. Omitted for single-output recipes.
+
+        The per-recipe converter return type stays a single ``Dict``; a
+        downstream packager can read ``portkit:additional_recipes`` to write
+        one extra ``.json`` file per secondary under ``recipes/``.
+        """
+        block["portkit:approximated_from"] = machine
+        note = self._build_create_conversion_note(normalized_recipe)
+        if note:
+            block["portkit:conversion_note"] = note
+
+        recipe = {"format_version": "1.20.10", block_key: block}
+
+        secondaries = normalized_recipe.get("secondary_outputs", []) or []
+        if not secondaries:
+            return recipe
+
+        additional = []
+        for idx, sec in enumerate(secondaries, start=2):
+            sec_block = copy.deepcopy(block)
+            sec_block["result"] = {
+                "item": self._map_java_item(sec.get("item", "")),
+                "data": sec.get("data", 0),
+                "count": sec.get("count", 1),
+            }
+            base_id = sec_block["description"]["identifier"]
+            sec_block["description"]["identifier"] = f"{base_id}_out{idx}"
+            if "chance" in sec:
+                sec_block["portkit:output_chance"] = sec["chance"]
+            additional.append({"format_version": "1.20.10", block_key: sec_block})
+        recipe["portkit:additional_recipes"] = additional
+        return recipe
 
     def _create_manual_review_result(self, namespace: str, recipe_name: str, reason: str) -> Dict:
         """Create a result indicating the recipe requires manual review."""

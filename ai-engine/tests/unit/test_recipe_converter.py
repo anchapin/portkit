@@ -896,7 +896,7 @@ class TestCreateCustomRecipeTypes:
             in result["minecraft:recipe_shaped"]["description"]["identifier"]
         )
         assert "milling" in result["minecraft:recipe_shaped"]["tags"]
-        assert "备注" in result["minecraft:recipe_shaped"]
+        assert result["minecraft:recipe_shaped"]["portkit:approximated_from"] == "create:milling"
 
     def test_convert_crushing(self, agent):
         """Test conversion of Create crushing recipe"""
@@ -1033,7 +1033,11 @@ class TestCreateRecipeEnhancements:
         assert result == "minecraft:diamond"
 
     def test_multi_output_crushing_with_secondary_outputs(self, agent):
-        """Test crushing recipe with multiple outputs (secondary outputs stored)"""
+        """Test crushing recipe with multiple outputs (secondary outputs fanned out).
+
+        Issue #1770: secondary outputs must be emitted as real Bedrock recipes
+        via ``portkit:additional_recipes`` rather than dropped into a note.
+        """
         recipe = {
             "type": "create:crushing",
             "ingredient": {"item": "minecraft:iron_ore"},
@@ -1047,14 +1051,27 @@ class TestCreateRecipeEnhancements:
 
         assert result["format_version"] == "1.20.10"
         assert "minecraft:recipe_shaped" in result
+        block = result["minecraft:recipe_shaped"]
         # Primary output should be the first result
-        assert result["minecraft:recipe_shaped"]["result"]["item"] == "minecraft:iron_nugget"
-        assert result["minecraft:recipe_shaped"]["result"]["count"] == 2
-        # Note should mention secondary outputs
-        assert "Secondary outputs" in result["minecraft:recipe_shaped"].get("备注", "")
+        assert block["result"]["item"] == "minecraft:iron_nugget"
+        assert block["result"]["count"] == 2
+        # Secondaries are fanned out, not stuffed into a note
+        assert "备注" not in block
+        additional = result.get("portkit:additional_recipes", [])
+        assert len(additional) == 2
+        # First secondary carries the recorded chance
+        sec1 = additional[0]["minecraft:recipe_shaped"]
+        assert sec1["result"]["item"] == "minecraft:iron_nugget"
+        assert sec1["result"]["count"] == 1
+        assert sec1["portkit:output_chance"] == 0.3
+        assert sec1["description"]["identifier"].endswith("_out2")
+        # Second secondary gets the _out3 suffix
+        sec2 = additional[1]["minecraft:recipe_shaped"]
+        assert sec2["result"]["item"] == "minecraft:flint"
+        assert sec2["description"]["identifier"].endswith("_out3")
 
     def test_multi_output_milling_with_secondary_outputs(self, agent):
-        """Test milling recipe with multiple outputs"""
+        """Test milling recipe with multiple outputs (secondary outputs fanned out)."""
         recipe = {
             "type": "create:milling",
             "ingredient": {"item": "create:crushed_copper_ore"},
@@ -1067,7 +1084,12 @@ class TestCreateRecipeEnhancements:
 
         assert result["format_version"] == "1.20.10"
         assert "minecraft:recipe_shaped" in result
-        assert "Secondary outputs" in result["minecraft:recipe_shaped"].get("备注", "")
+        assert "备注" not in result["minecraft:recipe_shaped"]
+        additional = result.get("portkit:additional_recipes", [])
+        assert len(additional) == 1
+        sec = additional[0]["minecraft:recipe_shaped"]
+        assert sec["result"]["item"] == "minecraft:copper_nugget"
+        assert sec["portkit:output_chance"] == 0.25
 
     def test_compacting_with_heat_requirement(self, agent):
         """Test compacting recipe with heatRequirement field"""
@@ -1081,7 +1103,9 @@ class TestCreateRecipeEnhancements:
 
         assert result["format_version"] == "1.20.10"
         assert "minecraft:recipe_shaped" in result
-        assert "Heat: heated" in result["minecraft:recipe_shaped"].get("备注", "")
+        assert "Heat: heated" in result["minecraft:recipe_shaped"].get(
+            "portkit:conversion_note", ""
+        )
 
     def test_crushing_with_rpm_fields(self, agent):
         """Test crushing recipe with minRPM/maxRPM fields"""
@@ -1096,7 +1120,7 @@ class TestCreateRecipeEnhancements:
 
         assert result["format_version"] == "1.20.10"
         assert "minecraft:recipe_shaped" in result
-        assert "RPM: 16-32" in result["minecraft:recipe_shaped"].get("备注", "")
+        assert "RPM: 16-32" in result["minecraft:recipe_shaped"].get("portkit:conversion_note", "")
 
     def test_mixing_with_fluid_ingredients_requires_review(self, agent):
         """Test mixing recipe with fluid ingredients requires manual review"""
@@ -1114,7 +1138,12 @@ class TestCreateRecipeEnhancements:
         assert "fluid" in result["reason"].lower()
 
     def test_parsing_secondary_outputs_from_result_list(self, agent):
-        """Test that _parse_java_recipe correctly extracts secondary outputs"""
+        """Test that _parse_java_recipe correctly extracts secondary outputs.
+
+        Issue #1770: each secondary's ``chance`` probability weight must be
+        captured alongside item/count/data so the converter can fan it out via
+        ``portkit:output_chance``.
+        """
         recipe = {
             "type": "create:milling",
             "ingredient": {"item": "create:crushed_iron_ore"},
@@ -1130,6 +1159,7 @@ class TestCreateRecipeEnhancements:
         assert "secondary_outputs" in parsed
         assert len(parsed["secondary_outputs"]) == 1
         assert parsed["secondary_outputs"][0]["item"] == "minecraft:iron_nugget"
+        assert parsed["secondary_outputs"][0]["chance"] == 0.15
 
     def test_splashing_with_rpm_fields(self, agent):
         """Test splashing recipe with minRPM/maxRPM fields"""
@@ -1143,7 +1173,212 @@ class TestCreateRecipeEnhancements:
 
         assert result["format_version"] == "1.20.10"
         assert "minecraft:recipe_shapeless" in result
-        assert "RPM: 128-" in result["minecraft:recipe_shapeless"].get("备注", "")
+        assert "RPM: 128-" in result["minecraft:recipe_shapeless"].get(
+            "portkit:conversion_note", ""
+        )
+
+
+class TestCreateMultiOutputFanOut:
+    """Regression tests for Create multi-output fan-out (issue #1770).
+
+    Create's crushing/milling/splashing/compacting recipes yield a primary
+    output plus probability-weighted secondaries. Bedrock has no native
+    multi-output recipe, so the converter must fan each secondary out into
+    its own Bedrock recipe via ``portkit:additional_recipes`` instead of
+    dropping them into a schema-invalid ``备注`` note.
+    """
+
+    @pytest.fixture
+    def agent(self):
+        return RecipeConverterAgent()
+
+    @staticmethod
+    def _count_recipe_files(result: dict) -> int:
+        """Count distinct Bedrock recipe objects in a converter result.
+
+        Primary recipe block counts as 1; each ``portkit:additional_recipes``
+        entry counts as 1 more. This mirrors the number of ``.json`` files a
+        packager would emit under ``recipes/``.
+        """
+        count = 1
+        count += len(result.get("portkit:additional_recipes", []) or [])
+        return count
+
+    @staticmethod
+    def _all_blocks(result: dict) -> list:
+        """Collect every Bedrock recipe block (primary + secondaries)."""
+        blocks = []
+        for key, value in result.items():
+            if key.startswith("minecraft:recipe_") and isinstance(value, dict):
+                blocks.append(value)
+        for extra in result.get("portkit:additional_recipes", []) or []:
+            for key, value in extra.items():
+                if key.startswith("minecraft:recipe_") and isinstance(value, dict):
+                    blocks.append(value)
+        return blocks
+
+    def test_crushing_two_output_yields_two_recipe_files(self, agent):
+        """Acceptance: a 2-output Java crushing recipe yields >=2 Bedrock recipes."""
+        recipe = {
+            "type": "create:crushing",
+            "ingredient": {"item": "minecraft:iron_ore"},
+            "result": [
+                {"item": "minecraft:iron_nugget", "count": 2},
+                {"item": "minecraft:flint", "count": 1, "chance": 0.05},
+            ],
+        }
+        result = agent.convert_recipe(recipe, namespace="create", recipe_name="iron_nugget")
+
+        assert self._count_recipe_files(result) >= 2
+        # Primary keeps the first result; secondary fans out
+        primary = result["minecraft:recipe_shaped"]
+        assert primary["result"]["item"] == "minecraft:iron_nugget"
+        assert primary["result"]["count"] == 2
+        sec = result["portkit:additional_recipes"][0]["minecraft:recipe_shaped"]
+        assert sec["result"]["item"] == "minecraft:flint"
+        assert sec["portkit:output_chance"] == 0.05
+
+    def test_milling_three_output_yields_three_recipe_files(self, agent):
+        """Acceptance: a 3-output Java milling recipe yields 3 Bedrock recipes."""
+        recipe = {
+            "type": "create:milling",
+            "ingredient": {"item": "create:crushed_copper_ore"},
+            "result": [
+                {"item": "create:copper_dust", "count": 2},
+                {"item": "minecraft:copper_nugget", "count": 1, "chance": 0.25},
+                {"item": "minecraft:gold_nugget", "count": 1, "chance": 0.1},
+            ],
+        }
+        result = agent.convert_recipe(recipe, namespace="create", recipe_name="copper_dust")
+
+        assert self._count_recipe_files(result) == 3
+        additional = result["portkit:additional_recipes"]
+        assert additional[0]["minecraft:recipe_shaped"]["result"]["item"] == (
+            "minecraft:copper_nugget"
+        )
+        assert additional[1]["minecraft:recipe_shaped"]["result"]["item"] == (
+            "minecraft:gold_nugget"
+        )
+
+    def test_splashing_multi_output_fans_out(self, agent):
+        """Splashing multi-output fans out into shapeless secondaries."""
+        recipe = {
+            "type": "create:splashing",
+            "ingredients": [{"item": "minecraft:gravel"}],
+            "result": [
+                {"item": "minecraft:flint", "count": 1},
+                {"item": "minecraft:iron_nugget", "count": 1, "chance": 0.12},
+            ],
+        }
+        result = agent.convert_recipe(recipe, namespace="create", recipe_name="flint")
+
+        assert self._count_recipe_files(result) == 2
+        assert "minecraft:recipe_shapeless" in result
+        sec = result["portkit:additional_recipes"][0]["minecraft:recipe_shapeless"]
+        assert sec["result"]["item"] == "minecraft:iron_nugget"
+        assert sec["portkit:output_chance"] == 0.12
+
+    def test_compacting_multi_output_fans_out(self, agent):
+        """Compacting multi-output fans out into shaped secondaries."""
+        recipe = {
+            "type": "create:compacting",
+            "ingredients": [{"item": "minecraft:iron_ingot", "count": 9}],
+            "result": [
+                {"item": "minecraft:iron_block", "count": 1},
+                {"item": "minecraft:iron_nugget", "count": 2, "chance": 0.5},
+            ],
+        }
+        result = agent.convert_recipe(recipe, namespace="create", recipe_name="iron_block")
+
+        assert self._count_recipe_files(result) == 2
+        sec = result["portkit:additional_recipes"][0]["minecraft:recipe_shaped"]
+        assert sec["result"]["item"] == "minecraft:iron_nugget"
+        assert sec["result"]["count"] == 2
+
+    def test_single_output_crushing_has_no_additional_recipes(self, agent):
+        """Single-output recipes must not emit portkit:additional_recipes."""
+        recipe = {
+            "type": "create:crushing",
+            "ingredient": {"item": "minecraft:iron_ore"},
+            "result": {"item": "minecraft:iron_nugget", "count": 2},
+        }
+        result = agent.convert_recipe(recipe, namespace="create", recipe_name="iron_nugget")
+
+        assert "portkit:additional_recipes" not in result
+        assert self._count_recipe_files(result) == 1
+
+    def test_no_beizhu_key_anywhere_in_output(self, agent):
+        """Acceptance: emitted recipe JSON contains zero 备注 keys (issue #1770).
+
+        Exercises every Create multi-output converter and asserts none of the
+        emitted blocks (primary or secondary) carry the legacy schema-invalid
+        ``备注`` remark key.
+        """
+        recipes = [
+            (
+                "create:crushing",
+                {"item": "minecraft:iron_ore"},
+                "ingredient",
+            ),
+            (
+                "create:milling",
+                {"item": "create:crushed_copper_ore"},
+                "ingredient",
+            ),
+            (
+                "create:splashing",
+                [{"item": "minecraft:gravel"}],
+                "ingredients",
+            ),
+            (
+                "create:compacting",
+                [{"item": "minecraft:iron_ingot", "count": 9}],
+                "ingredients",
+            ),
+        ]
+        for recipe_type, ing_val, ing_key in recipes:
+            recipe = {
+                "type": recipe_type,
+                ing_key: ing_val,
+                "result": [
+                    {"item": "minecraft:iron_nugget", "count": 2},
+                    {"item": "minecraft:flint", "count": 1, "chance": 0.1},
+                ],
+            }
+            result = agent.convert_recipe(recipe, namespace="create", recipe_name="multi")
+            for block in self._all_blocks(result):
+                assert "备注" not in block, f"{recipe_type}: legacy 备注 key must be removed"
+
+    def test_secondary_identifier_suffix_scheme(self, agent):
+        """Secondary recipes get _out2 / _out3 identifier suffixes."""
+        recipe = {
+            "type": "create:crushing",
+            "ingredient": {"item": "minecraft:iron_ore"},
+            "result": [
+                {"item": "minecraft:iron_nugget", "count": 2},
+                {"item": "minecraft:flint", "count": 1, "chance": 0.1},
+                {"item": "minecraft:gold_nugget", "count": 1, "chance": 0.05},
+            ],
+        }
+        result = agent.convert_recipe(recipe, namespace="create", recipe_name="iron")
+        additional = result["portkit:additional_recipes"]
+        ids = [ext["minecraft:recipe_shaped"]["description"]["identifier"] for ext in additional]
+        assert ids[0].endswith("_out2")
+        assert ids[1].endswith("_out3")
+
+    def test_namespaced_annotation_channel_present(self, agent):
+        """Every emitted block carries portkit:approximated_from."""
+        recipe = {
+            "type": "create:crushing",
+            "ingredient": {"item": "minecraft:iron_ore"},
+            "result": [
+                {"item": "minecraft:iron_nugget", "count": 2},
+                {"item": "minecraft:flint", "count": 1, "chance": 0.1},
+            ],
+        }
+        result = agent.convert_recipe(recipe, namespace="create", recipe_name="iron")
+        for block in self._all_blocks(result):
+            assert block["portkit:approximated_from"] == "create:crushing"
 
 
 class TestTagResolution:
