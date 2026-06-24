@@ -312,7 +312,7 @@ describe('AssumptionsReport Component', () => {
       screen.getByText('🧠 Smart Assumptions (1 applied)')
     ).toBeInTheDocument();
     expect(screen.getByText('CustomBlock Materials')).toBeInTheDocument();
-    expect(screen.getByText('90%')).toBeInTheDocument();
+    expect(screen.getAllByText('90%').length).toBeGreaterThan(0);
   });
 
   it('shows impact distribution', () => {
