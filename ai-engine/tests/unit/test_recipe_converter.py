@@ -1144,3 +1144,87 @@ class TestCreateRecipeEnhancements:
         assert result["format_version"] == "1.20.10"
         assert "minecraft:recipe_shapeless" in result
         assert "RPM: 128-" in result["minecraft:recipe_shapeless"].get("备注", "")
+
+
+class TestTagResolution:
+    """Test cases for Forge tag resolution (issue #1772)"""
+
+    def test_resolve_tag_to_bedrock_function(self):
+        """Test resolve_tag_to_bedrock function directly"""
+        from agents.recipe.tag_resolver import resolve_tag_to_bedrock
+
+        assert resolve_tag_to_bedrock("#forge:ingots/iron") == "minecraft:iron_ingot"
+        assert resolve_tag_to_bedrock("#forge:storage_blocks/diamond") == "minecraft:diamond_block"
+        assert resolve_tag_to_bedrock("#forge:ores/gold") == "minecraft:gold_ore"
+
+    def test_resolve_tag_to_bedrock_unknown_tag_returns_none(self):
+        """Test that unknown mod-only tags return None"""
+        from agents.recipe.tag_resolver import resolve_tag_to_bedrock
+
+        result = resolve_tag_to_bedrock("#forge:special_mod_item")
+        assert result is None
+
+    def test_resolve_tag_to_bedrock_minecraft_tag(self):
+        """Test that #minecraft: tags are handled"""
+        from agents.recipe.tag_resolver import resolve_tag_to_bedrock
+
+        result = resolve_tag_to_bedrock("#minecraft:ingots")
+        assert result is None
+
+    def test_pattern_based_tag_resolution(self):
+        """Test that tags not in FORGE_TAG_MAPPINGS are resolved via patterns"""
+        from agents.recipe.tag_resolver import clear_tag_pattern_cache
+
+        clear_tag_pattern_cache()
+        from agents.recipe.tag_resolver import resolve_tag_to_bedrock
+
+        result = resolve_tag_to_bedrock("#forge:planks/oak")
+        assert result == "minecraft:oak_planks"
+
+    def test_unresolved_tag_routes_to_manual_review(self):
+        """Test that unresolved tags route shaped recipes to manual review"""
+        agent = RecipeConverterAgent()
+        recipe = {
+            "type": "crafting_shaped",
+            "pattern": ["A"],
+            "key": {"A": {"item": "#forge:special_mod_only_tag"}},
+            "result": {"item": "minecraft:diamond"},
+        }
+        result = agent.convert_recipe(recipe, namespace="testmod", recipe_name="test_recipe")
+
+        assert result.get("manual_review_required") is True
+        assert result.get("portkit:unresolved_tag") is True
+        assert "Unresolved tag" in result.get("reason", "")
+
+    def test_unresolved_tag_in_shapeless_routes_to_manual_review(self):
+        """Test that unresolved tags route shapeless recipes to manual review"""
+        agent = RecipeConverterAgent()
+        recipe = {
+            "type": "crafting_shapeless",
+            "ingredients": [{"item": "#forge:unknown_mod_tag"}],
+            "result": {"item": "minecraft:diamond"},
+        }
+        result = agent.convert_recipe(recipe, namespace="testmod", recipe_name="test_recipe")
+
+        assert result.get("manual_review_required") is True
+        assert result.get("portkit:unresolved_tag") is True
+
+    def test_known_forge_tag_still_resolves(self):
+        """Test that known Forge tags from mappings still resolve correctly"""
+        agent = RecipeConverterAgent()
+        result = agent._map_java_item_to_bedrock("#forge:ingots/gold")
+        assert result == "minecraft:gold_ingot"
+
+    def test_resolved_tag_no_manual_review(self):
+        """Test that resolved tags do not trigger manual review"""
+        agent = RecipeConverterAgent()
+        recipe = {
+            "type": "crafting_shaped",
+            "pattern": ["A"],
+            "key": {"A": {"item": "#forge:ingots/iron"}},
+            "result": {"item": "minecraft:diamond"},
+        }
+        result = agent.convert_recipe(recipe, namespace="testmod", recipe_name="test_recipe")
+
+        assert result.get("manual_review_required") is not True
+        assert "minecraft:recipe_shaped" in result

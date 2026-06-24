@@ -1047,6 +1047,7 @@ class CustomTypesConverter:
             "reason": reason,
             "original_recipe": f"{namespace}:{recipe_name}",
             "description": {"identifier": f"{namespace}:{recipe_name}"},
+            "portkit:unresolved_tag": True,
         }
 
 
