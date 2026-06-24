@@ -1,18 +1,24 @@
 """
 Packaging subpackage for Bedrock addon packaging and validation.
 
-Split from packaging_agent.py (42K) and packaging_validator.py (31K) per issue #1278.
-Public API remains unchanged - callers import from agents.packaging.
+Split from packaging_agent.py (42K) and packaging_validator.py (31K) per
+issue #1278, then further decomposed per issue #1766. Public API remains
+unchanged - callers import from agents.packaging.
 
 Module structure:
-- agent.py: PackagingAgent coordinator
+- agent.py: thin re-export shim (backwards-compat entry point)
+- orchestrator.py: PackagingAgent coordinator (issue #1766)
+- assembler.py: packaging execution logic (issue #1766)
+- tools.py: typed LangChain BaseTool wrappers + args_schema (issue #1766)
+- validator.py: thin PackagingValidator orchestrator (issue #1766)
+- schema_validator.py: schema/structure/manifest validation mixin (issue #1766)
+- runtime_validator.py: runtime/compatibility checks mixin (issue #1766)
 - manifest_builder.py: Manifest assembly
 - zip_assembler.py: Zip construction
 - resource_mapper.py: Resource mapping
 - bundler.py: High-level bundling (delegates to zip_assembler)
 - folder_builder.py: Folder structure (delegates to resource_mapper)
 - manifest.py: Manifest generation (delegates to manifest_builder)
-- validator.py: Package validation
 - pack_report.py: Validation reporting
 """
 
