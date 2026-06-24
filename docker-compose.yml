@@ -88,10 +88,15 @@ services:
       - PYTHONPATH=/app
       - REDIS_URL=redis://redis:6379/0
       - LOG_LEVEL=INFO
+      - TRACING_EXPORTER=jaeger
+      - JAEGER_HOST=jaeger
+      - JAEGER_PORT=14268
     depends_on:
       redis:
         condition: service_healthy
       postgres:
+        condition: service_healthy
+      jaeger:
         condition: service_healthy
     volumes:
       - ./backend/src:/app/src
