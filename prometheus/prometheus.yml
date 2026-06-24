@@ -41,3 +41,4 @@ alerting:
 
 rule_files:
   - /etc/prometheus/backup_rules.yml
+  - /etc/prometheus/slo_rules.yml
