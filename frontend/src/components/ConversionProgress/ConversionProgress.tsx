@@ -67,7 +67,11 @@ export interface ConversionProgressProps {
   message?: string;
   stage?: string | null;
   /** Fires when conversion reaches a terminal state (completed/failed/cancelled). */
-  onTerminalState?: (jobId: string, status: 'completed' | 'failed' | 'cancelled', error?: string) => void;
+  onTerminalState?: (
+    jobId: string,
+    status: 'completed' | 'failed' | 'cancelled',
+    error?: string
+  ) => void;
 }
 
 const ConversionProgress: React.FC<ConversionProgressProps> = ({
@@ -141,39 +145,42 @@ const ConversionProgress: React.FC<ConversionProgressProps> = ({
     return Math.min(RECONNECT_DELAY_BASE * Math.pow(2, attempt), 16000);
   };
 
-  const updateProgressData = useCallback((newData: ConversionStatus) => {
-    setProgressData(newData);
-    currentStatusRef.current = newData.status;
-    if (
-      newData.status === 'completed' ||
-      newData.status === 'failed' ||
-      newData.status === 'cancelled'
-    ) {
-      console.log(
-        `Conversion ended with status: ${newData.status}. Cleaning up connections.`
-      );
+  const updateProgressData = useCallback(
+    (newData: ConversionStatus) => {
+      setProgressData(newData);
+      currentStatusRef.current = newData.status;
       if (
-        webSocketRef.current &&
-        webSocketRef.current.readyState === WebSocket.OPEN
+        newData.status === 'completed' ||
+        newData.status === 'failed' ||
+        newData.status === 'cancelled'
       ) {
-        webSocketRef.current.close(1000, `Conversion ${newData.status}`);
-      }
-      if (pollingIntervalRef.current) {
-        window.clearInterval(pollingIntervalRef.current);
-        pollingIntervalRef.current = null;
-      }
-      setUsingWebSocket(false); // Ensure this is reset
-
-      // Fire terminal state callback so parent can handle completion/failure
-      if (onTerminalState) {
-        onTerminalState(
-          jobId || newData.job_id,
-          newData.status,
-          newData.error || newData.message
+        console.log(
+          `Conversion ended with status: ${newData.status}. Cleaning up connections.`
         );
+        if (
+          webSocketRef.current &&
+          webSocketRef.current.readyState === WebSocket.OPEN
+        ) {
+          webSocketRef.current.close(1000, `Conversion ${newData.status}`);
+        }
+        if (pollingIntervalRef.current) {
+          window.clearInterval(pollingIntervalRef.current);
+          pollingIntervalRef.current = null;
+        }
+        setUsingWebSocket(false); // Ensure this is reset
+
+        // Fire terminal state callback so parent can handle completion/failure
+        if (onTerminalState) {
+          onTerminalState(
+            jobId || newData.job_id,
+            newData.status,
+            newData.error || newData.message
+          );
+        }
       }
-    }
-  }, [jobId, onTerminalState]);
+    },
+    [jobId, onTerminalState]
+  );
 
   const startPolling = useCallback(() => {
     // Prevent multiple polling intervals
