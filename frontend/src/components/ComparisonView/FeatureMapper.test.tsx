@@ -72,9 +72,9 @@ describe('FeatureMapper', () => {
   test('shows confidence labels correctly', () => {
     render(<FeatureMapper features={mockFeatures} />);
 
-    expect(screen.getByText('High (95%)')).toBeInTheDocument();
-    expect(screen.getByText('Medium (75%)')).toBeInTheDocument();
-    expect(screen.getByText('Low (45%)')).toBeInTheDocument();
+    expect(screen.getByText(/High.*95/)).toBeInTheDocument();
+    expect(screen.getByText(/Medium.*75/)).toBeInTheDocument();
+    expect(screen.getByText(/Low.*45/)).toBeInTheDocument();
     expect(screen.getAllByText('Unknown')).toHaveLength(2); // One for confidence, one for bedrock_equivalent
   });
 

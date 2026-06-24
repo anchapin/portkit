@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ConfidenceBadge, getConfidenceColor } from '../ui/confidence-badge';
+import { ConfidenceBadge } from '../ui/confidence-badge';
 
 interface FeatureMappingData {
   id: string;
