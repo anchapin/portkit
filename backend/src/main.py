@@ -54,6 +54,7 @@ from services.sentry_config import (
     track_conversion_failure_rate,
     flush,
 )
+from services.tracing import init_tracing
 
 # Import API routers
 from api import (
@@ -219,6 +220,10 @@ async def startup_event():
     # Initialize Sentry for error monitoring
     init_sentry()
     logger.info("Sentry error monitoring initialized")
+
+    # Initialize OpenTelemetry tracing with Jaeger/OTLP exporters
+    init_tracing(app)
+    logger.info("OpenTelemetry tracing initialized")
 
     # Configure structured logging
     debug_mode = os.getenv("DEBUG", "false").lower() == "true"

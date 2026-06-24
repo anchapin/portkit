@@ -37,6 +37,7 @@ from models.smart_assumptions import (
     ConversionPlan,
     ConversionPlanComponent,
 )
+from tracing import create_span, add_span_attributes, record_span_exception, end_span
 
 logger = logging.getLogger(__name__)
 
@@ -465,6 +466,12 @@ class ConversionPipeline:
         re-apply mergeable fields (``errors``, ``warnings``, ``node_status``,
         ``converted_scripts``, ``converted_assets``).
         """
+        span = create_span("langgraph.node.java_analyzer")
+        add_span_attributes(span, {
+            "agent_name": "java_analyzer",
+            "node_name": "java_analyzer",
+            "job_id": self.job_id,
+        })
         logger.info(f"[{self.job_id}] Running Java analyzer node")
 
         try:
@@ -476,6 +483,8 @@ class ConversionPipeline:
             logger.info(
                 f"[{self.job_id}] Java analyzer completed: {len(features)} features found"
             )
+            add_span_attributes(span, {"success": "true", "features_count": str(len(features))})
+            end_span(span)
             return {
                 "mod_info": result.get("mod_info", {}),
                 "features": features,
@@ -484,6 +493,9 @@ class ConversionPipeline:
             }
         except Exception as e:
             logger.error(f"[{self.job_id}] Java analyzer failed: {e}")
+            record_span_exception(span, e)
+            add_span_attributes(span, {"success": "false", "error": str(e)})
+            end_span(span)
             return {
                 "errors": [f"java_analyzer: {str(e)}"],
                 "node_status": {"java_analyzer": NodeStatus.FAILED.value},
@@ -494,6 +506,12 @@ class ConversionPipeline:
 
         Returns a partial state delta (see ``_java_analyzer_node``).
         """
+        span = create_span("langgraph.node.strategy_planner")
+        add_span_attributes(span, {
+            "agent_name": "strategy_planner",
+            "node_name": "strategy_planner",
+            "job_id": self.job_id,
+        })
         logger.info(f"[{self.job_id}] Running strategy planner node")
 
         try:
@@ -532,6 +550,8 @@ class ConversionPipeline:
                 f"[{self.job_id}] Strategy planner completed: "
                 f"{len(plan_components)} plan components"
             )
+            add_span_attributes(span, {"success": "true", "plan_components": str(len(plan_components))})
+            end_span(span)
             return {
                 "conversion_plan": ConversionPlan(components=plan_components),
                 "smart_assumptions_applied": smart_assumptions,
@@ -539,6 +559,9 @@ class ConversionPipeline:
             }
         except Exception as e:
             logger.error(f"[{self.job_id}] Strategy planner failed: {e}")
+            record_span_exception(span, e)
+            add_span_attributes(span, {"success": "false", "error": str(e)})
+            end_span(span)
             return {
                 "errors": [f"strategy_planner: {str(e)}"],
                 "node_status": {"strategy_planner": NodeStatus.FAILED.value},
@@ -573,6 +596,12 @@ class ConversionPipeline:
         Returns a partial state delta (LangGraph fan-out merges via
         ``ConversionState`` reducers).
         """
+        span = create_span("langgraph.node.block_converter")
+        add_span_attributes(span, {
+            "agent_name": "block_converter",
+            "node_name": "block_converter",
+            "job_id": self.job_id,
+        })
         logger.info(f"[{self.job_id}] Running block converter node")
 
         try:
@@ -595,12 +624,17 @@ class ConversionPipeline:
                     converted.append(block_result)
 
             logger.info(f"[{self.job_id}] Block converter completed: {len(converted)} blocks")
+            add_span_attributes(span, {"success": "true", "blocks_converted": str(len(converted))})
+            end_span(span)
             return {
                 "converted_scripts": converted,
                 "node_status": {"block_converter": NodeStatus.COMPLETED.value},
             }
         except Exception as e:
             logger.error(f"[{self.job_id}] Block converter failed: {e}")
+            record_span_exception(span, e)
+            add_span_attributes(span, {"success": "false", "error": str(e)})
+            end_span(span)
             return {
                 "errors": [f"block_converter: {str(e)}"],
                 "node_status": {"block_converter": NodeStatus.FAILED.value},
@@ -611,6 +645,12 @@ class ConversionPipeline:
 
         Returns a partial state delta (see ``_block_converter_node``).
         """
+        span = create_span("langgraph.node.entity_converter")
+        add_span_attributes(span, {
+            "agent_name": "entity_converter",
+            "node_name": "entity_converter",
+            "job_id": self.job_id,
+        })
         logger.info(f"[{self.job_id}] Running entity converter node")
 
         try:
@@ -633,12 +673,17 @@ class ConversionPipeline:
                     converted.append(entity_result)
 
             logger.info(f"[{self.job_id}] Entity converter completed: {len(converted)} entities")
+            add_span_attributes(span, {"success": "true", "entities_converted": str(len(converted))})
+            end_span(span)
             return {
                 "converted_scripts": converted,
                 "node_status": {"entity_converter": NodeStatus.COMPLETED.value},
             }
         except Exception as e:
             logger.error(f"[{self.job_id}] Entity converter failed: {e}")
+            record_span_exception(span, e)
+            add_span_attributes(span, {"success": "false", "error": str(e)})
+            end_span(span)
             return {
                 "errors": [f"entity_converter: {str(e)}"],
                 "node_status": {"entity_converter": NodeStatus.FAILED.value},
@@ -649,6 +694,12 @@ class ConversionPipeline:
 
         Returns a partial state delta (see ``_block_converter_node``).
         """
+        span = create_span("langgraph.node.recipe_converter")
+        add_span_attributes(span, {
+            "agent_name": "recipe_converter",
+            "node_name": "recipe_converter",
+            "job_id": self.job_id,
+        })
         logger.info(f"[{self.job_id}] Running recipe converter node")
 
         try:
@@ -668,12 +719,17 @@ class ConversionPipeline:
                     )
 
             logger.info(f"[{self.job_id}] Recipe converter completed: {len(converted)} recipes")
+            add_span_attributes(span, {"success": "true", "recipes_converted": str(len(converted))})
+            end_span(span)
             return {
                 "converted_scripts": converted,
                 "node_status": {"recipe_converter": NodeStatus.COMPLETED.value},
             }
         except Exception as e:
             logger.error(f"[{self.job_id}] Recipe converter failed: {e}")
+            record_span_exception(span, e)
+            add_span_attributes(span, {"success": "false", "error": str(e)})
+            end_span(span)
             return {
                 "errors": [f"recipe_converter: {str(e)}"],
                 "node_status": {"recipe_converter": NodeStatus.FAILED.value},
@@ -684,6 +740,12 @@ class ConversionPipeline:
 
         Returns a partial state delta (see ``_block_converter_node``).
         """
+        span = create_span("langgraph.node.asset_converter")
+        add_span_attributes(span, {
+            "agent_name": "asset_converter",
+            "node_name": "asset_converter",
+            "job_id": self.job_id,
+        })
         logger.info(f"[{self.job_id}] Running asset converter node")
 
         try:
@@ -705,12 +767,17 @@ class ConversionPipeline:
                             )
 
             logger.info(f"[{self.job_id}] Asset converter completed: {len(converted)} assets")
+            add_span_attributes(span, {"success": "true", "assets_converted": str(len(converted))})
+            end_span(span)
             return {
                 "converted_assets": converted,
                 "node_status": {"asset_converter": NodeStatus.COMPLETED.value},
             }
         except Exception as e:
             logger.error(f"[{self.job_id}] Asset converter failed: {e}")
+            record_span_exception(span, e)
+            add_span_attributes(span, {"success": "false", "error": str(e)})
+            end_span(span)
             return {
                 "errors": [f"asset_converter: {str(e)}"],
                 "node_status": {"asset_converter": NodeStatus.FAILED.value},
@@ -721,6 +788,12 @@ class ConversionPipeline:
 
         Returns a partial state delta (see ``_java_analyzer_node``).
         """
+        span = create_span("langgraph.node.output_assembler")
+        add_span_attributes(span, {
+            "agent_name": "output_assembler",
+            "node_name": "output_assembler",
+            "job_id": self.job_id,
+        })
         logger.info(f"[{self.job_id}] Running output assembler node")
 
         try:
@@ -733,12 +806,17 @@ class ConversionPipeline:
                 "manifest": {"format_version": 2, "header": {}, "modules": []},
             }
             logger.info(f"[{self.job_id}] Output assembler completed")
+            add_span_attributes(span, {"success": "true"})
+            end_span(span)
             return {
                 "bedrock_json": bedrock_json,
                 "node_status": {"output_assembler": NodeStatus.COMPLETED.value},
             }
         except Exception as e:
             logger.error(f"[{self.job_id}] Output assembler failed: {e}")
+            record_span_exception(span, e)
+            add_span_attributes(span, {"success": "false", "error": str(e)})
+            end_span(span)
             return {
                 "errors": [f"output_assembler: {str(e)}"],
                 "node_status": {"output_assembler": NodeStatus.FAILED.value},
@@ -750,6 +828,12 @@ class ConversionPipeline:
         Uses ``interrupt()`` for HITL when human review is needed. Returns
         a partial state delta (see ``_java_analyzer_node``).
         """
+        span = create_span("langgraph.node.qa_validator")
+        add_span_attributes(span, {
+            "agent_name": "qa_validator",
+            "node_name": "qa_validator",
+            "job_id": self.job_id,
+        })
         logger.info(f"[{self.job_id}] Running QA validator node")
 
         try:
@@ -789,6 +873,14 @@ class ConversionPipeline:
                 f"[{self.job_id}] QA validator completed: "
                 f"pass_rate={pass_rate:.2%}, flagged={len(flagged)}"
             )
+            add_span_attributes(span, {
+                "success": "true",
+                "qa_passed": str(qa_passed),
+                "pass_rate": str(pass_rate),
+                "flagged_count": str(len(flagged)),
+                "needs_human_review": str(needs_human_review),
+            })
+            end_span(span)
             return {
                 "qa_results": qa_result,
                 "qa_passed": qa_passed,
@@ -803,6 +895,9 @@ class ConversionPipeline:
             if "interrupted" in str(e).lower():
                 raise
             logger.error(f"[{self.job_id}] QA validator failed: {e}")
+            record_span_exception(span, e)
+            add_span_attributes(span, {"success": "false", "error": str(e)})
+            end_span(span)
             return {
                 "errors": [f"qa_validator: {str(e)}"],
                 "node_status": {"qa_validator": NodeStatus.FAILED.value},
@@ -837,6 +932,12 @@ class ConversionPipeline:
 
         Returns a partial state delta (see ``_java_analyzer_node``).
         """
+        span = create_span("langgraph.node.logic_translator_retry")
+        add_span_attributes(span, {
+            "agent_name": "logic_translator_retry",
+            "node_name": "logic_translator_retry",
+            "job_id": self.job_id,
+        })
         logger.info(f"[{self.job_id}] Running logic translator retry node")
         retry_count = state.get("retry_count", 0)
 
@@ -856,12 +957,17 @@ class ConversionPipeline:
             logger.info(
                 f"[{self.job_id}] Logic translator retry completed (attempt {retry_count + 1})"
             )
+            add_span_attributes(span, {"success": "true", "retry_count": str(retry_count + 1)})
+            end_span(span)
             return {
                 "retry_count": retry_count + 1,
                 "node_status": {"logic_translator_retry": NodeStatus.COMPLETED.value},
             }
         except Exception as e:
             logger.error(f"[{self.job_id}] Logic translator retry failed: {e}")
+            record_span_exception(span, e)
+            add_span_attributes(span, {"success": "false", "error": str(e)})
+            end_span(span)
             return {
                 "retry_count": retry_count + 1,
                 "errors": [f"logic_translator_retry: {str(e)}"],
@@ -876,6 +982,12 @@ class ConversionPipeline:
         rollups for the LangGraph-specific reviewer pipeline. Returns a
         partial state delta (see ``_java_analyzer_node``).
         """
+        span = create_span("langgraph.node.final_report")
+        add_span_attributes(span, {
+            "agent_name": "final_report",
+            "node_name": "final_report",
+            "job_id": self.job_id,
+        })
         logger.info(f"[{self.job_id}] Running final report node")
 
         try:
@@ -911,10 +1023,16 @@ class ConversionPipeline:
                 "soft_flag": soft_flag,
                 "hard_flag": hard_flag,
             }
-            # Surface a top-level status for callers that don't dive into the report.
             final_status = "completed" if state.get("qa_passed") else "partial"
 
             logger.info(f"[{self.job_id}] Final report completed status={final_status}")
+            add_span_attributes(span, {
+                "success": "true",
+                "final_status": final_status,
+                "total_segments": str(total_segments),
+                "high_confidence": str(high_conf),
+            })
+            end_span(span)
             return {
                 "final_report": final_report,
                 "status": final_status,
@@ -922,6 +1040,9 @@ class ConversionPipeline:
             }
         except Exception as e:
             logger.error(f"[{self.job_id}] Final report failed: {e}")
+            record_span_exception(span, e)
+            add_span_attributes(span, {"success": "false", "error": str(e)})
+            end_span(span)
             return {
                 "errors": [f"final_report: {str(e)}"],
                 "status": "failed",
