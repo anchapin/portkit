@@ -551,8 +551,13 @@ It contains class/function signatures, type definitions, and docstrings — **no
 
 ---
 
-### `ai-engine/agents/bedrock_builder.py`
+### `ai-engine/agents/bedrock_builder/` (package, split per Issue #1742)
 > Bedrock Builder Agent for generating Bedrock add-on files from Java mod analysis.
+>
+> Submodules:
+> - `bedrock_builder/agent.py` — `BedrockBuilderAgent` implementation.
+> - `bedrock_builder/tools.py` — typed `BaseTool` wrappers + Pydantic args-schema models.
+> - `bedrock_builder/__init__.py` — re-export shim (public API: `from agents.bedrock_builder import BedrockBuilderAgent`).
 *deps: PIL, jinja2, langchain_core.tools, models.smart_assumptions, pydantic, templates.template_engine, utils.atlas_descriptor_parser, zipfile*
 
 **class BedrockBuilderAgent:**

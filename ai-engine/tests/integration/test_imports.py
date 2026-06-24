@@ -36,7 +36,7 @@ def test_can_import_agents():
     - logic_translator is now a package (agents/logic_translator/)
     - texture_converter is now a package (agents/texture_converter/)
     - model_converter is now a package (agents/model_converter/)
-    - bedrock_builder is still a module (agents/bedrock_builder.py)
+    - bedrock_builder is now a package (agents/bedrock_builder/) per Issue #1742
     """
     agent_items = [
         # Packages (directories with __init__.py)
@@ -44,8 +44,8 @@ def test_can_import_agents():
         ("agents/logic_translator", "agents/logic_translator/__init__.py"),
         ("agents/texture_converter", "agents/texture_converter/__init__.py"),
         ("agents/model_converter", "agents/model_converter/__init__.py"),
+        ("agents/bedrock_builder", "agents/bedrock_builder/__init__.py"),
         # Modules (.py files)
-        ("agents/bedrock_builder.py", None),
         ("agents/asset_converter.py", None),
         ("agents/packaging_agent.py", None),
         ("agents/qa_validator.py", None),
