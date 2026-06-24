@@ -1,32 +1,27 @@
 """
 Inference-related Celery tasks.
 
-Self-hosted LLM inference via RunPod Flash or SGLang/vLLM.
+Self-hosted LLM inference via RunPod Flash or SGLang/vLLM, plus the generic
+heavy-processing task.
+
+Task names are preserved as ``services.celery_tasks.*`` for runtime
+compatibility (celery routing, beat schedule, in-flight tasks).
 
 Issue: #1203 - Self-hosted inference after fine-tuned model weights available
+Issue: #1743 - Split celery_tasks.py into task domain modules
 """
 
-from typing import Dict, Any, Optional, List
-from celery import shared_task
-import logging
 import asyncio
+import logging
+from typing import Any, Dict, List, Optional
+
+from celery import shared_task
 
 logger = logging.getLogger(__name__)
 
 
-def _run_async(coro):
-    """Run an async coroutine from synchronous context."""
-    try:
-        loop = asyncio.get_event_loop()
-    except RuntimeError:
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-
-    return loop.run_until_complete(coro)
-
-
 @shared_task(
-    name="services.tasks.inference_tasks.llm_inference_task",
+    name="services.celery_tasks.llm_inference_task",
     bind=True,
     max_retries=3,
     default_retry_delay=5,
@@ -70,7 +65,6 @@ def llm_inference_task(
 
     provider_str = os.getenv("INFERENCE_PROVIDER", "openrouter").lower()
     provider = InferenceProvider.OPENROUTER
-
     if provider_str == "runpod_flash":
         provider = InferenceProvider.RUNPOD_FLASH
     elif provider_str == "sglang":
@@ -126,7 +120,7 @@ def llm_inference_task(
         raise self.retry(exc=e)
 
 
-@shared_task(name="services.tasks.inference_tasks.heavy_task")
+@shared_task(name="services.celery_tasks.heavy_task")
 def heavy_task(payload: Dict[str, Any]) -> Dict[str, Any]:
     """Heavy processing task for batch operations."""
     logger.info(f"Processing heavy task")
