@@ -66,7 +66,7 @@ PortKit is committed to complying with the **General Data Protection Regulation 
 |-------------|-----------------|-------|
 | Job metadata (status, timestamps) | **90 days** | For analytics and debugging |
 | Audit logs | **1 year** | Security and compliance |
-| Conversion feedback | **Indefinite** | Used for AI model improvement unless user requests deletion |
+| Conversion feedback | **Indefinite** | Anonymized at submission for AI training (GDPR-compliant); personal identifiers (user_id, email patterns, phone numbers) are hashed/redacted before storage |
 
 ### 3.4 User Account Data
 
@@ -89,6 +89,7 @@ Users have the right to request deletion of their personal data. We implement th
 - **Input files**: Automatically deleted within 24 hours of upload or immediately after conversion
 - **Output files**: Automatically purged after 7 days
 - **Inactive accounts**: Data deleted after 365 days of inactivity
+- **Feedback personal data**: Anonymized at submission time — user identifiers are hashed and personal data patterns (emails, phone numbers) are redacted before storage. Feedback marked `is_anonymized=True` is eligible for indefinite retention for AI training. Non-anonymized feedback (legacy records) are not served to AI training endpoints.
 
 #### 4.1.2 Manual Deletion Requests
 
