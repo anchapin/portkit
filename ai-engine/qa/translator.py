@@ -27,6 +27,11 @@ class TranslatorAgent:
 
     Takes parsed Java code, queries the knowledge base for similar conversion patterns,
     and generates both Bedrock JSON (behavior pack) and TypeScript (Script API) code.
+
+    When strict_api mode is enabled (via QAContext.strict_api=True), uses the
+    BedrockAPIBoundaryProber to:
+    - Inject demand-guided API context before generation
+    - Validate generated output for hallucinated API calls
     """
 
     def __init__(self, temperature: float = TEMPERATURE_ZERO):
@@ -39,6 +44,7 @@ class TranslatorAgent:
         self.temperature = temperature
         self._search_engine = None
         self._logic_translator = None
+        self._api_prober = None
         logger.info("TranslatorAgent initialized", temperature=temperature)
 
     def _get_search_engine(self):
@@ -68,6 +74,19 @@ class TranslatorAgent:
                 logger.warning("Could not import LogicTranslatorAgent", error=str(e))
                 self._logic_translator = None
         return self._logic_translator
+
+    def _get_api_prober(self, strict_api: bool = False):
+        """Lazy-load the Bedrock API boundary prober for strict API validation."""
+        if self._api_prober is None and strict_api:
+            try:
+                from conversion.api_boundary_prober import BedrockAPIBoundaryProber
+
+                self._api_prober = BedrockAPIBoundaryProber(strict_api=strict_api)
+                logger.info("BedrockAPIBoundaryProber initialized (strict_api mode)")
+            except ImportError as e:
+                logger.warning("Could not import BedrockAPIBoundaryProber", error=str(e))
+                self._api_prober = None
+        return self._api_prober
 
     def _compress_context(self, java_code: str, max_tokens: int = MAX_TOKENS_CONTEXT) -> str:
         """
@@ -345,6 +364,19 @@ class TranslatorAgent:
 
             typescript_code = self._generate_typescript(parsed_ast)
 
+            api_context_injection = ""
+            api_validation_result = None
+            if context.strict_api:
+                prober = self._get_api_prober(strict_api=True)
+                if prober:
+                    api_context_injection = prober.get_injection_prompt(
+                        parsed_ast.get("raw_code", "")
+                    )
+                    logger.info(
+                        "API boundary context injection prepared",
+                        injection_length=len(api_context_injection),
+                    )
+
             output_dir = context.output_bedrock_path
             output_dir.mkdir(parents=True, exist_ok=True)
 
@@ -359,6 +391,16 @@ class TranslatorAgent:
             ts_path.write_text(typescript_code, encoding="utf-8")
             logger.info("Generated TypeScript", file=str(ts_path))
 
+            if context.strict_api:
+                prober = self._get_api_prober(strict_api=True)
+                if prober:
+                    api_validation_result = prober.validate_output(typescript_code)
+                    logger.info(
+                        "API boundary validation completed",
+                        is_valid=api_validation_result.is_valid,
+                        hallucination_rate=api_validation_result.hallucination_rate,
+                    )
+
             result = {
                 "parsed_classes": [c["name"] for c in parsed_ast.get("classes", [])],
                 "parsed_methods": [m["name"] for m in parsed_ast.get("methods", [])],
@@ -367,6 +409,18 @@ class TranslatorAgent:
                 "rag_patterns_found": len(rag_patterns),
                 "temperature": self.temperature,
             }
+
+            if api_context_injection:
+                result["api_context_injected"] = True
+                result["api_context_length"] = len(api_context_injection)
+
+            if api_validation_result:
+                result["api_validation"] = {
+                    "is_valid": api_validation_result.is_valid,
+                    "hallucination_rate": api_validation_result.hallucination_rate,
+                    "hallucinated_apis": api_validation_result.hallucinated_apis,
+                    "valid_apis_found": api_validation_result.valid_apis_found,
+                }
 
             execution_time = int((time.time() - start_time) * 1000)
 
