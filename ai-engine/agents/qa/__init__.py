@@ -890,14 +890,24 @@ def calculate_structure_score(results: Dict[str, Any]) -> int:
     return int((valid_count / len(results)) * 100)
 
 
-# Attach tool instances to QAValidatorAgent after class definition
+# Attach tool instances to QAValidatorAgent after class definition.
+# Re-export both the *Input schema models and the *Tool wrappers so tests and
+# downstream code can import them from the package root (regression fix for #1819).
+# The ``*Input`` models use a redundant alias so ruff treats them as intentional
+# re-exports (F401); the ``*Tool`` classes are consumed by the assignments below.
 from .tools import (
-    _ValidateConversionQualityTool,
-    _ValidateMcaddonTool,
-    _RunFunctionalTestsTool,
+    _AnalyzeBedrockCompatibilityInput as _AnalyzeBedrockCompatibilityInput,
     _AnalyzeBedrockCompatibilityTool,
+    _AssessPerformanceMetricsInput as _AssessPerformanceMetricsInput,
     _AssessPerformanceMetricsTool,
+    _GenerateQaReportInput as _GenerateQaReportInput,
     _GenerateQaReportTool,
+    _RunFunctionalTestsInput as _RunFunctionalTestsInput,
+    _RunFunctionalTestsTool,
+    _ValidateConversionQualityInput as _ValidateConversionQualityInput,
+    _ValidateConversionQualityTool,
+    _ValidateMcaddonInput as _ValidateMcaddonInput,
+    _ValidateMcaddonTool,
 )
 
 QAValidatorAgent.validate_conversion_quality_tool = _ValidateConversionQualityTool()
