@@ -195,9 +195,7 @@ async def get_training_data(
         raise HTTPException(status_code=400, detail="limit must be between 1 and 1000")
 
     try:
-        feedback_list = await crud.list_all_feedback(
-            db, skip=skip, limit=limit, is_anonymized=True
-        )
+        feedback_list = await crud.list_all_feedback(db, skip=skip, limit=limit, is_anonymized=True)
     except Exception as e:
         logger.error(f"Database error fetching feedback: {e}")
         raise HTTPException(status_code=500, detail="Error retrieving training data")
