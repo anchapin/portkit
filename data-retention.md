@@ -220,4 +220,4 @@ This policy is reviewed **annually** or when significant changes occur to our da
 
 - [Privacy Notice](./legal/PRIVACY.md) - Full privacy statement
 - [Security Policy](./SECURITY.md) - Security practices
-- [Runbook](./runbook.md) - Incident response procedures (includes breach notification)
+- [Security Incident Runbook](./runbooks/security-incident.md) - Incident response & data breach notification procedure (GDPR Art. 33/34)
