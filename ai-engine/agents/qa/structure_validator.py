@@ -172,58 +172,76 @@ def validate_block_definition(block: dict, path: str) -> Dict[str, Any]:
             warnings.append(f"{path}: format_version should be string")
 
     if has_block:
-        block_data = block["minecraft:block"]
+        body = _validate_block_body(block["minecraft:block"], path)
+        checks += body["checks"]
+        passed += body["passed"]
+        errors.extend(body["errors"])
+        warnings.extend(body["warnings"])
 
-        checks += 1
-        if "description" in block_data and "identifier" in block_data["description"]:
-            identifier = block_data["description"]["identifier"]
-            if ":" in identifier and identifier.count(":") == 1:
-                passed += 1
-            else:
-                errors.append(f"{path}: Invalid identifier format: {identifier}")
+    return {"checks": checks, "passed": passed, "errors": errors, "warnings": warnings}
+
+
+def _validate_block_body(block_data: dict, path: str) -> Dict[str, Any]:
+    """Validate the ``minecraft:block`` mapping of a block definition.
+
+    Returns the incremental ``checks``/``passed`` counts plus any
+    ``errors``/``warnings`` produced for this block body.
+    """
+    checks = 0
+    passed = 0
+    errors = []
+    warnings = []
+
+    checks += 1
+    if "description" in block_data and "identifier" in block_data["description"]:
+        identifier = block_data["description"]["identifier"]
+        if ":" in identifier and identifier.count(":") == 1:
+            passed += 1
         else:
-            errors.append(f"{path}: Missing description.identifier")
+            errors.append(f"{path}: Invalid identifier format: {identifier}")
+    else:
+        errors.append(f"{path}: Missing description.identifier")
 
-        if "components" in block_data:
-            components = block_data["components"]
-            checks += 1
+    if "components" in block_data:
+        components = block_data["components"]
+        checks += 1
 
-            if isinstance(components, dict):
-                passed += 1
+        if isinstance(components, dict):
+            passed += 1
 
-                invalid_comps = [c for c in components.keys() if c not in VALID_BLOCK_COMPONENTS]
-                if invalid_comps:
-                    warnings.append(
-                        f"{path}: Unknown component(s): {invalid_comps[:3]} - may not work in Bedrock"
-                    )
+            invalid_comps = [c for c in components.keys() if c not in VALID_BLOCK_COMPONENTS]
+            if invalid_comps:
+                warnings.append(
+                    f"{path}: Unknown component(s): {invalid_comps[:3]} - may not work in Bedrock"
+                )
 
-                for comp_name, comp_value in components.items():
-                    if comp_name == "minecraft:material_instances":
-                        checks += 1
-                        if isinstance(comp_value, dict):
-                            passed += 1
-                        else:
-                            warnings.append(f"{path}: {comp_name} should be an object")
+            for comp_name, comp_value in components.items():
+                if comp_name == "minecraft:material_instances":
+                    checks += 1
+                    if isinstance(comp_value, dict):
+                        passed += 1
+                    else:
+                        warnings.append(f"{path}: {comp_name} should be an object")
 
-                    elif comp_name == "minecraft:loot":
-                        checks += 1
-                        if isinstance(comp_value, str):
-                            passed += 1
-                        else:
-                            warnings.append(
-                                f"{path}: {comp_name} should be a string (loot table path)"
-                            )
+                elif comp_name == "minecraft:loot":
+                    checks += 1
+                    if isinstance(comp_value, str):
+                        passed += 1
+                    else:
+                        warnings.append(
+                            f"{path}: {comp_name} should be a string (loot table path)"
+                        )
 
-        if "permutations" in block_data:
-            checks += 1
-            if isinstance(block_data["permutations"], list):
-                passed += 1
+    if "permutations" in block_data:
+        checks += 1
+        if isinstance(block_data["permutations"], list):
+            passed += 1
 
-                for i, perm in enumerate(block_data["permutations"]):
-                    if not isinstance(perm, dict):
-                        warnings.append(f"{path}: Permutation {i} should be an object")
-                    elif "condition" not in perm:
-                        warnings.append(f"{path}: Permutation {i} missing 'condition' field")
+            for i, perm in enumerate(block_data["permutations"]):
+                if not isinstance(perm, dict):
+                    warnings.append(f"{path}: Permutation {i} should be an object")
+                elif "condition" not in perm:
+                    warnings.append(f"{path}: Permutation {i} missing 'condition' field")
 
     return {"checks": checks, "passed": passed, "errors": errors, "warnings": warnings}
 
@@ -292,80 +310,129 @@ def validate_entity_definition(entity: dict, path: str) -> Dict[str, Any]:
             warnings.append(f"{path}: format_version should be string")
 
     if has_entity:
-        entity_data = entity["minecraft:entity"]
+        body = _validate_entity_body(entity["minecraft:entity"], path)
+        checks += body["checks"]
+        passed += body["passed"]
+        errors.extend(body["errors"])
+        warnings.extend(body["warnings"])
 
+    return {"checks": checks, "passed": passed, "errors": errors, "warnings": warnings}
+
+
+def _validate_entity_body(entity_data: dict, path: str) -> Dict[str, Any]:
+    """Validate the ``minecraft:entity`` mapping of an entity definition.
+
+    Returns the incremental ``checks``/``passed`` counts plus any
+    ``errors``/``warnings`` produced for this entity body.
+    """
+    checks = 0
+    passed = 0
+    errors = []
+    warnings = []
+
+    desc = _validate_entity_description(entity_data, path)
+    checks += desc["checks"]
+    passed += desc["passed"]
+    errors.extend(desc["errors"])
+    warnings.extend(desc["warnings"])
+
+    comp = _validate_entity_components(entity_data, path)
+    checks += comp["checks"]
+    passed += comp["passed"]
+    errors.extend(comp["errors"])
+    warnings.extend(comp["warnings"])
+
+    if "component_groups" in entity_data:
         checks += 1
-        if "description" in entity_data:
-            desc = entity_data["description"]
-            if "identifier" in desc:
-                identifier = desc["identifier"]
-                if ":" in identifier and identifier.count(":") == 1:
-                    passed += 1
-                else:
-                    errors.append(f"{path}: Invalid identifier format: {identifier}")
-
-                if "is_spawnable" in desc:
-                    checks += 1
-                    if isinstance(desc["is_spawnable"], bool):
-                        passed += 1
-                if "is_experimental" in desc:
-                    checks += 1
-                    if isinstance(desc["is_experimental"], bool):
-                        passed += 1
+        if isinstance(entity_data["component_groups"], dict):
+            passed += 1
         else:
-            errors.append(f"{path}: Missing description.identifier")
+            warnings.append(f"{path}: component_groups should be an object")
 
-        if "components" in entity_data:
-            components = entity_data["components"]
-            checks += 1
+    if "events" in entity_data:
+        checks += 1
+        if isinstance(entity_data["events"], dict):
+            passed += 1
 
-            if isinstance(components, dict):
-                invalid_comps = [c for c in components.keys() if c not in VALID_ENTITY_COMPONENTS]
+            for event_name, event_data in entity_data["events"].items():
+                if not isinstance(event_data, dict):
+                    warnings.append(f"{path}: Event '{event_name}' should be an object")
+        else:
+            warnings.append(f"{path}: events should be an object")
 
-                if invalid_comps:
-                    warnings.append(
-                        f"{path}: Unknown component(s): {invalid_comps[:3]} - may not work correctly"
-                    )
+    return {"checks": checks, "passed": passed, "errors": errors, "warnings": warnings}
+
+
+def _validate_entity_description(entity_data: dict, path: str) -> Dict[str, Any]:
+    """Validate the ``description`` block of an entity definition."""
+    checks = 0
+    passed = 0
+    errors = []
+    warnings = []
+
+    if "description" in entity_data:
+        desc = entity_data["description"]
+        if "identifier" in desc:
+            identifier = desc["identifier"]
+            if ":" in identifier and identifier.count(":") == 1:
                 passed += 1
+            else:
+                errors.append(f"{path}: Invalid identifier format: {identifier}")
 
-                for comp_name, comp_value in components.items():
-                    if comp_name == "minecraft:health":
-                        checks += 1
-                        if isinstance(comp_value, dict) and "value" in comp_value:
-                            if (
-                                isinstance(comp_value["value"], (int, float))
-                                and comp_value["value"] > 0
-                            ):
-                                passed += 1
-                            else:
-                                errors.append(f"{path}: {comp_name} has invalid value")
-                        else:
-                            warnings.append(f"{path}: {comp_name} has unusual structure")
+            if "is_spawnable" in desc:
+                checks += 1
+                if isinstance(desc["is_spawnable"], bool):
+                    passed += 1
+            if "is_experimental" in desc:
+                checks += 1
+                if isinstance(desc["is_experimental"], bool):
+                    passed += 1
+    else:
+        errors.append(f"{path}: Missing description.identifier")
 
-                    elif comp_name == "minecraft:movement":
-                        checks += 1
-                        if isinstance(comp_value, dict):
+    return {"checks": checks, "passed": passed, "errors": errors, "warnings": warnings}
+
+
+def _validate_entity_components(entity_data: dict, path: str) -> Dict[str, Any]:
+    """Validate the ``components`` block of an entity definition."""
+    checks = 0
+    passed = 0
+    errors = []
+    warnings = []
+
+    if "components" in entity_data:
+        components = entity_data["components"]
+        checks += 1
+
+        if isinstance(components, dict):
+            invalid_comps = [c for c in components.keys() if c not in VALID_ENTITY_COMPONENTS]
+
+            if invalid_comps:
+                warnings.append(
+                    f"{path}: Unknown component(s): {invalid_comps[:3]} - may not work correctly"
+                )
+            passed += 1
+
+            for comp_name, comp_value in components.items():
+                if comp_name == "minecraft:health":
+                    checks += 1
+                    if isinstance(comp_value, dict) and "value" in comp_value:
+                        if (
+                            isinstance(comp_value["value"], (int, float))
+                            and comp_value["value"] > 0
+                        ):
                             passed += 1
                         else:
-                            warnings.append(f"{path}: {comp_name} should be an object")
+                            errors.append(f"{path}: {comp_name} has invalid value")
+                    else:
+                        warnings.append(f"{path}: {comp_name} has unusual structure")
 
-        if "component_groups" in entity_data:
-            checks += 1
-            if isinstance(entity_data["component_groups"], dict):
-                passed += 1
-            else:
-                warnings.append(f"{path}: component_groups should be an object")
-
-        if "events" in entity_data:
-            checks += 1
-            if isinstance(entity_data["events"], dict):
-                passed += 1
-
-                for event_name, event_data in entity_data["events"].items():
-                    if not isinstance(event_data, dict):
-                        warnings.append(f"{path}: Event '{event_name}' should be an object")
-            else:
-                warnings.append(f"{path}: events should be an object")
+                elif comp_name == "minecraft:movement":
+                    checks += 1
+                    if isinstance(comp_value, dict):
+                        passed += 1
+                    else:
+                        warnings.append(f"{path}: {comp_name} should be an object")
 
     return {"checks": checks, "passed": passed, "errors": errors, "warnings": warnings}
 

@@ -9,7 +9,6 @@ Submodules:
 Public API re-exports from submodules to maintain backwards compatibility.
 """
 
-import json
 import logging
 import zipfile
 from pathlib import Path
@@ -410,6 +409,7 @@ def convert_audio(audio_list: str, output_path: str) -> str:
 
 __all__ = [
     "AssetConverterAgent",
+    "ToolFunction",
     "convert_textures",
     "detect_texture_atlas",
     "extract_texture_atlas",

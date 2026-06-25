@@ -36,9 +36,9 @@ from .structure_validator import (
     validate_entities_in_archive,
     validate_sounds_in_archive,
     validate_models_in_archive,
-    VALID_BLOCK_COMPONENTS,
-    VALID_ENTITY_COMPONENTS,
-    VALID_SOUND_FORMATS,
+    VALID_BLOCK_COMPONENTS as VALID_BLOCK_COMPONENTS,
+    VALID_ENTITY_COMPONENTS as VALID_ENTITY_COMPONENTS,
+    VALID_SOUND_FORMATS as VALID_SOUND_FORMATS,
 )
 
 logger = logging.getLogger(__name__)
