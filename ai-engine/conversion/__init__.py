@@ -24,6 +24,16 @@ from conversion.five_phase_pipeline import (
     ValidationReport,
 )
 
+from conversion.failure_taxonomy import (
+    FailureClassifier,
+    FailureType,
+    Severity,
+    FailureClassification,
+    FailureEvidence,
+    classify_conversion_failure,
+    classify_all_failures,
+)
+
 __all__ = [
     # Multisage augmentation
     "MultisageAugmenter",
@@ -45,4 +55,12 @@ __all__ = [
     "PhaseStatus",
     "RepairAction",
     "ValidationReport",
+    # Failure taxonomy
+    "FailureClassifier",
+    "FailureType",
+    "Severity",
+    "FailureClassification",
+    "FailureEvidence",
+    "classify_conversion_failure",
+    "classify_all_failures",
 ]
