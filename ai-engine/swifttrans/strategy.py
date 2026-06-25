@@ -3,7 +3,7 @@ SwiftTrans dual-stage translation strategy — top-level orchestrator.
 
 Wires Stage 1 (:class:`MpTranslator`) and Stage 2 (:class:`DiffSelector`)
 into a single opt-in entry point intended to be called from the LangGraph
-conversion pipeline (:mod:`orchestration.langgraph_pipeline`).
+conversion pipeline (:mod:`orchestration.langgraph`).
 
 The strategy is *opt-in* via :class:`SwiftTransConfig.enabled`. When
 disabled, :meth:`SwiftTransStrategy.run` short-circuits and returns the
