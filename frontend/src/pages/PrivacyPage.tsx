@@ -141,11 +141,51 @@ export const PrivacyPage: React.FC = () => {
           infrastructure providers that process data under their privacy
           policies and terms.
         </p>
-        <h3 className={styles.sectionTitle}>Authentication</h3>
+        <h3 className={styles.sectionTitle}>Authentication (OAuth Sign-In)</h3>
         <p>
-          <strong>OAuth Providers (Google, GitHub, Discord)</strong> - If you
-          sign in using OAuth, these services provide certain account
-          information to us as specified in their privacy policies.
+          <strong>OAuth Providers (Discord, GitHub, Google).</strong> If you
+          choose to sign in with one of these providers instead of creating a
+          password, we receive a limited set of profile data to authenticate
+          you and create your account. We request only the minimum scopes
+          needed for sign-in:
+        </p>
+        <ul>
+          <li>
+            <strong>Discord</strong> ({' '}
+            <code>identify</code>, <code>email</code> scopes) — we receive your
+            Discord account ID, username, and email address.
+          </li>
+          <li>
+            <strong>GitHub</strong> ({' '}
+            <code>read:user</code>, <code>user:email</code> scopes) — we receive
+            your GitHub account ID, username (login), and primary verified
+            email address.
+          </li>
+          <li>
+            <strong>Google</strong> ({' '}
+            <code>openid</code>, <code>email</code>, <code>profile</code>{' '}
+            scopes) — we receive your Google account ID, name, and email
+            address.
+          </li>
+        </ul>
+        <p>
+          For each linked provider we store the provider name, your unique
+          account ID at that provider, the email and username returned by the
+          provider, and an encrypted access token used only to keep your
+          session signed in. <strong>We never receive your provider
+          password.</strong>
+        </p>
+        <p>
+          We do <strong>not</strong> request access to your messages or DMs,
+          your contacts or friends lists, your repositories or source code,
+          your Gmail, Drive, or calendar, and we{' '}
+          <strong>never post or take actions on your behalf</strong> on any
+          provider. This data is used for authentication and account creation
+          only — it is not used for marketing and is not sold. OAuth profile
+          data is retained for the life of your account and deleted when your
+          account is deleted; see the Data Retention section below and our{' '}
+          <a href="/data-retention">Data Retention Policy</a> for details,
+          including how to request deletion.
         </p>
       </section>
 

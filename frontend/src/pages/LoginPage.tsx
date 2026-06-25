@@ -163,6 +163,14 @@ export const LoginPage: React.FC = () => {
           </button>
         </div>
 
+        <p className="oauth-privacy-notice">
+          When you sign in with Discord, GitHub, or Google, we receive your
+          email address, username, and account ID for authentication only — we
+          never see your password or access your messages, contacts, or
+          repositories. See our{' '}
+          <Link to="/privacy#third-party">Privacy Policy</Link> for details.
+        </p>
+
         <div className="login-footer">
           <p>
             Don&apos;t have an account? <Link to="/register">Sign up</Link>
