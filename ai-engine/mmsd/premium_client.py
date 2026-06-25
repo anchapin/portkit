@@ -18,7 +18,7 @@ import re
 import time
 import logging
 from typing import Optional
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 import httpx
 
@@ -40,6 +40,10 @@ class ConversionResult:
     tier: str = "premium"  # or "standard"
     latency_ms: int = 0
     error: str = ""
+    has_hallucination: bool = False
+    hallucinated_apis: list[str] = field(default_factory=list)
+    hallucination_rate: float = 0.0
+    hallucination_signal: str = ""
 
 
 # ── Few-shot examples (curated from validated synthesis pairs) ───────────────
@@ -360,6 +364,39 @@ world.beforeEvents.itemUseOn.subscribe((event) => {
 
 # ── System prompt ────────────────────────────────────────────────────────────
 
+# Hallucination-prevention constraint injected into every prompt (issue #1678)
+ALLOWLIST_CONSTRAINT = """
+## API ALLOWLIST CONSTRAINT (CRITICAL — issue #1678)
+
+You MUST only use Bedrock Script API methods from `@minecraft/server`.
+The following are VALID and SAFE to use:
+- world, system, player, players, dimension (globals)
+- world.afterEvents / world.beforeEvents (WorldAfterEvents / WorldBeforeEvents)
+- player.afterEvents / player.beforeEvents (PlayerAfterEvents / PlayerBeforeEvents)
+- entity.afterEvents / entity.beforeEvents (EntityAfterEvents / EntityBeforeEvents)
+- system.runInterval / system.runTimeout / system.run (SystemEvents)
+- world.getDimension(), dimension.spawnEntity(), player.teleport()
+- player.sendMessage(), player.getComponent(), player.addCooldown(), player.addTag()
+- world.playSound(), world.getBlock(), world.setDynamicProperty()
+- entity.kill(), entity.getEntities(), entity.getEntitiesWithTag()
+- Block, BlockPermutation, BlockState, ItemStack, Entity, Player, Container
+- .subscribe() for event listeners (NOT .register())
+
+**NEVER generate any of the following — they do NOT exist in Bedrock:**
+- ServerPlayerAPI, ServerPlayer, PlayerAPI, WorldEvent, BlockEntityAPI
+- EntityPlayerAPI, WorldAPI, modEventBus
+- require('@minecraft/server') — use ES6 import instead
+- registerMod(), defineMod() — use manifest.json instead
+- .createLightningBolt(), .spawnLightning(), .registerEvent()
+- .registerServerEvent(), .onServerStart(), .onServerStop()
+- event.level.*, server.getWorld(), getServer(), Server.getInstance()
+- world.setBlock(...getPosition()), getTileEntity().getInventory()
+
+When in doubt, DO NOT guess. If a Java API has no clear Bedrock equivalent,
+explain that limitation rather than fabricating an API.
+"""
+
+
 SYSTEM_PROMPT = """You are PortKit, an expert at converting Minecraft Java Edition Forge mods to Bedrock Edition Add-ons.
 
 Given a mod description and Java source code, you must:
@@ -494,6 +531,14 @@ class PortKitPremium:
 
             result = self._call_model(model_name, instruction, java_source)
             if result.success:
+                # Issue #1678: if hallucination detected, try next model
+                if result.has_hallucination:
+                    logger.warning(
+                        f"Model {model_name} hallucinated: {result.hallucinated_apis}. "
+                        f"Trying next model..."
+                    )
+                    last_error = f"HALLUCINATION: {result.hallucinated_apis}"
+                    continue
                 return result
             last_error = result.error
             logger.warning(f"Model {model_name} failed: {result.error}")
@@ -587,7 +632,8 @@ class PortKitPremium:
 
     def _build_messages(self, instruction: str, java_source: str) -> list[dict]:
         """Build the message payload with system prompt + few-shot examples."""
-        messages = [{"role": "system", "content": SYSTEM_PROMPT}]
+        full_system = SYSTEM_PROMPT + ALLOWLIST_CONSTRAINT
+        messages = [{"role": "system", "content": full_system}]
 
         # Add few-shot examples
         for example in FEW_SHOT_EXAMPLES:
@@ -607,6 +653,78 @@ class PortKitPremium:
         )
 
         return messages
+
+    def _validate_hallucinations(self, script: str) -> tuple[bool, list[str], float, str]:
+        """
+        Validate bedrock script for hallucinations using the forbidden API patterns.
+
+        Returns (has_hallucination, hallucinated_apis, hallucination_rate, signal).
+        Uses lazy import to avoid circular dependency.
+        """
+        if not script:
+            return False, [], 0.0, ""
+
+        hallucinated_apis: list[str] = []
+
+        # Top hallucinated API patterns from issue #1678 / hallucination_catalog.py
+        forbidden_patterns = [
+            (r"\bServerPlayerAPI\b", "ServerPlayerAPI"),
+            (r"\bServerPlayer\b", "ServerPlayer"),
+            (r"\bPlayerAPI\b", "PlayerAPI"),
+            (r"\bWorldEvent\b", "WorldEvent"),
+            (r"\bmodEventBus\b", "modEventBus"),
+            (r"\bBlockEntityAPI\b", "BlockEntityAPI"),
+            (r"\bEntityPlayerAPI\b", "EntityPlayerAPI"),
+            (r"\bWorldAPI\b", "WorldAPI"),
+            (r'require\(["\']@minecraft/server["\']\)', "require(@minecraft/server)"),
+            (r"\bregisterMod\(", "registerMod"),
+            (r"\bdefineMod\(", "defineMod"),
+            (r"\.createLightningBolt\(", "createLightningBolt"),
+            (r"\.spawnLightning\(", "spawnLightning"),
+            (r"\.registerEvent\(", "registerEvent"),
+            (r"\.registerServerEvent\(", "registerServerEvent"),
+            (r"\.onServerStart\(", "onServerStart"),
+            (r"\.onServerStop\(", "onServerStop"),
+            (r"event\.level\.", "event.level"),
+            (r"server\.getWorld\(", "server.getWorld"),
+            (r"getServer\(\)", "getServer"),
+            (r"Server\.getInstance\(\)", "Server.getInstance"),
+        ]
+
+        for pattern_str, name in forbidden_patterns:
+            pattern = re.compile(pattern_str, re.IGNORECASE)
+            if pattern.search(script):
+                hallucinated_apis.append(name)
+
+        has_hallucination = len(hallucinated_apis) > 0
+
+        # Extract valid APIs for rate calculation
+        valid_apis = []
+        valid_patterns = [
+            r"world\.afterEvents", r"world\.beforeEvents",
+            r"player\.afterEvents", r"player\.beforeEvents",
+            r"system\.run", r"dimension\.spawnEntity",
+            r"player\.sendMessage", r"player\.getComponent",
+            r"\.subscribe\(", r"world\.getDimension",
+            r"world\.playSound", r"world\.getBlock",
+        ]
+        for vp in valid_patterns:
+            if re.search(vp, script):
+                valid_apis.append(vp)
+
+        total_refs = len(hallucinated_apis) + len(valid_apis)
+        hallucination_rate = len(hallucinated_apis) / max(1, total_refs)
+
+        if has_hallucination:
+            signal = (
+                f"[HALUCINATION WARNING] Hallucinated API(s) detected: {', '.join(hallucinated_apis)}. "
+                f"These do NOT exist in Bedrock Script API. "
+                f"Use valid APIs: world.afterEvents, player.sendMessage, system.runInterval, etc."
+            )
+        else:
+            signal = ""
+
+        return has_hallucination, hallucinated_apis, hallucination_rate, signal
 
     def _parse_output(self, output: str, model_key: str, latency_ms: int) -> ConversionResult:
         """Parse model output into structured result."""
@@ -630,6 +748,9 @@ class PortKitPremium:
 
         success = bool(reasoning and (manifest or script))
 
+        # Hallucination validation (issue #1678)
+        has_halluc, hallucinated_apis, halluc_rate, halluc_signal = self._validate_hallucinations(script)
+
         return ConversionResult(
             success=success,
             reasoning=reasoning,
@@ -639,6 +760,10 @@ class PortKitPremium:
             model_used=model_key,
             tier="premium",
             latency_ms=latency_ms,
+            has_hallucination=has_halluc,
+            hallucinated_apis=hallucinated_apis,
+            hallucination_rate=halluc_rate,
+            hallucination_signal=halluc_signal,
         )
 
     def close(self):
