@@ -145,40 +145,37 @@ export const PrivacyPage: React.FC = () => {
         <p>
           <strong>OAuth Providers (Discord, GitHub, Google).</strong> If you
           choose to sign in with one of these providers instead of creating a
-          password, we receive a limited set of profile data to authenticate
-          you and create your account. We request only the minimum scopes
-          needed for sign-in:
+          password, we receive a limited set of profile data to authenticate you
+          and create your account. We request only the minimum scopes needed for
+          sign-in:
         </p>
         <ul>
           <li>
-            <strong>Discord</strong> ({' '}
-            <code>identify</code>, <code>email</code> scopes) — we receive your
-            Discord account ID, username, and email address.
-          </li>
-          <li>
-            <strong>GitHub</strong> ({' '}
-            <code>read:user</code>, <code>user:email</code> scopes) — we receive
-            your GitHub account ID, username (login), and primary verified
-            email address.
-          </li>
-          <li>
-            <strong>Google</strong> ({' '}
-            <code>openid</code>, <code>email</code>, <code>profile</code>{' '}
-            scopes) — we receive your Google account ID, name, and email
+            <strong>Discord</strong> ( <code>identify</code>, <code>email</code>{' '}
+            scopes) — we receive your Discord account ID, username, and email
             address.
+          </li>
+          <li>
+            <strong>GitHub</strong> ( <code>read:user</code>,{' '}
+            <code>user:email</code> scopes) — we receive your GitHub account ID,
+            username (login), and primary verified email address.
+          </li>
+          <li>
+            <strong>Google</strong> ( <code>openid</code>, <code>email</code>,{' '}
+            <code>profile</code> scopes) — we receive your Google account ID,
+            name, and email address.
           </li>
         </ul>
         <p>
           For each linked provider we store the provider name, your unique
           account ID at that provider, the email and username returned by the
-          provider, and an encrypted access token used only to keep your
-          session signed in. <strong>We never receive your provider
-          password.</strong>
+          provider, and an encrypted access token used only to keep your session
+          signed in. <strong>We never receive your provider password.</strong>
         </p>
         <p>
           We do <strong>not</strong> request access to your messages or DMs,
-          your contacts or friends lists, your repositories or source code,
-          your Gmail, Drive, or calendar, and we{' '}
+          your contacts or friends lists, your repositories or source code, your
+          Gmail, Drive, or calendar, and we{' '}
           <strong>never post or take actions on your behalf</strong> on any
           provider. This data is used for authentication and account creation
           only — it is not used for marketing and is not sold. OAuth profile
