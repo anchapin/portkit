@@ -330,9 +330,10 @@ jobs:
         env:
           OPENAI_API_KEY: test_key
           ANTHROPIC_API_KEY: test_key
+          MMSD_DATASET_PATH: ai-engine/mmsd/data/processed/synthesis_pairs.jsonl
         run: |
           cd ai-engine
-          python -m pytest tests/ \
+          python -m pytest tests/ eval/mmsd_category_tests.py \
             -n 2 --dist=loadfile \
             -q --tb=short --timeout=120 \
             -m 'not slow and not ai and not real_service and not docker and not e2e' \
