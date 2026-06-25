@@ -1,119 +1,92 @@
 """
-Asset Converter Agent - Base module.
+Asset converter base — ToolFunction wrapper and utility functions.
 
-Contains the main AssetConverterAgent class and core configuration.
+Extracted from __init__.py to resolve the monolith pattern (issue #1740).
 """
 
-import logging
-from typing import Dict, List, Tuple
-
-logger = logging.getLogger(__name__)
+from typing import Dict
 
 
-class AssetConverterAgent:
-    """
-    Asset Converter Agent responsible for converting visual and audio assets
-    to Bedrock-compatible formats as specified in PRD Feature 2.
-    """
+class ToolFunction:
+    """Wrapper to make standalone functions compatible with LangChain tool interface (.run())"""
 
-    _instance = None
+    def __init__(self, func):
+        self._func = func
 
-    def __init__(self):
-        from models.smart_assumptions import SmartAssumptionEngine
+    @property
+    def func(self):
+        """Access the wrapped function directly (for tests using .func())."""
+        return self._func
 
-        self.smart_assumption_engine = SmartAssumptionEngine()
+    def run(self, **kwargs):
+        """Call the wrapped function with flattened kwargs."""
+        return self._invoke_with_kwargs(kwargs)
 
-        # Supported asset formats
-        self.texture_formats = {
-            "input": [".png", ".jpg", ".jpeg", ".tga", ".bmp"],
-            "output": ".png",  # Bedrock uses PNG
-        }
+    def invoke(self, input, config=None, **kwargs):  # noqa: A002 - LangChain signature
+        """LangChain BaseTool-compatible entry point."""
+        if isinstance(input, dict):
+            return self._invoke_with_kwargs(input)
+        return self._func(input)
 
-        self.model_formats = {
-            "input": [".obj", ".fbx", ".json"],  # Java mod formats
-            "output": ".geo.json",  # Bedrock geometry format
-        }
+    async def ainvoke(self, input, config=None, **kwargs):  # noqa: A002
+        """Async LangChain entry point — delegates to the sync `invoke`."""
+        return self.invoke(input, config=config, **kwargs)
 
-        self.audio_formats = {
-            "input": [".ogg", ".wav", ".mp3"],
-            "output": ".ogg",  # Bedrock prefers OGG
-        }
+    def _invoke_with_kwargs(self, kwargs):
+        if len(kwargs) == 1:
+            key = list(kwargs.keys())[0]
+            val = kwargs[key]
+            if key in (
+                "asset_data",
+                "texture_data",
+                "model_data",
+                "audio_data",
+                "jar_path",
+                "atlas_path",
+                "model_data",
+                "audio_list",
+                "jar_data",
+                "path_data",
+                "texture_data",
+                "validation_data",
+                "quality_data",
+                "mcaddon_path",
+                "test_data",
+                "compatibility_data",
+                "performance_data",
+                "report_data",
+                "recipe_json",
+                "recipes_json",
+                "item_mapping_json",
+                "texture_path",
+            ):
+                return self._func(val)
+        return self._func(**kwargs)
 
-        # Bedrock asset constraints
-        self.texture_constraints = {
-            "max_resolution": 1024,  # Max texture size for performance
-            "must_be_power_of_2": True,
-            "supported_channels": ["rgb", "rgba"],
-        }
 
-        self.model_constraints = {
-            "max_vertices": 3000,  # Bedrock model complexity limit
-            "max_textures": 8,
-            "supported_bones": 60,  # Max bones for animated models
-        }
+def _assess_conversion_complexity(analysis: Dict) -> str:
+    """Assess the overall conversion complexity"""
+    total_issues = (
+        len(analysis.get("textures", {}).get("issues", []))
+        + len(analysis.get("models", {}).get("issues", []))
+        + len(analysis.get("audio", {}).get("issues", []))
+    )
+    total_assets = (
+        analysis.get("textures", {}).get("count", 0)
+        + analysis.get("models", {}).get("count", 0)
+        + analysis.get("audio", {}).get("count", 0)
+    )
 
-        self.audio_constraints = {
-            "max_file_size_mb": 10,
-            "sample_rates": [22050, 44100],
-            "max_duration_seconds": 300,
-        }
+    if total_assets == 0:
+        return "none"
 
-        # Caching for performance optimization
-        self._texture_cache = {}
-        self._conversion_cache = {}
+    issue_ratio = total_issues / total_assets if total_assets > 0 else 0
 
-    @classmethod
-    def get_instance(cls):
-        """Get singleton instance of AssetConverterAgent"""
-        if cls._instance is None:
-            cls._instance = cls()
-        return cls._instance
-
-    def get_tools(self) -> List:
-        """Get tools available to this agent"""
-        from agents.asset_converter.tools import (
-            analyze_assets_tool,
-            convert_textures_tool,
-            convert_models_tool,
-            convert_audio_tool,
-            validate_bedrock_assets_tool,
-            extract_jar_textures_tool,
-            convert_java_texture_path_tool,
-            validate_texture_tool,
-            generate_fallback_texture_tool,
-        )
-        return [
-            analyze_assets_tool,
-            convert_textures_tool,
-            convert_models_tool,
-            convert_audio_tool,
-            validate_bedrock_assets_tool,
-            # New tools for Issue #650 - JAR Texture Extraction
-            extract_jar_textures_tool,
-            convert_java_texture_path_tool,
-            validate_texture_tool,
-            generate_fallback_texture_tool,
-        ]
-
-    def clear_cache(self):
-        """Clear the conversion cache"""
-        self._conversion_cache.clear()
-        logger.info("Cleared asset conversion cache")
-
-    # Utility functions
-    def _is_power_of_2(self, n: int) -> bool:
-        return n > 0 and (n & (n - 1)) == 0
-
-    def _next_power_of_2(self, n: int) -> int:
-        power = 1
-        while power < n:
-            power *= 2
-        return power
-
-    def _previous_power_of_2(self, n: int) -> int:
-        if n <= 0:
-            return 1
-        power = 1
-        while (power * 2) <= n:
-            power *= 2
-        return power
+    if total_issues == 0 and total_assets >= 3:
+        return "moderate"
+    if issue_ratio < 0.3:
+        return "simple"
+    elif issue_ratio <= 0.65:
+        return "moderate"
+    else:
+        return "complex"

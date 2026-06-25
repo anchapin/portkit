@@ -43,22 +43,30 @@ def _parse_blockstate(agent, blockstate_data: Dict) -> Dict:
     return parse_blockstate(blockstate_data)
 
 
-def _resolve_parent_model(agent, model_data: Dict, model_cache: Dict, namespace: str = None) -> Tuple[List[Dict], List[str]]:
+def _resolve_parent_model(
+    agent, model_data: Dict, model_cache: Dict, namespace: str = None
+) -> Tuple[List[Dict], List[str]]:
     """Resolve parent model inheritance."""
     return resolve_parent_model(model_data, model_cache, namespace)
 
 
-def _get_model_elements_with_inheritance(agent, model_json: Dict, all_models: Dict, namespace: str = None) -> Tuple[List[Dict], List[str]]:
+def _get_model_elements_with_inheritance(
+    agent, model_json: Dict, all_models: Dict, namespace: str = None
+) -> Tuple[List[Dict], List[str]]:
     """Get model elements with inheritance resolved."""
     return get_model_elements_with_inheritance(model_json, all_models, namespace)
 
 
-def _convert_blockstate(agent, blockstate_path: str, model_output_dir: str, all_models: Dict, namespace: str = None) -> Dict:
+def _convert_blockstate(
+    agent, blockstate_path: str, model_output_dir: str, all_models: Dict, namespace: str = None
+) -> Dict:
     """Convert a blockstate file to Bedrock format."""
     return convert_blockstate(agent, blockstate_path, model_output_dir, all_models, namespace)
 
 
-def convert_blockstate(agent, blockstate_path: str, model_output_dir: str, all_models: Dict, namespace: str = None) -> Dict:
+def convert_blockstate(
+    agent, blockstate_path: str, model_output_dir: str, all_models: Dict, namespace: str = None
+) -> Dict:
     """Convert a blockstate file (standalone function)."""
     return convert_blockstate(agent, blockstate_path, model_output_dir, all_models, namespace)
 
@@ -71,5 +79,10 @@ def parse_blockstate(blockstate_data: Dict) -> Dict:
 def convert_models(model_list: str, output_path: str) -> str:
     """Convert models to Bedrock format (standalone function)."""
     from agents.asset_converter.base import AssetConverterAgent
+
     agent = AssetConverterAgent.get_instance()
-    return agent.convert_models_tool(model_list) if hasattr(agent, 'convert_models_tool') else str({"success": False, "error": "Model conversion not available"})
+    return (
+        agent.convert_models_tool(model_list)
+        if hasattr(agent, "convert_models_tool")
+        else str({"success": False, "error": "Model conversion not available"})
+    )

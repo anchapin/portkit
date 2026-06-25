@@ -2,17 +2,12 @@
 PNG format, dimensions, existence checks.
 """
 
-import json
 import re
 import struct
-import zipfile
-from pathlib import Path
 from typing import Any, Dict, List, Set
 
 
-def validate_png_dimensions(
-    zipf, texture_file: str
-) -> Dict[str, Any]:
+def validate_png_dimensions(zipf, texture_file: str) -> Dict[str, Any]:
     """Validate a PNG texture file's dimensions and format."""
     errors = []
     warnings = []
@@ -39,9 +34,7 @@ def is_power_of_2(n: int) -> bool:
 
 def validate_texture_dimensions(width: int, height: int) -> bool:
     """Check if dimensions are power of 2 or standard sizes."""
-    return (is_power_of_2(width) and is_power_of_2(height)) or (
-        width <= 512 and height <= 512
-    )
+    return (is_power_of_2(width) and is_power_of_2(height)) or (width <= 512 and height <= 512)
 
 
 def extract_texture_references(zipf) -> List[str]:
@@ -63,9 +56,7 @@ def extract_texture_references(zipf) -> List[str]:
     return list(texture_refs)
 
 
-def validate_textures(
-    zipf, namelist: List[str]
-) -> Dict[str, Any]:
+def validate_textures(zipf, namelist: List[str]) -> Dict[str, Any]:
     """Validate all textures in a ZIP archive."""
     checks = 0
     passed = 0
@@ -98,9 +89,7 @@ def validate_textures(
     return {"checks": checks, "passed": passed, "errors": errors, "warnings": warnings}
 
 
-def validate_texture_references(
-    zipf, namelist: List[str]
-) -> Dict[str, Any]:
+def validate_texture_references(zipf, namelist: List[str]) -> Dict[str, Any]:
     """Validate that texture references in JSON files match actual files."""
     checks = 0
     passed = 0

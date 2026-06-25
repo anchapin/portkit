@@ -16,6 +16,7 @@ try:
         convert_furnace_recipe,
         resolve_recipe_tags,
     )
+
     HAS_RECIPE_SUPPORT = True
 except ImportError:
     HAS_RECIPE_SUPPORT = False
@@ -23,6 +24,7 @@ except ImportError:
 
 # If recipe support is not available, provide stub functions
 if not HAS_RECIPE_SUPPORT:
+
     def convert_shaped_recipe(recipe_data: Dict) -> Dict:
         """Convert a shaped recipe (stub when recipe package unavailable)."""
         return {"success": False, "error": "Recipe package not available"}

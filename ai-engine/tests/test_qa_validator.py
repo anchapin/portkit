@@ -164,9 +164,9 @@ class TestQAValidatorAgent:
         result = agent.assess_performance_metrics_tool.invoke({"performance_data": input_data})
         result_data = json.loads(result)
 
-    def test_generate_qa_report_tool(self, agent):
+    def test_generate_qa_report_tool(self, agent, mock_mcaddon):
         """Test generate_qa_report_tool"""
-        input_data = json.dumps({"mod_info": {"name": "Test Mod"}, "mcaddon_path": "test.mcaddon"})
+        input_data = json.dumps({"mod_info": {"name": "Test Mod"}, "mcaddon_path": mock_mcaddon})
         result = agent.generate_qa_report_tool.invoke({"report_data": input_data})
         result_data = json.loads(result)
         assert result_data.get("success") is True

@@ -9,16 +9,14 @@ Submodules:
 - furnace: FurnaceRecipeConverter (smelting, blasting, smoking, campfire, stonecutter, smithing)
 - custom_types: CustomTypesConverter (Farmer's Delight, Create, Forge custom recipes)
 - tag_resolver: FORGE_TAG_MAPPINGS and JAVA_TO_BEDROCK_ITEM_MAP
+- tools: Input models and typed BaseTool subclasses for LangChain tools
 
 Public API re-exports RecipeConverterAgent to maintain backwards compatibility.
 """
 
 import json
 import logging
-from typing import ClassVar, Dict, List
-
-from langchain_core.tools import BaseTool
-from pydantic import BaseModel, ConfigDict, Field
+from typing import Dict, List
 
 from agents.recipe.tag_resolver import (
     FORGE_TAG_MAPPINGS,
@@ -160,10 +158,6 @@ class RecipeConverterAgent:
                 secondary_outputs = []
                 for r in result[1:]:
                     if isinstance(r, dict):
-                        # Each secondary may carry a ``chance`` probability weight
-                        # (Create crushing/milling/splashing/compacting result-object
-                        # format). Preserved here so the converter can fan it out via
-                        # the ``portkit:output_chance`` annotation (issue #1770).
                         secondary = {
                             "item": r.get("item", r.get("id", "")),
                             "count": r.get("count", 1),
@@ -357,13 +351,7 @@ class RecipeConverterAgent:
 
     @staticmethod
     def _normalize_ie_input(recipe_data: Dict) -> list:
-        """Normalize an ImmersiveEngineering ``input`` field into a list of ingredients.
-
-        IE recipes use a single ``input`` key (an ingredient dict, a tag string,
-        or a list of alternative ingredients) rather than the vanilla
-        ``ingredient``/``ingredients`` keys. This helper wraps it into the list
-        shape the rest of the converter pipeline expects.
-        """
+        """Normalize an ImmersiveEngineering ``input`` field into a list of ingredients."""
         raw = recipe_data.get("input")
         if raw is None:
             return []
@@ -373,13 +361,7 @@ class RecipeConverterAgent:
 
     @staticmethod
     def _normalize_ie_secondaries(recipe_data: Dict) -> list:
-        """Normalize an ImmersiveEngineering ``secondaries`` array.
-
-        IE ``secondaries`` entries look like ``{"chance": 0.1, "output": {...}}``;
-        downstream converters only care about the ``output`` item/count, so each
-        entry is flattened to ``{"item", "count", "chance"}``. Returns an empty
-        list when there are no secondaries.
-        """
+        """Normalize an ImmersiveEngineering ``secondaries`` array."""
         secondaries = recipe_data.get("secondaries") or []
         normalized = []
         for entry in secondaries:
@@ -846,133 +828,13 @@ class RecipeConverterAgent:
             return json.dumps({"valid": False, "issues": [str(e)]}, indent=2)
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Typed args_schema models — one per LangChain tool wrapper
-#
-# Phase 8 A5 (refs #1201). Each schema preserves the legacy single-string
-# JSON shape so chat models and existing call sites continue to invoke
-# ``RecipeConverterAgent.<tool_name>.invoke({...})`` (or the legacy
-# ``.run(<json_string>)``) without changes. ``extra="forbid"`` makes
-# hallucinated extra fields fail loud at validation, and ``min_length=1``
-# rejects empty strings.
-# ─────────────────────────────────────────────────────────────────────────────
-
-
-class _ConvertRecipeInput(BaseModel):
-    """Args for :class:`_ConvertRecipeTool`."""
-
-    model_config = ConfigDict(extra="forbid")
-    recipe_json: str = Field(
-        min_length=1,
-        description=(
-            "JSON string describing a single Java recipe to convert. May contain "
-            "an optional ``recipe_data``, ``namespace``, and ``recipe_name``."
-        ),
-    )
-
-
-class _ConvertRecipesBatchInput(BaseModel):
-    """Args for :class:`_ConvertRecipesBatchTool`."""
-
-    model_config = ConfigDict(extra="forbid")
-    recipes_json: str = Field(
-        min_length=1,
-        description="JSON-encoded list of Java recipes to convert in a batch.",
-    )
-
-
-class _MapItemIdInput(BaseModel):
-    """Args for :class:`_MapItemIdTool`."""
-
-    model_config = ConfigDict(extra="forbid")
-    item_mapping_json: str = Field(
-        min_length=1,
-        description=(
-            "JSON-encoded list of {java, bedrock} mappings, or dict of "
-            "{java_id: bedrock_id} mappings, to register on the converter."
-        ),
-    )
-
-
-class _ValidateRecipeInput(BaseModel):
-    """Args for :class:`_ValidateRecipeTool`."""
-
-    model_config = ConfigDict(extra="forbid")
-    recipe_json: str = Field(
-        min_length=1,
-        description="JSON string describing the Bedrock recipe to validate.",
-    )
-
-
-# ─────────────────────────────────────────────────────────────────────────────
-# Typed BaseTool subclasses — replace the previous @tool @staticmethod wrappers
-# ─────────────────────────────────────────────────────────────────────────────
-
-
-class _BaseRecipeTool(BaseTool):
-    """Common scaffolding for Recipe Converter typed tool wrappers."""
-
-    model_config = ConfigDict(arbitrary_types_allowed=True)
-
-
-class _ConvertRecipeTool(_BaseRecipeTool):
-    name: str = "convert_recipe_tool"
-    description: str = (
-        "Convert a single Java recipe to Bedrock JSON. "
-        "Args: recipe_json (str, required) — JSON describing the Java recipe, "
-        "optionally wrapped in {recipe_data, namespace, recipe_name}."
-    )
-    args_schema: ClassVar[type[BaseModel]] = _ConvertRecipeInput
-
-    def _run(self, recipe_json: str) -> str:  # type: ignore[override]
-        return RecipeConverterAgent._convert_recipe(recipe_json)
-
-
-class _ConvertRecipesBatchTool(_BaseRecipeTool):
-    name: str = "convert_recipes_batch_tool"
-    description: str = (
-        "Convert a batch of Java recipes to Bedrock JSON. "
-        "Args: recipes_json (str, required) — JSON list of Java recipes."
-    )
-    args_schema: ClassVar[type[BaseModel]] = _ConvertRecipesBatchInput
-
-    def _run(self, recipes_json: str) -> str:  # type: ignore[override]
-        return RecipeConverterAgent._convert_recipes_batch(recipes_json)
-
-
-class _MapItemIdTool(_BaseRecipeTool):
-    name: str = "map_item_id_tool"
-    description: str = (
-        "Register custom Java→Bedrock item-ID mappings on the converter. "
-        "Args: item_mapping_json (str, required) — JSON list or dict of mappings."
-    )
-    args_schema: ClassVar[type[BaseModel]] = _MapItemIdInput
-
-    def _run(self, item_mapping_json: str) -> str:  # type: ignore[override]
-        return RecipeConverterAgent._map_item_id(item_mapping_json)
-
-
-class _ValidateRecipeTool(_BaseRecipeTool):
-    name: str = "validate_recipe_tool"
-    description: str = (
-        "Validate a Bedrock recipe against expected structure. "
-        "Args: recipe_json (str, required) — JSON of the Bedrock recipe."
-    )
-    args_schema: ClassVar[type[BaseModel]] = _ValidateRecipeInput
-
-    def _run(self, recipe_json: str) -> str:  # type: ignore[override]
-        return RecipeConverterAgent._validate_recipe(recipe_json)
-
-
-# ─────────────────────────────────────────────────────────────────────────────
-# Module-level tool instances — preserved as class attributes on
-# RecipeConverterAgent so the existing access patterns
-# (``RecipeConverterAgent.<tool_name>`` and ``agent.<tool_name>``) both
-# continue to work unchanged for call sites and tests, including the
-# legacy ``tool_func.run(<json_string>)`` shape exercised by
-# ``tests/test_recipe_converter.py``.
-# ─────────────────────────────────────────────────────────────────────────────
-
+# Attach tool instances to RecipeConverterAgent after class definition
+from .tools import (
+    _ConvertRecipeTool,
+    _ConvertRecipesBatchTool,
+    _MapItemIdTool,
+    _ValidateRecipeTool,
+)
 
 RecipeConverterAgent.convert_recipe_tool = _ConvertRecipeTool()
 RecipeConverterAgent.convert_recipes_batch_tool = _ConvertRecipesBatchTool()

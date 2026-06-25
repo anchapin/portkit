@@ -3,7 +3,6 @@ Block/item/entity/sound/model schema checks.
 """
 
 import json
-import zipfile
 from pathlib import Path
 from typing import Any, Dict, List
 
@@ -192,9 +191,7 @@ def validate_block_definition(block: dict, path: str) -> Dict[str, Any]:
             if isinstance(components, dict):
                 passed += 1
 
-                invalid_comps = [
-                    c for c in components.keys() if c not in VALID_BLOCK_COMPONENTS
-                ]
+                invalid_comps = [c for c in components.keys() if c not in VALID_BLOCK_COMPONENTS]
                 if invalid_comps:
                     warnings.append(
                         f"{path}: Unknown component(s): {invalid_comps[:3]} - may not work in Bedrock"
@@ -323,9 +320,7 @@ def validate_entity_definition(entity: dict, path: str) -> Dict[str, Any]:
             checks += 1
 
             if isinstance(components, dict):
-                invalid_comps = [
-                    c for c in components.keys() if c not in VALID_ENTITY_COMPONENTS
-                ]
+                invalid_comps = [c for c in components.keys() if c not in VALID_ENTITY_COMPONENTS]
 
                 if invalid_comps:
                     warnings.append(
@@ -447,9 +442,7 @@ def validate_entities_in_archive(zipf, namelist: List[str]) -> Dict[str, Any]:
     entity_files = [
         name
         for name in namelist
-        if name.startswith("behavior_packs/")
-        and "/entities/" in name
-        and name.endswith(".json")
+        if name.startswith("behavior_packs/") and "/entities/" in name and name.endswith(".json")
     ]
 
     for entity_file in entity_files:
@@ -478,9 +471,7 @@ def validate_sounds_in_archive(zipf, namelist: List[str]) -> Dict[str, Any]:
     warnings = []
 
     sound_files = [
-        name
-        for name in namelist
-        if any(name.lower().endswith(ext) for ext in VALID_SOUND_FORMATS)
+        name for name in namelist if any(name.lower().endswith(ext) for ext in VALID_SOUND_FORMATS)
     ]
 
     for sound_file in sound_files:
