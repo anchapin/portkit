@@ -597,7 +597,7 @@ async def _process_with_langgraph_pipeline(
 ) -> None:
     """Process conversion using the LangGraph pipeline."""
     try:
-        from orchestration.langgraph_pipeline import ConversionPipeline
+        from orchestration.langgraph import ConversionPipeline
 
         logger.info(f"Initializing LangGraph pipeline for job {job_id}")
 
