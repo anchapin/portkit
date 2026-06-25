@@ -30,4 +30,6 @@ class QAContext(BaseModel):
     refinement_enabled: bool = True
     max_iterations: int = 3
     refinement_completed: bool = False
-    strict_api: bool = Field(default=False, description="Enable strict API validation and context injection")
+    strict_api: bool = Field(
+        default=False, description="Enable strict API validation and context injection"
+    )

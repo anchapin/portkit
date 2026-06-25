@@ -31,6 +31,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class HiddenStateShape:
     """Shape information for hidden states"""
+
     batch_size: int
     seq_len: int
     hidden_dim: int
@@ -40,6 +41,7 @@ class HiddenStateShape:
 @dataclass
 class ActivationSlice:
     """A slice of model activations at a specific layer"""
+
     layer_idx: int
     hidden_states: np.ndarray
     position: int = 0  # Token position for position-wise operations
@@ -47,6 +49,7 @@ class ActivationSlice:
 
 class InferenceBackend(str):
     """Supported inference backends"""
+
     OPENAI_COMPATIBLE = "openai_compatible"  # Standard API without hidden states
     VLLM = "vllm"  # vLLM with activation extraction
     SGLANG = "sglang"  # SGLang with intervention hooks
@@ -57,6 +60,7 @@ class InferenceBackend(str):
 @dataclass
 class InterceptorConfig:
     """Configuration for the inference interceptor"""
+
     backend: InferenceBackend = InferenceBackend.OPENAI_COMPATIBLE
     endpoint_url: Optional[str] = None
     api_key: Optional[str] = None
@@ -160,7 +164,9 @@ class HiddenStateInterceptor:
 
         if not activations:
             # Fallback to prompt steering
-            return await self._generate_with_prompt_steering(messages, steering_vector, **generation_kwargs)
+            return await self._generate_with_prompt_steering(
+                messages, steering_vector, **generation_kwargs
+            )
 
         # Apply steering hooks
         modified_activations = []
@@ -174,7 +180,9 @@ class HiddenStateInterceptor:
 
         # Generate with modified activations
         # This requires backend support - fall back to prompt steering if not available
-        return await self._generate_with_prompt_steering(messages, steering_vector, **generation_kwargs)
+        return await self._generate_with_prompt_steering(
+            messages, steering_vector, **generation_kwargs
+        )
 
     async def _generate_without_steering(
         self,
@@ -234,23 +242,27 @@ class HiddenStateInterceptor:
         modified = []
         for msg in messages:
             if msg.get("role") == "system":
-                modified.append({
-                    "role": "system",
-                    "content": msg.get("content", "") + injection,
-                })
+                modified.append(
+                    {
+                        "role": "system",
+                        "content": msg.get("content", "") + injection,
+                    }
+                )
             else:
                 modified.append(msg)
 
         if not any(m.get("role") == "system" for m in modified):
             # Add system message if none exists
-            modified.insert(0, {
-                "role": "system",
-                "content": (
-                    "You are a Bedrock Minecraft add-on code generator. "
-                    "Output ONLY Bedrock Scripting API code, NEVER Java Forge code."
-                    + injection
-                ),
-            })
+            modified.insert(
+                0,
+                {
+                    "role": "system",
+                    "content": (
+                        "You are a Bedrock Minecraft add-on code generator. "
+                        "Output ONLY Bedrock Scripting API code, NEVER Java Forge code." + injection
+                    ),
+                },
+            )
 
         return modified
 
@@ -314,10 +326,12 @@ class HiddenStateInterceptor:
             for layer_idx, hidden in enumerate(hidden_states):
                 # Take last token's hidden state
                 last_token_hidden = hidden[:, -1, :].numpy()
-                slices.append(ActivationSlice(
-                    layer_idx=layer_idx,
-                    hidden_states=last_token_hidden,
-                ))
+                slices.append(
+                    ActivationSlice(
+                        layer_idx=layer_idx,
+                        hidden_states=last_token_hidden,
+                    )
+                )
 
             return slices
 
@@ -347,17 +361,20 @@ class HiddenStateInterceptor:
                         "return_hidden_states": True,
                     },
                     headers={"Authorization": f"Bearer {self.config.api_key}"}
-                    if self.config.api_key else {},
+                    if self.config.api_key
+                    else {},
                 )
                 response.raise_for_status()
                 data = response.json()
 
                 slices = []
                 for layer_data in data.get("hidden_states", []):
-                    slices.append(ActivationSlice(
-                        layer_idx=layer_data["layer"],
-                        hidden_states=np.array(layer_data["states"]),
-                    ))
+                    slices.append(
+                        ActivationSlice(
+                            layer_idx=layer_data["layer"],
+                            hidden_states=np.array(layer_data["states"]),
+                        )
+                    )
 
                 return slices
 
@@ -479,7 +496,6 @@ class PromptSteeringEngine:
             2001: "extends Block patterns",
             2002: "extends Entity patterns",
             3000: "BlockPos constructor calls",
-
             # Bedrock patterns (encourage)
             4000: "JavaScript syntax and patterns",
             4001: "world.afterEvents API",

@@ -92,9 +92,7 @@ class CurseForgeManifestParser(ModPortalParserBase):
         self.require_fields(self.manifest, ["manifestType"])
 
         if self.manifest.get("manifestType") != "minecraftModpack":
-            raise ValueError(
-                f"Unsupported manifest type: {self.manifest.get('manifestType')}"
-            )
+            raise ValueError(f"Unsupported manifest type: {self.manifest.get('manifestType')}")
 
         # Check manifest version
         self.require_supported_version(

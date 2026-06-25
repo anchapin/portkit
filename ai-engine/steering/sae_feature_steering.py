@@ -28,6 +28,7 @@ logger = logging.getLogger(__name__)
 
 class SteeringTarget(Enum):
     """Targets for SAE-based steering."""
+
     JAVA_FORGE_API = "java_forge_api"
     JAVA_CLASS_STRUCTURE = "java_class_structure"
     JAVA_IMPORTS = "java_imports"
@@ -38,6 +39,7 @@ class SteeringTarget(Enum):
 @dataclass
 class FeatureVector:
     """Represents an SAE feature with its activation strength."""
+
     feature_id: str
     activation: float
     steering_direction: float  # positive = enhance, negative = suppress
@@ -48,6 +50,7 @@ class FeatureVector:
 @dataclass
 class JavaIdiomFeatures:
     """Discovered features corresponding to Java Edition patterns."""
+
     forge_api_features: List[FeatureVector] = field(default_factory=list)
     class_structure_features: List[FeatureVector] = field(default_factory=list)
     import_features: List[FeatureVector] = field(default_factory=list)
@@ -73,6 +76,7 @@ class JavaIdiomFeatures:
 @dataclass
 class SteeringConfig:
     """Configuration for SAE-based steering."""
+
     steering_strength: float = 1.0  # 0.0 to 2.0, 1.0 = standard
     suppression_threshold: float = 0.5  # minimum activation to apply steering
     enable_boost: bool = False  # whether to boost Bedrock features
@@ -153,7 +157,9 @@ class SAEFeatureSteerer:
 
             self.features = self._deserialize_features(data)
             self._is_initialized = True
-            logger.info(f"Loaded {len(self.features.get_all_features())} features from {features_path}")
+            logger.info(
+                f"Loaded {len(self.features.get_all_features())} features from {features_path}"
+            )
             return True
         except Exception as e:
             logger.error(f"Failed to load features from {features_path}: {e}")
@@ -163,8 +169,12 @@ class SAEFeatureSteerer:
         """Deserialize JSON data to JavaIdiomFeatures."""
         features = JavaIdiomFeatures()
 
-        for category in ["forge_api_features", "class_structure_features",
-                         "import_features", "type_pattern_features"]:
+        for category in [
+            "forge_api_features",
+            "class_structure_features",
+            "import_features",
+            "type_pattern_features",
+        ]:
             if category in data:
                 features_list = []
                 for item in data[category]:
@@ -217,18 +227,16 @@ class SAEFeatureSteerer:
 
         # Step 3: Build the features object
         features = JavaIdiomFeatures(
-            forge_api_features=java_features[:top_k // 4],
-            class_structure_features=java_features[top_k // 4:top_k // 2],
-            import_features=java_features[top_k // 2:3 * top_k // 4],
-            type_pattern_features=java_features[3 * top_k // 4:top_k],
+            forge_api_features=java_features[: top_k // 4],
+            class_structure_features=java_features[top_k // 4 : top_k // 2],
+            import_features=java_features[top_k // 2 : 3 * top_k // 4],
+            type_pattern_features=java_features[3 * top_k // 4 : top_k],
         )
 
         self.features = features
         return features
 
-    def _compute_average_activations(
-        self, dataset: List[Dict[str, Any]]
-    ) -> Dict[str, List[float]]:
+    def _compute_average_activations(self, dataset: List[Dict[str, Any]]) -> Dict[str, List[float]]:
         """Compute average activation per feature across dataset."""
         feature_activations: Dict[str, List[float]] = {}
 
@@ -320,8 +328,10 @@ class SAEFeatureSteerer:
             if len(activations) < 2:
                 continue
 
-            java_activation = sum(activations[:len(java_samples)]) / max(1, len(java_samples))
-            non_java_activation = sum(activations[len(java_samples):]) / max(1, len(non_java_samples))
+            java_activation = sum(activations[: len(java_samples)]) / max(1, len(java_samples))
+            non_java_activation = sum(activations[len(java_samples) :]) / max(
+                1, len(non_java_samples)
+            )
 
             discriminability = java_activation - non_java_activation
 
@@ -377,10 +387,7 @@ class SAEFeatureSteerer:
                 # Apply suppression (negative steering direction) or boost (positive)
                 steering_effect = suppression * self._steering_strength * original
 
-                steered_activations[feature_id] = max(
-                    0.0,
-                    original + steering_effect
-                )
+                steered_activations[feature_id] = max(0.0, original + steering_effect)
 
         return steered_activations
 
@@ -423,19 +430,23 @@ class SAEFeatureSteerer:
             steering_value = suppression_vector.get(feature_id, 0.0)
 
             if steering_value < 0:
-                suppressed_features.append({
-                    "feature_id": feature_id,
-                    "original_activation": activation,
-                    "steering_effect": steering_value,
-                    "new_activation": max(0.0, activation + steering_value * activation),
-                })
+                suppressed_features.append(
+                    {
+                        "feature_id": feature_id,
+                        "original_activation": activation,
+                        "steering_effect": steering_value,
+                        "new_activation": max(0.0, activation + steering_value * activation),
+                    }
+                )
             elif steering_value > 0:
-                boosted_features.append({
-                    "feature_id": feature_id,
-                    "original_activation": activation,
-                    "steering_effect": steering_value,
-                    "new_activation": activation + steering_value * activation,
-                })
+                boosted_features.append(
+                    {
+                        "feature_id": feature_id,
+                        "original_activation": activation,
+                        "steering_effect": steering_value,
+                        "new_activation": activation + steering_value * activation,
+                    }
+                )
             else:
                 unchanged_features.append(feature_id)
 
@@ -483,8 +494,8 @@ class JavaIdiomClassifier:
         r'"format_version"\s*:\s*"',
         r'"client"\s*:\s*\{',
         r'"server"\s*:\s*\{',
-        r'\.setProperty\(',
-        r'\.execute\(\)',
+        r"\.setProperty\(",
+        r"\.execute\(\)",
     ]
 
     def __init__(self):
@@ -493,6 +504,7 @@ class JavaIdiomClassifier:
     def _compile_patterns(self):
         """Pre-compile regex patterns for performance."""
         import re
+
         self._forge_patterns = [re.compile(p) for p in self.JAVA_FORGE_PATTERNS]
         self._class_patterns = [re.compile(p) for p in self.JAVA_CLASS_PATTERNS]
         self._bedrock_patterns = [re.compile(p) for p in self.BEDROCK_IDIOM_PATTERNS]
@@ -555,8 +567,7 @@ class JavaIdiomClassifier:
         )
 
         steering_effective = (
-            java_reduction > 0 and
-            steered_classification["idiom_type"] == "bedrock"
+            java_reduction > 0 and steered_classification["idiom_type"] == "bedrock"
         )
 
         return {

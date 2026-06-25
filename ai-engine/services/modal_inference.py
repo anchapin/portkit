@@ -118,8 +118,7 @@ class PortkitInference:
         from vllm import SamplingParams
 
         prompt = self.tokenizer.apply_chat_template(
-            [{"role": "system", "content": system_prompt}]
-            + messages,
+            [{"role": "system", "content": system_prompt}] + messages,
             tokenize=False,
             add_generation_prompt=True,
         )
@@ -155,7 +154,6 @@ class PortkitInference:
             "gpu": str(GPU_CONFIG),
         }
 
-
     @modal.method()
     def chat_completions(self, body: dict) -> dict:
         """OpenAI-compatible /v1/chat/completions endpoint (reuses loaded model)."""
@@ -172,8 +170,7 @@ class PortkitInference:
         user_messages = [m for m in messages if m.get("role") != "system"]
 
         prompt = self.tokenizer.apply_chat_template(
-            [{"role": "system", "content": system_prompt}]
-            + user_messages,
+            [{"role": "system", "content": system_prompt}] + user_messages,
             tokenize=False,
             add_generation_prompt=True,
         )

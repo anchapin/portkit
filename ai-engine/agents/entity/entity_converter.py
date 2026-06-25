@@ -433,6 +433,7 @@ class EntityConverter:
     def _parse_java_entity_properties(self, java_entity: Dict[str, Any]) -> EntityProperties:
         """Parse Java entity properties."""
         from agents.entity.nbt_parser import parse_java_entity_properties as parse
+
         return parse(java_entity)
 
     def _apply_entity_properties(self, components: Dict[str, Any], properties: EntityProperties):
@@ -508,6 +509,7 @@ class EntityConverter:
             Dictionary of Bedrock behavior components
         """
         from agents.entity.type_registry import convert_ai_goals as convert
+
         return convert(java_goals)
 
     def _generate_entity_behaviors(self, java_entity: Dict[str, Any]) -> Optional[Dict[str, Any]]:
@@ -633,6 +635,7 @@ class EntityConverter:
 
 class EntityType:
     """Entity type enum for backward compatibility."""
+
     PASSIVE = "passive"
     NEUTRAL = "neutral"
     HOSTILE = "hostile"
@@ -643,6 +646,7 @@ class EntityType:
 
 class MobCategory:
     """Mob category enum for backward compatibility."""
+
     HOSTILE = "hostile"
     PASSIVE = "passive"
     NEUTRAL = "neutral"

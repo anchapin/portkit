@@ -18,6 +18,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class IdiomPattern:
     """A pattern representing a code idiom."""
+
     name: str
     pattern: str  # Regex or code pattern
     description: str
@@ -202,6 +203,7 @@ class IdiomFeatureRegistry:
             List of (matched_idiom, feature_indices) tuples
         """
         import re
+
         results = []
 
         for idiom in self.patterns:
@@ -232,6 +234,7 @@ class JavaIdiomFeatureRegistry(IdiomFeatureRegistry):
     def _generate_feature_indices(self, idiom: IdiomPattern) -> List[int]:
         """Generate plausible feature indices for an idiom."""
         import hashlib
+
         hash_val = int(hashlib.md5(idiom.name.encode()).hexdigest()[:8], 16)
         base_idx = hash_val % 2048
         return [base_idx, (base_idx + 1) % 2048]
@@ -241,9 +244,7 @@ class JavaIdiomFeatureRegistry(IdiomFeatureRegistry):
         suppression_indices = []
         for idiom in self.patterns:
             if idiom.severity >= 0.8:
-                suppression_indices.extend(
-                    self._feature_mappings.get(idiom.name, [])
-                )
+                suppression_indices.extend(self._feature_mappings.get(idiom.name, []))
         return list(set(suppression_indices))
 
 
@@ -266,6 +267,7 @@ class BedrockIdiomFeatureRegistry(IdiomFeatureRegistry):
     def _generate_feature_indices(self, idiom: IdiomPattern) -> List[int]:
         """Generate plausible feature indices for an idiom."""
         import hashlib
+
         hash_val = int(hashlib.md5(idiom.name.encode()).hexdigest()[:8], 16)
         base_idx = (hash_val + 1024) % 2048
         return [base_idx, (base_idx + 1) % 2048]
@@ -275,9 +277,7 @@ class BedrockIdiomFeatureRegistry(IdiomFeatureRegistry):
         amplification_indices = []
         for idiom in self.patterns:
             if idiom.severity >= 0.8:
-                amplification_indices.extend(
-                    self._feature_mappings.get(idiom.name, [])
-                )
+                amplification_indices.extend(self._feature_mappings.get(idiom.name, []))
         return list(set(amplification_indices))
 
 

@@ -74,6 +74,7 @@ class RunAgent:
             Tuple of (success, execution_trace)
         """
         import uuid
+
         execution_id = execution_id or str(uuid.uuid4())[:8]
 
         logger.info(f"Starting RunAgent execution {execution_id} for plan '{self.plan.name}'")
@@ -99,13 +100,15 @@ class RunAgent:
         success = True
 
         for i, step in enumerate(self.plan.steps):
-            logger.info(f"Executing step {i+1}/{len(self.plan.steps)}: {step.name} ({step.step_id})")
+            logger.info(
+                f"Executing step {i + 1}/{len(self.plan.steps)}: {step.name} ({step.step_id})"
+            )
 
             step_result = await self._execute_step(step, context)
 
             self._execution_trace.steps.append(step_result)
-            self._execution_trace.total_constraints_checked += (
-                len(step.constraints) + len(self.plan.global_constraints)
+            self._execution_trace.total_constraints_checked += len(step.constraints) + len(
+                self.plan.global_constraints
             )
 
             if step_result.constraint_violations:
@@ -197,7 +200,9 @@ class RunAgent:
                         duration=time.time() - start_time,
                         constraints_satisfied=len(all_violations) == 0,
                         constraint_violations=all_violations,
-                        trace_entry=self._create_trace_entry(step, step_context, None, all_violations),
+                        trace_entry=self._create_trace_entry(
+                            step, step_context, None, all_violations
+                        ),
                     )
             except Exception as e:
                 return StepResult(
@@ -280,11 +285,13 @@ class RunAgent:
         if rollback_target and rollback_target.rollback_fn:
             try:
                 await rollback_target.rollback_fn(context)
-                self._rollback_history.append({
-                    "failed_step": failed_step.step_id,
-                    "rollback_target": rollback_target.step_id,
-                    "timestamp": time.time(),
-                })
+                self._rollback_history.append(
+                    {
+                        "failed_step": failed_step.step_id,
+                        "rollback_target": rollback_target.step_id,
+                        "timestamp": time.time(),
+                    }
+                )
                 self._execution_trace.rollback_count += 1
                 logger.info(f"Rollback successful to step {rollback_target.step_id}")
                 return True
@@ -306,7 +313,9 @@ class RunAgent:
             "step_id": step.step_id,
             "step_name": step.name,
             "timestamp": time.time(),
-            "status": context.status.value if hasattr(context.status, 'value') else str(context.status),
+            "status": context.status.value
+            if hasattr(context.status, "value")
+            else str(context.status),
             "output_preview": str(output)[:200] if output else None,
             "constraint_violations": violations,
             "has_violations": len(violations) > 0,

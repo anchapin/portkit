@@ -146,7 +146,13 @@ NODE_WRITES: Dict[str, Set[str]] = {
         "node_status",
         "errors",
     },
-    "logic_translator_retry": {"retry_count", "corrected_segment_keys", "node_status", "errors", "warnings"},
+    "logic_translator_retry": {
+        "retry_count",
+        "corrected_segment_keys",
+        "node_status",
+        "errors",
+        "warnings",
+    },
     "final_report": {"final_report", "status", "node_status", "errors"},
 }
 
@@ -202,9 +208,16 @@ def check_state_completeness(graph_builder_path: str) -> ValidationReport:
 
     for field_name in state_fields:
         if field_name not in all_writers and field_name not in {
-            "job_id", "mod_path", "output_path", "temp_dir",
-            "retry_count", "max_retries", "hitl_feedback",
-            "confidence_segments", "execution_time", "interrupted_segments",
+            "job_id",
+            "mod_path",
+            "output_path",
+            "temp_dir",
+            "retry_count",
+            "max_retries",
+            "hitl_feedback",
+            "confidence_segments",
+            "execution_time",
+            "interrupted_segments",
         }:
             report.add(
                 Finding(
@@ -310,7 +323,12 @@ ALL_NODES = {
 # Only these nodes can cause race conditions with each other.
 # java_analyzer, strategy_planner, output_assembler, qa_validator,
 # logic_translator_retry, final_report run sequentially (not in parallel).
-PARALLEL_BRANCH_NODES = {"block_converter", "entity_converter", "recipe_converter", "asset_converter"}
+PARALLEL_BRANCH_NODES = {
+    "block_converter",
+    "entity_converter",
+    "recipe_converter",
+    "asset_converter",
+}
 
 
 def check_edge_correctness(graph_builder_path: str) -> ValidationReport:
@@ -324,13 +342,15 @@ def check_edge_correctness(graph_builder_path: str) -> ValidationReport:
         with open(graph_builder_path) as f:
             content = f.read()
     except FileNotFoundError:
-        report.add(Finding(
-            node_or_edge="graph",
-            check="file-readable",
-            verdict=Verdict.FAIL,
-            detail=f"Cannot read {graph_builder_path}",
-            recommendation="Verify the file path.",
-        ))
+        report.add(
+            Finding(
+                node_or_edge="graph",
+                check="file-readable",
+                verdict=Verdict.FAIL,
+                detail=f"Cannot read {graph_builder_path}",
+                recommendation="Verify the file path.",
+            )
+        )
         return report
 
     import re
@@ -342,21 +362,25 @@ def check_edge_correctness(graph_builder_path: str) -> ValidationReport:
             from_node = args[0]
             to_node = args[1]
             if from_node not in ALL_NODES and from_node != "START":
-                report.add(Finding(
-                    node_or_edge=f"edge: {from_node} -> {to_node}",
-                    check="edge-source-valid",
-                    verdict=Verdict.FAIL,
-                    detail=f"Edge source '{from_node}' is not a declared node.",
-                    recommendation=f"Use a declared node name or 'START'.",
-                ))
+                report.add(
+                    Finding(
+                        node_or_edge=f"edge: {from_node} -> {to_node}",
+                        check="edge-source-valid",
+                        verdict=Verdict.FAIL,
+                        detail=f"Edge source '{from_node}' is not a declared node.",
+                        recommendation=f"Use a declared node name or 'START'.",
+                    )
+                )
             if to_node not in ALL_NODES and to_node != "END":
-                report.add(Finding(
-                    node_or_edge=f"edge: {from_node} -> {to_node}",
-                    check="edge-target-valid",
-                    verdict=Verdict.FAIL,
-                    detail=f"Edge target '{to_node}' is not a declared node.",
-                    recommendation=f"Use a declared node name or 'END'.",
-                ))
+                report.add(
+                    Finding(
+                        node_or_edge=f"edge: {from_node} -> {to_node}",
+                        check="edge-target-valid",
+                        verdict=Verdict.FAIL,
+                        detail=f"Edge target '{to_node}' is not a declared node.",
+                        recommendation=f"Use a declared node name or 'END'.",
+                    )
+                )
 
     # Extract conditional edges from strategy_planner (fan-out)
     fan_out_match = re.search(
@@ -369,13 +393,15 @@ def check_edge_correctness(graph_builder_path: str) -> ValidationReport:
         fan_out_targets = re.findall(r"['\"](\w+)['\"]:\s*['\"](\w+)['\"]", inner)
         for from_key, to_node in fan_out_targets:
             if to_node not in ALL_NODES:
-                report.add(Finding(
-                    node_or_edge=f"conditional: strategy_planner -> {to_node}",
-                    check="conditional-target-valid",
-                    verdict=Verdict.FAIL,
-                    detail=f"Conditional edge key '{from_key}' routes to undeclared node '{to_node}'.",
-                    recommendation=f"Use a declared node name for the routing target.",
-                ))
+                report.add(
+                    Finding(
+                        node_or_edge=f"conditional: strategy_planner -> {to_node}",
+                        check="conditional-target-valid",
+                        verdict=Verdict.FAIL,
+                        detail=f"Conditional edge key '{from_key}' routes to undeclared node '{to_node}'.",
+                        recommendation=f"Use a declared node name for the routing target.",
+                    )
+                )
 
     # Extract conditional edges from qa_validator (decide_qa_route)
     qa_match = re.search(
@@ -394,22 +420,26 @@ def check_edge_correctness(graph_builder_path: str) -> ValidationReport:
         declared_routes = {"retry", "hitl", "complete"}
         if route_keys != declared_routes:
             missing = declared_routes - route_keys
-            report.add(Finding(
-                node_or_edge="conditional: qa_validator",
-                check="qa-routing-exhaustive",
-                verdict=Verdict.FAIL,
-                detail=f"QA routing missing routes: {missing}. Found: {route_keys}.",
-                recommendation="Ensure all three routes (retry/hitl/complete) are defined in the conditional edge mapping.",
-            ))
+            report.add(
+                Finding(
+                    node_or_edge="conditional: qa_validator",
+                    check="qa-routing-exhaustive",
+                    verdict=Verdict.FAIL,
+                    detail=f"QA routing missing routes: {missing}. Found: {route_keys}.",
+                    recommendation="Ensure all three routes (retry/hitl/complete) are defined in the conditional edge mapping.",
+                )
+            )
         for route_key, to_node in qa_routes_all:
             if to_node not in ALL_NODES and to_node != "END":
-                report.add(Finding(
-                    node_or_edge=f"conditional: qa_validator -> {to_node}",
-                    check="qa-route-target-valid",
-                    verdict=Verdict.FAIL,
-                    detail=f"QA route '{route_key}' routes to undeclared node '{to_node}'.",
-                    recommendation="Use a declared node or 'END' for the hitl branch.",
-                ))
+                report.add(
+                    Finding(
+                        node_or_edge=f"conditional: qa_validator -> {to_node}",
+                        check="qa-route-target-valid",
+                        verdict=Verdict.FAIL,
+                        detail=f"QA route '{route_key}' routes to undeclared node '{to_node}'.",
+                        recommendation="Use a declared node or 'END' for the hitl branch.",
+                    )
+                )
 
     # Check that the retry loop is bounded (max_retries guard in routing)
     routing_func = re.search(
@@ -420,21 +450,25 @@ def check_edge_correctness(graph_builder_path: str) -> ValidationReport:
     if routing_func:
         body = routing_func.group(1)
         if "retry_count >= max_retries" not in body and "retry_count > max_retries" not in body:
-            report.add(Finding(
-                node_or_edge="routing: decide_qa_route",
-                check="retry-bounded",
-                verdict=Verdict.WARNING,
-                detail="decide_qa_route does not check retry_count against max_retries.",
-                recommendation="Add a retry budget guard to prevent infinite retry loops.",
-            ))
+            report.add(
+                Finding(
+                    node_or_edge="routing: decide_qa_route",
+                    check="retry-bounded",
+                    verdict=Verdict.WARNING,
+                    detail="decide_qa_route does not check retry_count against max_retries.",
+                    recommendation="Add a retry budget guard to prevent infinite retry loops.",
+                )
+            )
         if "pass_threshold" not in body and "pass_rate" not in body:
-            report.add(Finding(
-                node_or_edge="routing: decide_qa_route",
-                check="threshold-check",
-                verdict=Verdict.WARNING,
-                detail="decide_qa_route does not compare pass_rate to a threshold.",
-                recommendation="Ensure pass rate threshold routing is implemented.",
-            ))
+            report.add(
+                Finding(
+                    node_or_edge="routing: decide_qa_route",
+                    check="threshold-check",
+                    verdict=Verdict.WARNING,
+                    detail="decide_qa_route does not compare pass_rate to a threshold.",
+                    recommendation="Ensure pass rate threshold routing is implemented.",
+                )
+            )
 
     return report
 
@@ -458,48 +492,56 @@ def check_checkpoint_integrity(
         with open(checkpointing_path) as f:
             ckpt_content = f.read()
     except FileNotFoundError:
-        report.add(Finding(
-            node_or_edge="checkpointing",
-            check="file-readable",
-            verdict=Verdict.FAIL,
-            detail=f"Cannot read {checkpointing_path}",
-            recommendation="Verify the file path.",
-        ))
+        report.add(
+            Finding(
+                node_or_edge="checkpointing",
+                check="file-readable",
+                verdict=Verdict.FAIL,
+                detail=f"Cannot read {checkpointing_path}",
+                recommendation="Verify the file path.",
+            )
+        )
         return report
 
     import re
 
     # Check 1: SqliteSaver thread safety comment is present
     if "check_same_thread" not in ckpt_content:
-        report.add(Finding(
-            node_or_edge="checkpointing: SqliteSaver",
-            check="thread-safety-doc",
-            verdict=Verdict.WARNING,
-            detail="SqliteSaver connection does not document thread-safety rationale.",
-            recommendation="Add a comment explaining why check_same_thread=False is safe.",
-        ))
+        report.add(
+            Finding(
+                node_or_edge="checkpointing: SqliteSaver",
+                check="thread-safety-doc",
+                verdict=Verdict.WARNING,
+                detail="SqliteSaver connection does not document thread-safety rationale.",
+                recommendation="Add a comment explaining why check_same_thread=False is safe.",
+            )
+        )
 
     # Check 2: MemorySaver fallback when SqliteSaver unavailable
     if "MemorySaver" not in ckpt_content:
-        report.add(Finding(
-            node_or_edge="checkpointing: MemorySaver",
-            check="fallback-present",
-            verdict=Verdict.WARNING,
-            detail="No MemorySaver fallback found when SqliteSaver is unavailable.",
-            recommendation="Provide MemorySaver as fallback for in-memory checkpointing.",
-        ))
+        report.add(
+            Finding(
+                node_or_edge="checkpointing: MemorySaver",
+                check="fallback-present",
+                verdict=Verdict.WARNING,
+                detail="No MemorySaver fallback found when SqliteSaver is unavailable.",
+                recommendation="Provide MemorySaver as fallback for in-memory checkpointing.",
+            )
+        )
 
     # Check 3: Verify state fields that are mergeable (Annotated) are compatible
     # with serialization through the checkpointer
     # Long lists and large dicts in state should be serializable
     if "sqlite" not in ckpt_content.lower() and "memorysaver" not in ckpt_content.lower():
-        report.add(Finding(
-            node_or_edge="checkpointing",
-            check="checkpointer-type",
-            verdict=Verdict.WARNING,
-            detail="No clear checkpointer type (MemorySaver/SqliteSaver) selection found.",
-            recommendation="Ensure a checkpointer is created and passed to graph.compile().",
-        ))
+        report.add(
+            Finding(
+                node_or_edge="checkpointing",
+                check="checkpointer-type",
+                verdict=Verdict.WARNING,
+                detail="No clear checkpointer type (MemorySaver/SqliteSaver) selection found.",
+                recommendation="Ensure a checkpointer is created and passed to graph.compile().",
+            )
+        )
 
     # Check 4: Verify that the thread_id is set from job_id (not a constant)
     try:
@@ -515,13 +557,15 @@ def check_checkpoint_integrity(
     else:
         thread_id_match = re.search(r'thread_id["\']:\s*([^,\}]+)', gb_content)
         if thread_id_match:
-            report.add(Finding(
-                node_or_edge="checkpointing: thread_id",
-                check="thread-id-source",
-                verdict=Verdict.WARNING,
-                detail=f"thread_id is set to '{thread_id_match.group(1).strip()}' — verify it is unique per job.",
-                recommendation="Use self.job_id or a job-specific value for thread_id to ensure correct checkpoint isolation.",
-            ))
+            report.add(
+                Finding(
+                    node_or_edge="checkpointing: thread_id",
+                    check="thread-id-source",
+                    verdict=Verdict.WARNING,
+                    detail=f"thread_id is set to '{thread_id_match.group(1).strip()}' — verify it is unique per job.",
+                    recommendation="Use self.job_id or a job-specific value for thread_id to ensure correct checkpoint isolation.",
+                )
+            )
 
     # Check 5: HITL resume clears needs_human_review
     # NOTE: resume_from_interruption lives in graph_builder.py, not here.
@@ -530,31 +574,41 @@ def check_checkpoint_integrity(
         try:
             with open(graph_builder_path) as f:
                 gb_content = f.read()
-            if "needs_human_review" not in gb_content or \
-               "needs_human_review" not in re.search(
-                   r"def resume_from_interruption.*?(?=\n    def |\Z)", gb_content, re.DOTALL
-               ).group(0) if re.search(r"def resume_from_interruption.*?(?=\n    def |\Z)", gb_content, re.DOTALL) else "":
-                report.add(Finding(
-                    node_or_edge="graph_builder: resume_from_interruption",
-                    check="hitl-state-reset",
-                    verdict=Verdict.WARNING,
-                    detail="resume_from_interruption does not clearly clear 'needs_human_review' before re-invoking.",
-                    recommendation="Verify that needs_human_review is set to False in the resume state_update.",
-                ))
-            else:
-                # Check it is actually set to False
-                resume_match = re.search(
-                    r"def resume_from_interruption.*?(?=\n    def |\Z)",
-                    gb_content, re.DOTALL
+            if (
+                "needs_human_review" not in gb_content
+                or "needs_human_review"
+                not in re.search(
+                    r"def resume_from_interruption.*?(?=\n    def |\Z)", gb_content, re.DOTALL
+                ).group(0)
+                if re.search(
+                    r"def resume_from_interruption.*?(?=\n    def |\Z)", gb_content, re.DOTALL
                 )
-                if resume_match and '"needs_human_review": False' not in resume_match.group(0):
-                    report.add(Finding(
+                else ""
+            ):
+                report.add(
+                    Finding(
                         node_or_edge="graph_builder: resume_from_interruption",
                         check="hitl-state-reset",
                         verdict=Verdict.WARNING,
-                        detail="resume_from_interruption may not clear needs_human_review flag.",
-                        recommendation="Set needs_human_review to False in the resume state_update.",
-                    ))
+                        detail="resume_from_interruption does not clearly clear 'needs_human_review' before re-invoking.",
+                        recommendation="Verify that needs_human_review is set to False in the resume state_update.",
+                    )
+                )
+            else:
+                # Check it is actually set to False
+                resume_match = re.search(
+                    r"def resume_from_interruption.*?(?=\n    def |\Z)", gb_content, re.DOTALL
+                )
+                if resume_match and '"needs_human_review": False' not in resume_match.group(0):
+                    report.add(
+                        Finding(
+                            node_or_edge="graph_builder: resume_from_interruption",
+                            check="hitl-state-reset",
+                            verdict=Verdict.WARNING,
+                            detail="resume_from_interruption may not clear needs_human_review flag.",
+                            recommendation="Set needs_human_review to False in the resume state_update.",
+                        )
+                    )
         except (FileNotFoundError, AttributeError):
             pass
 
@@ -577,13 +631,15 @@ def check_concurrency_safety(graph_builder_path: str) -> ValidationReport:
         with open(graph_builder_path) as f:
             content = f.read()
     except FileNotFoundError:
-        report.add(Finding(
-            node_or_edge="graph_builder",
-            check="file-readable",
-            verdict=Verdict.FAIL,
-            detail=f"Cannot read {graph_builder_path}",
-            recommendation="Verify the file path.",
-        ))
+        report.add(
+            Finding(
+                node_or_edge="graph_builder",
+                check="file-readable",
+                verdict=Verdict.FAIL,
+                detail=f"Cannot read {graph_builder_path}",
+                recommendation="Verify the file path.",
+            )
+        )
         return report
 
     import re
@@ -608,13 +664,15 @@ def check_concurrency_safety(graph_builder_path: str) -> ValidationReport:
     for field in reducer_fields:
         pattern = rf'["\']?{field}["\']?\s*:\s*Annotated'
         if not re.search(pattern, schema_content):
-            report.add(Finding(
-                node_or_edge=f"state_schema: {field}",
-                check="reducer-annotated",
-                verdict=Verdict.FAIL,
-                detail=f"Mergeable field '{field}' is not Annotated with a reducer in ConversionState.",
-                recommendation=f"Wrap '{field}' with Annotated[..., _concat_lists] or _merge_dicts to prevent last-write-wins in parallel branches.",
-            ))
+            report.add(
+                Finding(
+                    node_or_edge=f"state_schema: {field}",
+                    check="reducer-annotated",
+                    verdict=Verdict.FAIL,
+                    detail=f"Mergeable field '{field}' is not Annotated with a reducer in ConversionState.",
+                    recommendation=f"Wrap '{field}' with Annotated[..., _concat_lists] or _merge_dicts to prevent last-write-wins in parallel branches.",
+                )
+            )
 
     # Check 2: Parallel-branch nodes that write to mergeable fields do NOT also write
     # non-mergeable singleton fields that could race
@@ -626,64 +684,77 @@ def check_concurrency_safety(graph_builder_path: str) -> ValidationReport:
         if has_mergeable and has_singleton:
             singleton_issues = writes - reducer_fields - {"node_status", "errors", "warnings"}
             if singleton_issues:
-                report.add(Finding(
-                    node_or_edge=f"node:{node_name}",
-                    check="singleton-write-in-parallel-branch",
-                    verdict=Verdict.FAIL,
-                    detail=f"Parallel node '{node_name}' writes both mergeable and singleton fields: {singleton_issues}. "
-                            "In parallel fan-out, these singleton writes will race (last-write-wins).",
-                    recommendation="Wrap singleton fields in Annotated with a reducer, or move to a join node after fan-out.",
-                ))
+                report.add(
+                    Finding(
+                        node_or_edge=f"node:{node_name}",
+                        check="singleton-write-in-parallel-branch",
+                        verdict=Verdict.FAIL,
+                        detail=f"Parallel node '{node_name}' writes both mergeable and singleton fields: {singleton_issues}. "
+                        "In parallel fan-out, these singleton writes will race (last-write-wins).",
+                        recommendation="Wrap singleton fields in Annotated with a reducer, or move to a join node after fan-out.",
+                    )
+                )
 
     # Check 3: Conditional routing uses state values, not captured closure values
     # The decide_qa_route function signature should take state, not just instance self
     qa_route_sig = re.search(
         r"def decide_qa_route\((.*?)\)",
         open(graph_builder_path.replace("graph_builder.py", "routing.py")).read()
-        if graph_builder_path else "",
+        if graph_builder_path
+        else "",
         re.DOTALL,
     )
     if qa_route_sig:
         params = qa_route_sig.group(1)
         if "state" not in params and "ConversionState" not in params:
-            report.add(Finding(
-                node_or_edge="routing: decide_qa_route",
-                check="routing-state-param",
-                verdict=Verdict.WARNING,
-                detail="decide_qa_route does not take 'state' as a parameter — routing may use stale closure values.",
-                recommendation="Pass the current ConversionState to routing decisions for correctness on checkpoint resume.",
-            ))
+            report.add(
+                Finding(
+                    node_or_edge="routing: decide_qa_route",
+                    check="routing-state-param",
+                    verdict=Verdict.WARNING,
+                    detail="decide_qa_route does not take 'state' as a parameter — routing may use stale closure values.",
+                    recommendation="Pass the current ConversionState to routing decisions for correctness on checkpoint resume.",
+                )
+            )
 
     # Check 4: execute() uses ainvoke (async), not invoke
     if re.search(r"\.invoke\([^)]*\)", content) and not re.search(r"\.ainvoke\(", content):
-        report.add(Finding(
-            node_or_edge="execute()",
-            check="async-execution",
-            verdict=Verdict.WARNING,
-            detail="execute() uses synchronous .invoke() — parallel converter branches will not run concurrently.",
-            recommendation="Use .ainvoke() for true async parallel execution of converter nodes.",
-        ))
+        report.add(
+            Finding(
+                node_or_edge="execute()",
+                check="async-execution",
+                verdict=Verdict.WARNING,
+                detail="execute() uses synchronous .invoke() — parallel converter branches will not run concurrently.",
+                recommendation="Use .ainvoke() for true async parallel execution of converter nodes.",
+            )
+        )
     elif not re.search(r"\.ainvoke\(", content):
-        report.add(Finding(
-            node_or_edge="execute()",
-            check="async-usage",
-            verdict=Verdict.WARNING,
-            detail="execute() does not call .ainvoke() — verify async node execution.",
-            recommendation="Ensure .ainvoke() is used for async graph execution.",
-        ))
+        report.add(
+            Finding(
+                node_or_edge="execute()",
+                check="async-usage",
+                verdict=Verdict.WARNING,
+                detail="execute() does not call .ainvoke() — verify async node execution.",
+                recommendation="Ensure .ainvoke() is used for async graph execution.",
+            )
+        )
 
     # Check 5: No shared mutable state between nodes (agent instances are per-node singletons)
-    agent_init = re.search(r"def _initialize_agents\(self\)(.*?)(?=\n    def |\Z)", content, re.DOTALL)
+    agent_init = re.search(
+        r"def _initialize_agents\(self\)(.*?)(?=\n    def |\Z)", content, re.DOTALL
+    )
     if agent_init:
         body = agent_init.group(1)
         if "get_instance()" not in body and "singleton" not in body.lower():
-            report.add(Finding(
-                node_or_edge="_initialize_agents",
-                check="agent-singleton",
-                verdict=Verdict.INFO if hasattr(ast, "Info") else Verdict.WARNING,
-                detail="Agent initialization does not use get_instance() singleton pattern.",
-                recommendation="Use singleton agents to avoid duplicate state across node invocations.",
-            ))
+            report.add(
+                Finding(
+                    node_or_edge="_initialize_agents",
+                    check="agent-singleton",
+                    verdict=Verdict.INFO if hasattr(ast, "Info") else Verdict.WARNING,
+                    detail="Agent initialization does not use get_instance() singleton pattern.",
+                    recommendation="Use singleton agents to avoid duplicate state across node invocations.",
+                )
+            )
 
     return report
 
@@ -753,13 +824,15 @@ def check_cross_framework_heuristics() -> ValidationReport:
 
     for h in CROSS_FRAMEWORK_FLAGS:
         verdict = Verdict.WARNING if h["framework_uncertain"] else Verdict.PASS
-        report.add(Finding(
-            node_or_edge=f"heuristic: {h['heuristic']}",
-            check="framework-uncertainty",
-            verdict=verdict,
-            detail=f"[Source: {h['source']}] {h.get('direction_in_study', 'PortKit-derived')}",
-            recommendation=h["portkit_verdict"],
-        ))
+        report.add(
+            Finding(
+                node_or_edge=f"heuristic: {h['heuristic']}",
+                check="framework-uncertainty",
+                verdict=verdict,
+                detail=f"[Source: {h['source']}] {h.get('direction_in_study', 'PortKit-derived')}",
+                recommendation=h["portkit_verdict"],
+            )
+        )
 
     return report
 

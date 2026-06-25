@@ -24,6 +24,7 @@ logger = logging.getLogger(__name__)
 
 class ViolationSeverity(Enum):
     """Severity levels for contract violations."""
+
     CRITICAL = "critical"
     ERROR = "error"
     WARNING = "warning"
@@ -32,6 +33,7 @@ class ViolationSeverity(Enum):
 
 class ContractType(Enum):
     """Types of Minecraft/Bedrock contracts."""
+
     COORDINATE_SEMANTICS = "coordinate_semantics"
     COMPONENT_NESTING = "component_nesting"
     JSON_SCHEMA = "json_schema"
@@ -43,6 +45,7 @@ class ContractType(Enum):
 @dataclass
 class ContractViolation:
     """Represents a single contract violation."""
+
     contract_type: ContractType
     severity: ViolationSeverity
     message: str
@@ -64,6 +67,7 @@ class ContractViolation:
 @dataclass
 class BedrockIdiomaticityScore:
     """Score for Bedrock API idiomaticity."""
+
     overall_score: float = 0.0
     coordinate_score: float = 0.0
     component_score: float = 0.0
@@ -87,6 +91,7 @@ class BedrockIdiomaticityScore:
 @dataclass
 class MinecraftContractResult:
     """Result of Minecraft contract validation."""
+
     is_valid: bool
     idiomaticity_score: BedrockIdiomaticityScore
     violations: List[ContractViolation]
@@ -117,21 +122,27 @@ class CoordinateContractValidator:
     def validate(self, code: str, location: Optional[str] = None) -> List[ContractViolation]:
         """Check for non-integer coordinates in block position contexts."""
         violations = []
-        lines = code.split('\n')
+        lines = code.split("\n")
 
         for line_num, line in enumerate(lines, 1):
             stripped = line.strip()
-            if stripped.startswith('"x"') or stripped.startswith('"y"') or stripped.startswith('"z"'):
-                coord_matches = re.findall(r':\s*(-?\d+\.\d+)', line)
+            if (
+                stripped.startswith('"x"')
+                or stripped.startswith('"y"')
+                or stripped.startswith('"z"')
+            ):
+                coord_matches = re.findall(r":\s*(-?\d+\.\d+)", line)
                 for match in coord_matches:
-                    violations.append(ContractViolation(
-                        contract_type=ContractType.COORDINATE_SEMANTICS,
-                        severity=ViolationSeverity.ERROR,
-                        message=f"Block coordinates must be integers, found float: {match}",
-                        location=f"{location}:{line_num}" if location else f"line {line_num}",
-                        context={"coordinate_value": match, "line": line.strip()},
-                        repair_suggestion=f"Convert {match} to integer by removing decimal part"
-                    ))
+                    violations.append(
+                        ContractViolation(
+                            contract_type=ContractType.COORDINATE_SEMANTICS,
+                            severity=ViolationSeverity.ERROR,
+                            message=f"Block coordinates must be integers, found float: {match}",
+                            location=f"{location}:{line_num}" if location else f"line {line_num}",
+                            context={"coordinate_value": match, "line": line.strip()},
+                            repair_suggestion=f"Convert {match} to integer by removing decimal part",
+                        )
+                    )
 
         return violations
 
@@ -165,14 +176,19 @@ class ComponentNestingValidator:
                         if key == forbidden_parent and isinstance(value, dict):
                             for child_key in value.keys():
                                 if child_key in forbidden_children:
-                                    violations.append(ContractViolation(
-                                        contract_type=ContractType.COMPONENT_NESTING,
-                                        severity=ViolationSeverity.ERROR,
-                                        message=f"Invalid nesting: {child_key} cannot be nested inside {forbidden_parent}",
-                                        location=location,
-                                        context={"parent": forbidden_parent, "child": child_key},
-                                        repair_suggestion=f"Move {child_key} to top level or remove nested relationship"
-                                    ))
+                                    violations.append(
+                                        ContractViolation(
+                                            contract_type=ContractType.COMPONENT_NESTING,
+                                            severity=ViolationSeverity.ERROR,
+                                            message=f"Invalid nesting: {child_key} cannot be nested inside {forbidden_parent}",
+                                            location=location,
+                                            context={
+                                                "parent": forbidden_parent,
+                                                "child": child_key,
+                                            },
+                                            repair_suggestion=f"Move {child_key} to top level or remove nested relationship",
+                                        )
+                                    )
         except json.JSONDecodeError:
             pass
 
@@ -182,7 +198,11 @@ class ComponentNestingValidator:
         """Calculate component nesting score from violations."""
         if not violations:
             return 1.0
-        error_count = sum(1 for v in violations if v.severity in [ViolationSeverity.CRITICAL, ViolationSeverity.ERROR])
+        error_count = sum(
+            1
+            for v in violations
+            if v.severity in [ViolationSeverity.CRITICAL, ViolationSeverity.ERROR]
+        )
         return max(0.0, 1.0 - (error_count * 0.2))
 
 
@@ -195,7 +215,13 @@ class JsonSchemaValidator:
     }
 
     VALID_FORMAT_VERSIONS = [
-        "1.20.10", "1.20.20", "1.20.30", "1.20.40", "1.21.0", "1.21.10", "1.21.20"
+        "1.20.10",
+        "1.20.20",
+        "1.20.30",
+        "1.20.40",
+        "1.21.0",
+        "1.21.10",
+        "1.21.20",
     ]
 
     def validate(self, code: str, location: Optional[str] = None) -> List[ContractViolation]:
@@ -209,38 +235,44 @@ class JsonSchemaValidator:
                 if "format_version" in data:
                     fv = data["format_version"]
                     if isinstance(fv, str) and fv not in self.VALID_FORMAT_VERSIONS:
-                        violations.append(ContractViolation(
-                            contract_type=ContractType.JSON_SCHEMA,
-                            severity=ViolationSeverity.WARNING,
-                            message=f"Unknown format_version '{fv}', may not be valid",
-                            location=location,
-                            context={"format_version": fv},
-                            repair_suggestion=f"Use one of: {', '.join(self.VALID_FORMAT_VERSIONS)}"
-                        ))
+                        violations.append(
+                            ContractViolation(
+                                contract_type=ContractType.JSON_SCHEMA,
+                                severity=ViolationSeverity.WARNING,
+                                message=f"Unknown format_version '{fv}', may not be valid",
+                                location=location,
+                                context={"format_version": fv},
+                                repair_suggestion=f"Use one of: {', '.join(self.VALID_FORMAT_VERSIONS)}",
+                            )
+                        )
 
                 if "header" in data and isinstance(data["header"], dict):
                     header = data["header"]
                     required = ["name", "uuid", "version"]
                     for field in required:
                         if field not in header:
-                            violations.append(ContractViolation(
-                                contract_type=ContractType.JSON_SCHEMA,
-                                severity=ViolationSeverity.ERROR,
-                                message=f"Missing required manifest header field: {field}",
-                                location=location,
-                                context={"missing_field": field},
-                                repair_suggestion=f"Add '{field}' to manifest header"
-                            ))
+                            violations.append(
+                                ContractViolation(
+                                    contract_type=ContractType.JSON_SCHEMA,
+                                    severity=ViolationSeverity.ERROR,
+                                    message=f"Missing required manifest header field: {field}",
+                                    location=location,
+                                    context={"missing_field": field},
+                                    repair_suggestion=f"Add '{field}' to manifest header",
+                                )
+                            )
 
         except json.JSONDecodeError as e:
-            violations.append(ContractViolation(
-                contract_type=ContractType.JSON_SCHEMA,
-                severity=ViolationSeverity.CRITICAL,
-                message=f"Invalid JSON: {str(e)}",
-                location=location,
-                context={"error": str(e)},
-                repair_suggestion="Fix JSON syntax errors"
-            ))
+            violations.append(
+                ContractViolation(
+                    contract_type=ContractType.JSON_SCHEMA,
+                    severity=ViolationSeverity.CRITICAL,
+                    message=f"Invalid JSON: {str(e)}",
+                    location=location,
+                    context={"error": str(e)},
+                    repair_suggestion="Fix JSON syntax errors",
+                )
+            )
 
         return violations
 
@@ -258,50 +290,75 @@ class BedrockAPIContractValidator:
     """Validates Bedrock API contract violations."""
 
     VALID_COMPONENT_TYPES = {
-        "minecraft:item", "minecraft:block", "minecraft:entity",
-        "minecraft:recipe", "minecraft:loot_table", "minecraft:chat_type",
-        "minecraft:custom_art", "minecraft:animation", "minecraft:attachable",
-        "minecraft:client_request", "minecraft:geometry", "minecraft:material",
-        "minecraft:model", "minecraft:molang", "minecraft:render_controller",
-        "minecraft:particle", "minecraft:spelling", "minecraft:music",
-        "minecraft:sound", "minecraft:swamp_slime_subbbiography", "minecraft:template",
-        "minecraft:item_texture", "minecraft:terrain_texture", "minecraft:flipbook_texture",
+        "minecraft:item",
+        "minecraft:block",
+        "minecraft:entity",
+        "minecraft:recipe",
+        "minecraft:loot_table",
+        "minecraft:chat_type",
+        "minecraft:custom_art",
+        "minecraft:animation",
+        "minecraft:attachable",
+        "minecraft:client_request",
+        "minecraft:geometry",
+        "minecraft:material",
+        "minecraft:model",
+        "minecraft:molang",
+        "minecraft:render_controller",
+        "minecraft:particle",
+        "minecraft:spelling",
+        "minecraft:music",
+        "minecraft:sound",
+        "minecraft:swamp_slime_subbbiography",
+        "minecraft:template",
+        "minecraft:item_texture",
+        "minecraft:terrain_texture",
+        "minecraft:flipbook_texture",
     }
 
     VALID_EVENTS = {
-        "minecraft:on_player_placed", "minecraft:on_player_interacted",
-        "minecraft:on_entity_hit_player", "minecraft:on_entity_hit_entity",
-        "minecraft:on_item_use", "minecraft:on_item_use_on",
+        "minecraft:on_player_placed",
+        "minecraft:on_player_interacted",
+        "minecraft:on_entity_hit_player",
+        "minecraft:on_entity_hit_entity",
+        "minecraft:on_item_use",
+        "minecraft:on_item_use_on",
     }
 
     def validate(self, code: str, location: Optional[str] = None) -> List[ContractViolation]:
         """Check for invalid Bedrock API usage."""
         violations = []
-        lines = code.split('\n')
+        lines = code.split("\n")
 
         for line_num, line in enumerate(lines, 1):
             if '"type"' in line or '"component"' in line:
                 for invalid_type in ["minecraft:player", "minecraft:world"]:
                     if invalid_type in line:
-                        violations.append(ContractViolation(
-                            contract_type=ContractType.API_CONTRACT,
-                            severity=ViolationSeverity.ERROR,
-                            message=f"Invalid Bedrock API type: {invalid_type}",
-                            location=f"{location}:{line_num}" if location else f"line {line_num}",
-                            context={"invalid_type": invalid_type, "line": line.strip()},
-                            repair_suggestion=f"Use valid Bedrock component type"
-                        ))
+                        violations.append(
+                            ContractViolation(
+                                contract_type=ContractType.API_CONTRACT,
+                                severity=ViolationSeverity.ERROR,
+                                message=f"Invalid Bedrock API type: {invalid_type}",
+                                location=f"{location}:{line_num}"
+                                if location
+                                else f"line {line_num}",
+                                context={"invalid_type": invalid_type, "line": line.strip()},
+                                repair_suggestion=f"Use valid Bedrock component type",
+                            )
+                        )
 
             if "minecraft:spawn_entity" in line:
                 if "entity_type" not in line and "type" not in line:
-                    violations.append(ContractViolation(
-                        contract_type=ContractType.API_CONTRACT,
-                        severity=ViolationSeverity.WARNING,
-                        message="spawn_entity requires 'entity_type' parameter",
-                        location=f"{location}:{line_num}" if location else f"line {line_num}",
-                        context={"line": line.strip()},
-                        repair_suggestion="Add 'entity_type' parameter to spawn_entity call"
-                    ))
+                    violations.append(
+                        ContractViolation(
+                            contract_type=ContractType.API_CONTRACT,
+                            severity=ViolationSeverity.WARNING,
+                            message="spawn_entity requires 'entity_type' parameter",
+                            location=f"{location}:{line_num}" if location else f"line {line_num}",
+                            context={"line": line.strip()},
+                            repair_suggestion="Add 'entity_type' parameter to spawn_entity call",
+                        )
+                    )
 
         return violations
 
@@ -309,7 +366,11 @@ class BedrockAPIContractValidator:
         """Calculate API contract score from violations."""
         if not violations:
             return 1.0
-        errors = sum(1 for v in violations if v.severity in [ViolationSeverity.CRITICAL, ViolationSeverity.ERROR])
+        errors = sum(
+            1
+            for v in violations
+            if v.severity in [ViolationSeverity.CRITICAL, ViolationSeverity.ERROR]
+        )
         warnings = sum(1 for v in violations if v.severity == ViolationSeverity.WARNING)
         return max(0.0, 1.0 - (errors * 0.25 + warnings * 0.05))
 
@@ -334,7 +395,7 @@ class MinecraftContractValidator:
         code: str,
         file_type: str = "json",
         location: Optional[str] = None,
-        enable_repair: bool = True
+        enable_repair: bool = True,
     ) -> MinecraftContractResult:
         """
         Validate code against all Minecraft contracts.
@@ -373,10 +434,10 @@ class MinecraftContractValidator:
         )
 
         total_score = (
-            idiomaticity.coordinate_score * 0.25 +
-            idiomaticity.component_score * 0.25 +
-            idiomaticity.schema_score * 0.25 +
-            idiomaticity.api_contract_score * 0.25
+            idiomaticity.coordinate_score * 0.25
+            + idiomaticity.component_score * 0.25
+            + idiomaticity.schema_score * 0.25
+            + idiomaticity.api_contract_score * 0.25
         )
         idiomaticity.overall_score = total_score
 
@@ -408,9 +469,7 @@ class MinecraftContractValidator:
         return result
 
     def _attempt_repair(
-        self,
-        code: str,
-        violations: List[ContractViolation]
+        self, code: str, violations: List[ContractViolation]
     ) -> Tuple[Optional[str], bool]:
         """Attempt automatic repair of violations."""
         repaired_code = code
@@ -426,7 +485,10 @@ class MinecraftContractValidator:
                 repaired_code = self._repair_api_violation(repaired_code, violation)
 
         validated = self.validate(repaired_code, enable_repair=False)
-        success = validated.is_valid and validated.idiomaticity_score.overall_score >= self.repair_confidence_threshold
+        success = (
+            validated.is_valid
+            and validated.idiomaticity_score.overall_score >= self.repair_confidence_threshold
+        )
 
         return repaired_code if success else None, success
 
@@ -504,7 +566,7 @@ class BedrockIdiomaticityRewardModel:
         code: str,
         file_type: str = "json",
         location: Optional[str] = None,
-        enable_repair: bool = True
+        enable_repair: bool = True,
     ) -> Tuple[MinecraftContractResult, float]:
         """
         Score code for Bedrock idiomaticity and compute reward.
@@ -556,8 +618,7 @@ class BedrockIdiomaticityRewardModel:
         return max(-2.0, min(3.0, reward))
 
     def batch_score(
-        self,
-        code_samples: List[Dict[str, Any]]
+        self, code_samples: List[Dict[str, Any]]
     ) -> List[Tuple[MinecraftContractResult, float]]:
         """Score multiple code samples."""
         results = []

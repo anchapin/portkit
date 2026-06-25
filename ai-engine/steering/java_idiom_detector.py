@@ -20,6 +20,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class IdiomPattern:
     """A detected idiom pattern"""
+
     pattern_id: int
     pattern_name: str
     confidence: float  # 0.0 to 1.0
@@ -50,44 +51,40 @@ class JavaIdiomHeuristics:
         """Compile all regex patterns for idiom detection"""
         return {
             # Class declarations
-            "extends_item": re.compile(r'\bextends\s+Item\b', re.IGNORECASE),
-            "extends_block": re.compile(r'\bextends\s+Block\b', re.IGNORECASE),
-            "extends_entity": re.compile(r'\bextends\s+(Entity|Mob|PathfinderMob)\b', re.IGNORECASE),
-            "extends_tile": re.compile(r'\bextends\s+(BlockEntity|TileEntity)\b', re.IGNORECASE),
-            "implements_interface": re.compile(r'\bimplements\s+\w+', re.IGNORECASE),
-
+            "extends_item": re.compile(r"\bextends\s+Item\b", re.IGNORECASE),
+            "extends_block": re.compile(r"\bextends\s+Block\b", re.IGNORECASE),
+            "extends_entity": re.compile(
+                r"\bextends\s+(Entity|Mob|PathfinderMob)\b", re.IGNORECASE
+            ),
+            "extends_tile": re.compile(r"\bextends\s+(BlockEntity|TileEntity)\b", re.IGNORECASE),
+            "implements_interface": re.compile(r"\bimplements\s+\w+", re.IGNORECASE),
             # Annotations
-            "subscribe_event": re.compile(r'@SubscribeEvent\b', re.IGNORECASE),
-            "mod_init": re.compile(r'@Mod\b', re.IGNORECASE),
-            "event_handler": re.compile(r'@EventBusSubscriber\b', re.IGNORECASE),
-
+            "subscribe_event": re.compile(r"@SubscribeEvent\b", re.IGNORECASE),
+            "mod_init": re.compile(r"@Mod\b", re.IGNORECASE),
+            "event_handler": re.compile(r"@EventBusSubscriber\b", re.IGNORECASE),
             # Forge API patterns
-            "minecraft_server": re.compile(r'Minecraft\.getInstance\(\)', re.IGNORECASE),
-            "is_client_side": re.compile(r'\.isClientSide\(\)', re.IGNORECASE),
-            "is_server_side": re.compile(r'\.isServerSide\(\)', re.IGNORECASE),
-            "add_fresh_entity": re.compile(r'\.addFreshEntity\(', re.IGNORECASE),
-            "level_get_block_state": re.compile(r'\.getBlockState\(', re.IGNORECASE),
-            "blockpos_pattern": re.compile(r'new\s+BlockPos\(', re.IGNORECASE),
-            "itemstack_pattern": re.compile(r'new\s+ItemStack\(', re.IGNORECASE),
-
+            "minecraft_server": re.compile(r"Minecraft\.getInstance\(\)", re.IGNORECASE),
+            "is_client_side": re.compile(r"\.isClientSide\(\)", re.IGNORECASE),
+            "is_server_side": re.compile(r"\.isServerSide\(\)", re.IGNORECASE),
+            "add_fresh_entity": re.compile(r"\.addFreshEntity\(", re.IGNORECASE),
+            "level_get_block_state": re.compile(r"\.getBlockState\(", re.IGNORECASE),
+            "blockpos_pattern": re.compile(r"new\s+BlockPos\(", re.IGNORECASE),
+            "itemstack_pattern": re.compile(r"new\s+ItemStack\(", re.IGNORECASE),
             # Registry patterns
-            "register_recipe": re.compile(r'\.register\([^)]\)', re.IGNORECASE),
-            "register_entity": re.compile(r'EntityType\.register\b', re.IGNORECASE),
-            "registry_holder": re.compile(r'ForgeRegistries\b', re.IGNORECASE),
-
+            "register_recipe": re.compile(r"\.register\([^)]\)", re.IGNORECASE),
+            "register_entity": re.compile(r"EntityType\.register\b", re.IGNORECASE),
+            "registry_holder": re.compile(r"ForgeRegistries\b", re.IGNORECASE),
             # Capability patterns
-            "capability_item_handler": re.compile(r'IItemHandler\b', re.IGNORECASE),
-            "capability_fluid_handler": re.compile(r'IFluidHandler\b', re.IGNORECASE),
-            "capability_energy": re.compile(r'IEnergyStorage\b', re.IGNORECASE),
-
+            "capability_item_handler": re.compile(r"IItemHandler\b", re.IGNORECASE),
+            "capability_fluid_handler": re.compile(r"IFluidHandler\b", re.IGNORECASE),
+            "capability_energy": re.compile(r"IEnergyStorage\b", re.IGNORECASE),
             # Java-specific constructs
-            "public_class": re.compile(r'\bpublic\s+class\s+\w+', re.IGNORECASE),
-            "private_field": re.compile(r'\bprivate\s+\w+\s+\w+;', re.IGNORECASE),
-            "synchronized": re.compile(r'\bsynchronized\b', re.IGNORECASE),
-
+            "public_class": re.compile(r"\bpublic\s+class\s+\w+", re.IGNORECASE),
+            "private_field": re.compile(r"\bprivate\s+\w+\s+\w+;", re.IGNORECASE),
+            "synchronized": re.compile(r"\bsynchronized\b", re.IGNORECASE),
             # Import patterns (indicators)
-            "forge_import": re.compile(r'import\s+net\.minecraftforge', re.IGNORECASE),
-            "mojang_import": re.compile(r'import\s+com\.mojang\.crafting', re.IGNORECASE),
+            "forge_import": re.compile(r"import\s+net\.minecraftforge", re.IGNORECASE),
+            "mojang_import": re.compile(r"import\s+com\.mojang\.crafting", re.IGNORECASE),
         }
 
     def detect_features(self, text: str) -> Dict[int, float]:
@@ -105,7 +102,7 @@ class JavaIdiomHeuristics:
         self._stats["total_calls"] += 1
 
         features: Dict[int, float] = {}
-        lines = text.split('\n')
+        lines = text.split("\n")
 
         for line_num, line in enumerate(lines, 1):
             for pattern_name, pattern in self.patterns.items():
@@ -137,7 +134,6 @@ class JavaIdiomHeuristics:
             "forge_import": 1011,
             "capability_item_handler": 1012,
             "capability_fluid_handler": 1013,
-
             # Class patterns -> 2000-2099
             "extends_item": 2000,
             "extends_block": 2001,
@@ -148,7 +144,6 @@ class JavaIdiomHeuristics:
             "private_field": 2006,
             "synchronized": 2007,
             "mod_init": 2008,
-
             # API patterns -> 3000-3099
             "blockpos_pattern": 3000,
             "itemstack_pattern": 3001,
@@ -204,14 +199,16 @@ class JavaIdiomHeuristics:
             pattern_name = self._feature_id_to_pattern_name(feature_id)
             matched_text = self._find_matching_snippet(java_code, pattern_name)
 
-            patterns.append(IdiomPattern(
-                pattern_id=feature_id,
-                pattern_name=pattern_name,
-                confidence=confidence,
-                matched_text=matched_text,
-                line_number=self._find_line_number(java_code, matched_text),
-                suppression_priority=self._get_suppression_priority(feature_id),
-            ))
+            patterns.append(
+                IdiomPattern(
+                    pattern_id=feature_id,
+                    pattern_name=pattern_name,
+                    confidence=confidence,
+                    matched_text=matched_text,
+                    line_number=self._find_line_number(java_code, matched_text),
+                    suppression_priority=self._get_suppression_priority(feature_id),
+                )
+            )
 
         # Sort by suppression priority (highest first)
         patterns.sort(key=lambda p: -p.suppression_priority)
@@ -253,7 +250,7 @@ class JavaIdiomHeuristics:
         """Find line number of snippet in text"""
         if not snippet:
             return 0
-        lines = text.split('\n')
+        lines = text.split("\n")
         for i, line in enumerate(lines, 1):
             if snippet[:30] in line:
                 return i

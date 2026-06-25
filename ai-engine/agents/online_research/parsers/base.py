@@ -89,9 +89,7 @@ class ModPortalParserBase:
                 raise ValueError(f"Missing required field: {field}")
 
     @classmethod
-    def require_supported_version(
-        cls, version: Any, unsupported_msg_template: str
-    ) -> None:
+    def require_supported_version(cls, version: Any, unsupported_msg_template: str) -> None:
         """Raise ``ValueError`` if ``version`` is not in :attr:`SUPPORTED_VERSIONS`.
 
         ``unsupported_msg_template`` must contain a single ``%s``/``{}`` style
@@ -137,7 +135,5 @@ class ModPortalParserAgentBase:
         """
         descriptor_path = modpack_path / self.manifest_filename
         if not descriptor_path.exists():
-            raise FileNotFoundError(
-                f"{self.manifest_filename} not found in {modpack_path}"
-            )
+            raise FileNotFoundError(f"{self.manifest_filename} not found in {modpack_path}")
         return getattr(self.parser, self.parse_method)(descriptor_path)

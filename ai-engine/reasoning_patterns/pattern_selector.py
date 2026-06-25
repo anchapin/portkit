@@ -77,15 +77,36 @@ class PatternSelector:
         if any(ind in code_lower for ind in nbt_indicators):
             return FeatureType.NBT_LOGIC
 
-        gui_indicators = ["guihandler", "screen", "button", "textfield", "container", "slot", "inventory"]
+        gui_indicators = [
+            "guihandler",
+            "screen",
+            "button",
+            "textfield",
+            "container",
+            "slot",
+            "inventory",
+        ]
         if any(ind in code_lower for ind in gui_indicators):
             return FeatureType.GUI
 
-        entity_indicators = ["entitytype", "pathfindermob", "goal_selector", "ai_goal", "entityspawn", "livingentity"]
+        entity_indicators = [
+            "entitytype",
+            "pathfindermob",
+            "goal_selector",
+            "ai_goal",
+            "entityspawn",
+            "livingentity",
+        ]
         if any(ind in code_lower for ind in entity_indicators):
             return FeatureType.ENTITY
 
-        block_indicators = ["block", "blockstate", "blockentity", "statedefinition", "stateproperties"]
+        block_indicators = [
+            "block",
+            "blockstate",
+            "blockentity",
+            "statedefinition",
+            "stateproperties",
+        ]
         if any(ind in code_lower for ind in block_indicators):
             return FeatureType.BLOCK
 
@@ -93,19 +114,44 @@ class PatternSelector:
         if any(ind in code_lower for ind in item_indicators):
             return FeatureType.ITEM
 
-        recipe_indicators = ["recipe", "shapedrecipe", "shapelessrecipe", "cookingrecipe", "recipebuilder"]
+        recipe_indicators = [
+            "recipe",
+            "shapedrecipe",
+            "shapelessrecipe",
+            "cookingrecipe",
+            "recipebuilder",
+        ]
         if any(ind in code_lower for ind in recipe_indicators):
             return FeatureType.RECIPE
 
-        event_indicators = ["subscribeevent", "eventlistener", "eventhandler", "onattach", "@SubscribeEvent"]
+        event_indicators = [
+            "subscribeevent",
+            "eventlistener",
+            "eventhandler",
+            "onattach",
+            "@SubscribeEvent",
+        ]
         if any(ind in code_lower for ind in event_indicators):
             return FeatureType.EVENT
 
-        network_indicators = ["packet", "network", " FriendlyByteBuf", "encode", "decode", "CustomPayload"]
+        network_indicators = [
+            "packet",
+            "network",
+            " FriendlyByteBuf",
+            "encode",
+            "decode",
+            "CustomPayload",
+        ]
         if any(ind in code_lower for ind in network_indicators):
             return FeatureType.NETWORK
 
-        capability_indicators = ["capability", "iitemhandler", "ifluidhandler", "provider", "getCapability"]
+        capability_indicators = [
+            "capability",
+            "iitemhandler",
+            "ifluidhandler",
+            "provider",
+            "getCapability",
+        ]
         if any(ind in code_lower for ind in capability_indicators):
             return FeatureType.CAPABILITY
 
@@ -159,7 +205,9 @@ class PatternSelector:
 
         if complexity == "high" or context.get("high_stakes", False):
             selected = max(patterns, key=lambda p: p.success_threshold)
-            logger.info(f"High-stakes selection: {selected.id} (threshold={selected.success_threshold})")
+            logger.info(
+                f"High-stakes selection: {selected.id} (threshold={selected.success_threshold})"
+            )
             return selected
 
         scored_patterns = []
@@ -221,9 +269,15 @@ class PatternSelector:
             description="Fallback pattern when no specific pattern is available",
             feature_type=FeatureType.UNKNOWN,
             steps=[
-                ReasoningStep(1, "Analyze Structure", "Identify the main components and their relationships"),
-                ReasoningStep(2, "Map to Bedrock", "Find appropriate Bedrock equivalents for each component"),
-                ReasoningStep(3, "Implement Conversion", "Convert the Java logic to Bedrock JavaScript"),
+                ReasoningStep(
+                    1, "Analyze Structure", "Identify the main components and their relationships"
+                ),
+                ReasoningStep(
+                    2, "Map to Bedrock", "Find appropriate Bedrock equivalents for each component"
+                ),
+                ReasoningStep(
+                    3, "Implement Conversion", "Convert the Java logic to Bedrock JavaScript"
+                ),
                 ReasoningStep(4, "Validate", "Verify the conversion works correctly"),
             ],
             is_handcrafted=True,

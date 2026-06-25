@@ -95,9 +95,7 @@ class ModrinthPackParser(ModPortalParserBase):
         self.require_non_empty(self.pack_info, empty_msg="Pack info is empty")
 
         # Check required fields
-        self.require_fields(
-            self.pack_info, ["format_version", "pack", "files"]
-        )
+        self.require_fields(self.pack_info, ["format_version", "pack", "files"])
 
         # Check format version
         self.require_supported_version(

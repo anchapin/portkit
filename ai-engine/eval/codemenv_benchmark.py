@@ -256,7 +256,9 @@ class IncompatibleFunctionDetector:
             f"Identify which API calls have NO direct Bedrock Scripting API equivalent. "
             f"Respond with a JSON list of incompatible APIs found.",
             java_source=java_source,
-            reference_bedrock=json.dumps({"incompatible_apis": [p["pattern"] for p in found_patterns]}),
+            reference_bedrock=json.dumps(
+                {"incompatible_apis": [p["pattern"] for p in found_patterns]}
+            ),
             expected_outcome=expected_outcome,
             api_packages=[p["pattern"] for p in found_patterns],
         )
@@ -279,7 +281,11 @@ class IncompatibleFunctionDetector:
                 intersection = detected & expected_patterns
                 precision = len(intersection) / len(detected) if detected else 0.0
                 recall = len(intersection) / len(expected_patterns) if expected_patterns else 0.0
-                f1 = 2 * precision * recall / (precision + recall) if (precision + recall) > 0 else 0.0
+                f1 = (
+                    2 * precision * recall / (precision + recall)
+                    if (precision + recall) > 0
+                    else 0.0
+                )
                 exact_match = f1 >= 0.8
                 response = None
 
@@ -472,7 +478,9 @@ class CodeAdaptor:
 
         features["has_manifest"] = '"format_version"' in code or "'format_version'" in code
         features["has_world_import"] = "@minecraft/server" in code
-        features["has_event_handler"] = bool(re.search(r"onPlayer|listenForEvent|afterEvents", code))
+        features["has_event_handler"] = bool(
+            re.search(r"onPlayer|listenForEvent|afterEvents", code)
+        )
         features["has_system_run"] = "system.run" in code
         features["has_world_getplayers"] = "getPlayers" in code or "getAllPlayers" in code
         features["has_block_access"] = bool(re.search(r"\.getBlock\(", code))
@@ -539,7 +547,9 @@ def _load_mmsd_pairs(path: str, max_pairs: int = 0) -> list[dict[str, Any]]:
             continue
         try:
             d = json.loads(line)
-            key = hashlib.md5((d.get("java_source", "") + d.get("instruction", ""))[:500].encode()).hexdigest()
+            key = hashlib.md5(
+                (d.get("java_source", "") + d.get("instruction", ""))[:500].encode()
+            ).hexdigest()
             if key not in seen:
                 seen.add(key)
                 pairs.append(d)
@@ -681,7 +691,9 @@ async def _evaluate_task_async(
 
     else:
         adaptor = CodeAdaptor()
-        bedrock_output, conv_error = _call_converter(task.java_source, task.instruction, converter_api_key)
+        bedrock_output, conv_error = _call_converter(
+            task.java_source, task.instruction, converter_api_key
+        )
 
         if conv_error:
             model_output = ""
@@ -744,7 +756,9 @@ class CodeMigrationsBenchmark:
             async with semaphore:
                 return await _evaluate_task_async(task, self.converter_api_key)
 
-        results = await asyncio.gather(*[run_with_semaphore(t) for t in tasks], return_exceptions=True)
+        results = await asyncio.gather(
+            *[run_with_semaphore(t) for t in tasks], return_exceptions=True
+        )
 
         task_results = []
         for i, result in enumerate(results):
@@ -789,8 +803,12 @@ class CodeMigrationsBenchmark:
                 task_type=task_type,
                 total_tasks=total,
                 exact_match_rate=exact_matches / total if total > 0 else 0.0,
-                avg_ast_similarity=sum(r.ast_similarity for r in results) / total if total > 0 else 0.0,
-                avg_semantic_equivalence=sum(r.semantic_equivalence for r in results) / total if total > 0 else 0.0,
+                avg_ast_similarity=sum(r.ast_similarity for r in results) / total
+                if total > 0
+                else 0.0,
+                avg_semantic_equivalence=sum(r.semantic_equivalence for r in results) / total
+                if total > 0
+                else 0.0,
                 compilation_success_rate=compiles / total if total > 0 else 0.0,
                 task_results=results,
             )
@@ -809,18 +827,22 @@ class CodeMigrationsBenchmark:
             else 0.0
         )
         overall_sem = (
-            sum(r.semantic_equivalence for results in by_type.values() for r in results) / total_tasks
+            sum(r.semantic_equivalence for results in by_type.values() for r in results)
+            / total_tasks
             if total_tasks > 0
             else 0.0
         )
         overall_comp = (
-            sum(r.compilation_success for results in by_type.values() for r in results) / total_tasks
+            sum(r.compilation_success for results in by_type.values() for r in results)
+            / total_tasks
             if total_tasks > 0
             else 0.0
         )
 
         weak = min(breakdowns, key=lambda t: breakdowns[t].exact_match_rate) if breakdowns else None
-        strong = max(breakdowns, key=lambda t: breakdowns[t].exact_match_rate) if breakdowns else None
+        strong = (
+            max(breakdowns, key=lambda t: breakdowns[t].exact_match_rate) if breakdowns else None
+        )
 
         return BenchmarkResult(
             total_tasks=total_tasks,
@@ -871,7 +893,9 @@ def run_benchmark(
     if output_path:
         output_data = result.to_dict()
         output_data["tasks"] = [
-            tr.to_dict() for results in result.task_type_breakdowns.values() for tr in results.task_results
+            tr.to_dict()
+            for results in result.task_type_breakdowns.values()
+            for tr in results.task_results
         ]
         with open(output_path, "w") as f:
             json.dump(output_data, f, indent=2, default=str)

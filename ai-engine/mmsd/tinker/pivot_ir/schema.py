@@ -29,6 +29,7 @@ from typing import Optional, Any
 
 class EntityType(Enum):
     """Type of Minecraft entity."""
+
     BLOCK = "block"
     ITEM = "item"
     ENTITY = "entity"
@@ -37,6 +38,7 @@ class EntityType(Enum):
 
 class EventType(Enum):
     """Type of event handler."""
+
     INTERACT = "interact"
     BREAK = "break"
     PLACE = "place"
@@ -51,9 +53,10 @@ class EventType(Enum):
 @dataclass
 class APICall:
     """A single API call in the IR.
-    
+
     Tracks whether this API call was successfully translated.
     """
+
     chain: str  # e.g., "world.afterEvents.tick.subscribe"
     depth: int  # API chain depth
     source_java: Optional[str] = None  # Original Java API call
@@ -64,9 +67,10 @@ class APICall:
 @dataclass
 class EventHandler:
     """An event handler mapping from Java to Bedrock.
-    
+
     Captures the essential semantics of an event handler.
     """
+
     java_event: str  # e.g., "@SubscribeEvent", "onPlayerInteract"
     bedrock_event: str  # e.g., "playerInteractWithBlock"
     callback_params: list[str] = field(default_factory=list)  # e.g., ["player", "block"]
@@ -78,6 +82,7 @@ class EventHandler:
 @dataclass
 class Manifest:
     """Add-on manifest metadata."""
+
     name: str
     uuid: str
     version: list[int]
@@ -89,6 +94,7 @@ class Manifest:
 @dataclass
 class BlockDef:
     """Block definition in IR."""
+
     name: str
     properties: dict[str, Any] = field(default_factory=dict)
     event_handlers: list[EventHandler] = field(default_factory=list)
@@ -100,6 +106,7 @@ class BlockDef:
 @dataclass
 class ItemDef:
     """Item definition in IR."""
+
     name: str
     properties: dict[str, Any] = field(default_factory=dict)
     event_handlers: list[EventHandler] = field(default_factory=list)
@@ -111,6 +118,7 @@ class ItemDef:
 @dataclass
 class EntityDef:
     """Entity definition in IR."""
+
     name: str
     entity_type: str  # e.g., "minecraft:pig"
     properties: dict[str, Any] = field(default_factory=dict)
@@ -123,9 +131,9 @@ class EntityDef:
 @dataclass
 class PivotIR:
     """Pivot IR — Structured representation of Java→Bedrock conversion.
-    
+
     This is the core data structure that adapters work with.
-    
+
     Attributes:
         manifest: Add-on manifest metadata
         blocks: Block definitions (keyed by name)
@@ -136,6 +144,7 @@ class PivotIR:
         raw_java: Original Java source (for debugging)
         coverage_stats: Coverage statistics for APF reward
     """
+
     manifest: Optional[Manifest] = None
     blocks: dict[str, BlockDef] = field(default_factory=dict)
     items: dict[str, ItemDef] = field(default_factory=dict)
@@ -175,6 +184,7 @@ def create_pivot_ir(
 
 def pivot_ir_to_dict(ir: PivotIR) -> dict:
     """Convert PivotIR to dictionary for serialization."""
+
     def handler_to_dict(h: EventHandler) -> dict:
         return {
             "java_event": h.java_event,
@@ -184,7 +194,7 @@ def pivot_ir_to_dict(ir: PivotIR) -> dict:
             "translated": h.translated,
             "partial": h.partial,
         }
-    
+
     def api_to_dict(a: APICall) -> dict:
         return {
             "chain": a.chain,
@@ -193,7 +203,7 @@ def pivot_ir_to_dict(ir: PivotIR) -> dict:
             "translated": a.translated,
             "partial": a.partial,
         }
-    
+
     def manifest_to_dict(m: Manifest) -> dict:
         return {
             "name": m.name,
@@ -203,7 +213,7 @@ def pivot_ir_to_dict(ir: PivotIR) -> dict:
             "min_engine_version": m.min_engine_version,
             "format_version": m.format_version,
         }
-    
+
     return {
         "manifest": manifest_to_dict(ir.manifest) if ir.manifest else None,
         "blocks": {
@@ -256,6 +266,7 @@ def pivot_ir_to_dict(ir: PivotIR) -> dict:
 
 def dict_to_pivot_ir(d: dict) -> PivotIR:
     """Reconstruct PivotIR from dictionary."""
+
     def dict_to_handler(h: dict) -> EventHandler:
         return EventHandler(
             java_event=h["java_event"],
@@ -265,7 +276,7 @@ def dict_to_pivot_ir(d: dict) -> PivotIR:
             translated=h.get("translated", True),
             partial=h.get("partial", False),
         )
-    
+
     def dict_to_api(a: dict) -> APICall:
         return APICall(
             chain=a["chain"],
@@ -274,7 +285,7 @@ def dict_to_pivot_ir(d: dict) -> PivotIR:
             translated=a.get("translated", True),
             partial=a.get("partial", False),
         )
-    
+
     def dict_to_manifest(m: dict) -> Manifest:
         return Manifest(
             name=m["name"],
@@ -284,7 +295,7 @@ def dict_to_pivot_ir(d: dict) -> PivotIR:
             min_engine_version=m.get("min_engine_version", [1, 20, 0]),
             format_version=m.get("format_version", 2),
         )
-    
+
     def dict_to_block(b: dict) -> BlockDef:
         return BlockDef(
             name=b["name"],
@@ -294,7 +305,7 @@ def dict_to_pivot_ir(d: dict) -> PivotIR:
             translated=b.get("translated", True),
             partial=b.get("partial", False),
         )
-    
+
     def dict_to_item(i: dict) -> ItemDef:
         return ItemDef(
             name=i["name"],
@@ -304,7 +315,7 @@ def dict_to_pivot_ir(d: dict) -> PivotIR:
             translated=i.get("translated", True),
             partial=i.get("partial", False),
         )
-    
+
     def dict_to_entity(e: dict) -> EntityDef:
         return EntityDef(
             name=e["name"],
@@ -315,7 +326,7 @@ def dict_to_pivot_ir(d: dict) -> PivotIR:
             translated=e.get("translated", True),
             partial=e.get("partial", False),
         )
-    
+
     cov = d.get("coverage_stats", {})
     return PivotIR(
         manifest=dict_to_manifest(d["manifest"]) if d.get("manifest") else None,
@@ -338,21 +349,16 @@ def dict_to_pivot_ir(d: dict) -> PivotIR:
 # IR Statistics
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 def compute_coverage(ir: PivotIR) -> dict[str, float]:
     """Compute coverage statistics for APF reward calculation.
-    
+
     Returns dict with coverage percentages for entities, events, and APIs.
     """
-    entity_coverage = (
-        ir.translated_entities / ir.total_entities if ir.total_entities > 0 else 0.0
-    )
-    event_coverage = (
-        ir.translated_events / ir.total_events if ir.total_events > 0 else 0.0
-    )
-    api_coverage = (
-        ir.translated_api_calls / ir.total_api_calls if ir.total_api_calls > 0 else 0.0
-    )
-    
+    entity_coverage = ir.translated_entities / ir.total_entities if ir.total_entities > 0 else 0.0
+    event_coverage = ir.translated_events / ir.total_events if ir.total_events > 0 else 0.0
+    api_coverage = ir.translated_api_calls / ir.total_api_calls if ir.total_api_calls > 0 else 0.0
+
     return {
         "entity_coverage": entity_coverage,
         "event_coverage": event_coverage,
@@ -364,32 +370,32 @@ def compute_coverage(ir: PivotIR) -> dict[str, float]:
 def ir_to_text_summary(ir: PivotIR) -> str:
     """Generate a human-readable summary of the IR."""
     lines = ["PivotIR Summary", "=" * 50]
-    
+
     if ir.manifest:
         lines.append(f"Manifest: {ir.manifest.name} v{ir.manifest.version}")
-    
+
     lines.append(f"\nBlocks: {len(ir.blocks)}")
     for name, block in ir.blocks.items():
         lines.append(f"  - {name}: {len(block.event_handlers)} events, {len(block.api_calls)} APIs")
-    
+
     lines.append(f"\nItems: {len(ir.items)}")
     for name, item in ir.items.items():
         lines.append(f"  - {name}: {len(item.event_handlers)} events, {len(item.api_calls)} APIs")
-    
+
     lines.append(f"\nEntities: {len(ir.entities)}")
     for name, entity in ir.entities.items():
         lines.append(f"  - {name} ({entity.entity_type}): {len(entity.event_handlers)} events")
-    
+
     lines.append(f"\nGlobal Events: {len(ir.global_events)}")
     lines.append(f"Global APIs: {len(ir.global_apis)}")
-    
+
     cov = compute_coverage(ir)
     lines.append(f"\nCoverage:")
     lines.append(f"  Entities: {cov['entity_coverage']:.1%}")
     lines.append(f"  Events: {cov['event_coverage']:.1%}")
     lines.append(f"  APIs: {cov['api_coverage']:.1%}")
     lines.append(f"  Overall: {cov['overall_coverage']:.1%}")
-    
+
     return "\n".join(lines)
 
 
@@ -401,7 +407,7 @@ if __name__ == "__main__":
         version=[1, 0, 0],
         description="Test mod",
     )
-    
+
     block = BlockDef(
         name="custom_block",
         properties={"material": "stone"},
@@ -423,7 +429,7 @@ if __name__ == "__main__":
             )
         ],
     )
-    
+
     ir = create_pivot_ir(
         manifest=manifest,
         blocks={"custom_block": block},
@@ -435,12 +441,12 @@ if __name__ == "__main__":
     ir.translated_events = 1
     ir.total_api_calls = 1
     ir.translated_api_calls = 1
-    
+
     print(ir_to_text_summary(ir))
     print("\n" + "=" * 50)
     print("Dict serialization test:")
     d = pivot_ir_to_dict(ir)
     print(f"Serialized keys: {list(d.keys())}")
-    
+
     ir2 = dict_to_pivot_ir(d)
     print(f"Deserialized blocks: {list(ir2.blocks.keys())}")

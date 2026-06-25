@@ -228,9 +228,7 @@ def _validate_block_body(block_data: dict, path: str) -> Dict[str, Any]:
                     if isinstance(comp_value, str):
                         passed += 1
                     else:
-                        warnings.append(
-                            f"{path}: {comp_name} should be a string (loot table path)"
-                        )
+                        warnings.append(f"{path}: {comp_name} should be a string (loot table path)")
 
     if "permutations" in block_data:
         checks += 1

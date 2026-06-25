@@ -210,7 +210,9 @@ class RecipeConverterAgent:
         if ingredient:
             normalized["ingredients"] = [ingredient]
 
-    def _apply_vanilla_category(self, normalized: Dict, recipe_data: Dict, recipe_type: str) -> bool:
+    def _apply_vanilla_category(
+        self, normalized: Dict, recipe_data: Dict, recipe_type: str
+    ) -> bool:
         """Apply a vanilla (non-modded) recipe category.
 
         Returns ``True`` when ``recipe_type`` matched a vanilla category.

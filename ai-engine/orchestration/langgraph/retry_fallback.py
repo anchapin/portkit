@@ -56,21 +56,28 @@ def execute_logic_translator_retry(
                 if script_key == segment_id or script.get("name") == segment_id:
                     if isinstance(correction_data, dict):
                         script["data"] = correction_data.get("bedrock_data", script.get("data", {}))
-                        script["confidence"] = correction_data.get("confidence", script.get("confidence", 0.95))
+                        script["confidence"] = correction_data.get(
+                            "confidence", script.get("confidence", 0.95)
+                        )
                         script["review_flag"] = correction_data.get("review_flag", False)
                         script["corrected"] = True
                     corrected_keys.append(script_key)
                     corrected_count += 1
                     logger.info(f"[{job_id}] Applied HITL correction for segment {segment_id}")
 
-        logger.info(f"[{job_id}] Logic translator retry completed (attempt {retry_count + 1}): "
-                     f"{len(interrupted)} segments retried, {corrected_count} corrections applied")
-        add_span_attributes(span, {
-            "success": "true",
-            "retry_count": str(retry_count + 1),
-            "segments_retried": str(len(interrupted)),
-            "corrections_applied": str(corrected_count),
-        })
+        logger.info(
+            f"[{job_id}] Logic translator retry completed (attempt {retry_count + 1}): "
+            f"{len(interrupted)} segments retried, {corrected_count} corrections applied"
+        )
+        add_span_attributes(
+            span,
+            {
+                "success": "true",
+                "retry_count": str(retry_count + 1),
+                "segments_retried": str(len(interrupted)),
+                "corrections_applied": str(corrected_count),
+            },
+        )
         end_span(span)
 
         # Do NOT return converted_scripts here — the Annotated[..., _concat_lists]

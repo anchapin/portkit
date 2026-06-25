@@ -55,11 +55,13 @@ def startup():
 
 @app.get("/health")
 def health():
-    return JSONResponse({
-        "status": "ok",
-        "model": MODEL_REPO,
-        "quantization": "bfloat16 (above Q5_K_M minimum floor)",
-    })
+    return JSONResponse(
+        {
+            "status": "ok",
+            "model": MODEL_REPO,
+            "quantization": "bfloat16 (above Q5_K_M minimum floor)",
+        }
+    )
 
 
 @app.post("/v1/chat/completions")
@@ -83,8 +85,7 @@ def chat_completions(body: dict):
     user_messages = [m for m in messages if m.get("role") != "system"]
 
     prompt = tokenizer.apply_chat_template(
-        [{"role": "system", "content": system_prompt}]
-        + user_messages,
+        [{"role": "system", "content": system_prompt}] + user_messages,
         tokenize=False,
         add_generation_prompt=True,
     )
@@ -135,8 +136,7 @@ def generate(body: dict):
     )
 
     prompt = tokenizer.apply_chat_template(
-        [{"role": "system", "content": system_prompt}]
-        + messages,
+        [{"role": "system", "content": system_prompt}] + messages,
         tokenize=False,
         add_generation_prompt=True,
     )

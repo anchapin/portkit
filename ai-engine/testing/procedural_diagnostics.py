@@ -202,9 +202,9 @@ class ProcedureAnalyzer:
 
         for step in self.procedure.steps:
             if step.required and not completed_or_skipped.get(step.step_id, False):
-                actual_status = (
-                    tracer.step_executions.get(step.step_id, StepExecution(step_id=step.step_id, status=StepStatus.PENDING)).status
-                )
+                actual_status = tracer.step_executions.get(
+                    step.step_id, StepExecution(step_id=step.step_id, status=StepStatus.PENDING)
+                ).status
                 deviations.append(
                     Deviation(
                         deviation_type=DeviationType.SKIPPED_STEP,
@@ -308,9 +308,7 @@ class ProcedureAnalyzer:
 
         return deviations
 
-    def _check_misinterpreted_conditionals(
-        self, tracer: ProcedureTracer
-    ) -> List[Deviation]:
+    def _check_misinterpreted_conditionals(self, tracer: ProcedureTracer) -> List[Deviation]:
         deviations = []
 
         for step in self.procedure.steps:
@@ -383,12 +381,10 @@ class ProceduralDiagnosticsSuite:
 
         total_steps = len(procedure.steps)
         completed_steps = sum(
-            1 for se in tracer.step_executions.values()
-            if se.status == StepStatus.COMPLETED
+            1 for se in tracer.step_executions.values() if se.status == StepStatus.COMPLETED
         )
         skipped_steps = sum(
-            1 for se in tracer.step_executions.values()
-            if se.status == StepStatus.SKIPPED
+            1 for se in tracer.step_executions.values() if se.status == StepStatus.SKIPPED
         )
 
         fidelity_score = self._calculate_fidelity_score(
@@ -445,13 +441,9 @@ class ProceduralDiagnosticsSuite:
         fidelity_score = max(0.0, completion_score - skip_penalty - deviation_penalty)
         return fidelity_score
 
-    def get_diagnostic_summary(
-        self, procedure_id: Optional[str] = None
-    ) -> Dict[str, Any]:
+    def get_diagnostic_summary(self, procedure_id: Optional[str] = None) -> Dict[str, Any]:
         if procedure_id:
-            metrics_list = [
-                m for m in self.diagnostic_history if m.procedure_id == procedure_id
-            ]
+            metrics_list = [m for m in self.diagnostic_history if m.procedure_id == procedure_id]
         else:
             metrics_list = self.diagnostic_history
 
@@ -461,9 +453,7 @@ class ProceduralDiagnosticsSuite:
         total_runs = len(metrics_list)
         avg_fidelity = sum(m.fidelity_score for m in metrics_list) / total_runs
         total_deviations = sum(len(m.deviations) for m in metrics_list)
-        high_severity = sum(
-            1 for m in metrics_list for d in m.deviations if d.severity == "high"
-        )
+        high_severity = sum(1 for m in metrics_list for d in m.deviations if d.severity == "high")
 
         return {
             "total_runs": total_runs,
@@ -482,9 +472,7 @@ class ProceduralDiagnosticsSuite:
             ],
         }
 
-    def generate_report(
-        self, metrics: FidelityMetrics, format: str = "json"
-    ) -> Dict[str, Any]:
+    def generate_report(self, metrics: FidelityMetrics, format: str = "json") -> Dict[str, Any]:
         report = {
             "procedure_id": metrics.procedure_id,
             "procedure_name": metrics.procedure_name,
@@ -538,9 +526,7 @@ class ProceduralDiagnosticsSuite:
             if metrics.deviations:
                 lines.append("Deviations:")
                 for d in metrics.deviations:
-                    lines.append(
-                        f"  [{d.severity.upper()}] {d.deviation_type.value}: {d.details}"
-                    )
+                    lines.append(f"  [{d.severity.upper()}] {d.deviation_type.value}: {d.details}")
             else:
                 lines.append("No deviations detected.")
             return "\n".join(lines)

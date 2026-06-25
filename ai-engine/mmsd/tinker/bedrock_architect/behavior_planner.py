@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import json
 import logging
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from enum import Enum
 from typing import Any, Dict, List, Optional
 
@@ -111,7 +111,9 @@ def _build_metadata(options: DefinitionOptions, component_type: ComponentType) -
     }
 
 
-def generate_block_definition(block_data: Dict[str, Any], options: Optional[DefinitionOptions] = None) -> Dict[str, Any]:
+def generate_block_definition(
+    block_data: Dict[str, Any], options: Optional[DefinitionOptions] = None
+) -> Dict[str, Any]:
     """Generate a Bedrock block definition.
 
     Args:
@@ -145,7 +147,9 @@ def generate_block_definition(block_data: Dict[str, Any], options: Optional[Defi
     return definition
 
 
-def generate_item_definition(item_data: Dict[str, Any], options: Optional[DefinitionOptions] = None) -> Dict[str, Any]:
+def generate_item_definition(
+    item_data: Dict[str, Any], options: Optional[DefinitionOptions] = None
+) -> Dict[str, Any]:
     """Generate a Bedrock item definition.
 
     Args:
@@ -179,7 +183,9 @@ def generate_item_definition(item_data: Dict[str, Any], options: Optional[Defini
     return definition
 
 
-def generate_entity_definition(entity_data: Dict[str, Any], options: Optional[DefinitionOptions] = None) -> Dict[str, Any]:
+def generate_entity_definition(
+    entity_data: Dict[str, Any], options: Optional[DefinitionOptions] = None
+) -> Dict[str, Any]:
     """Generate a Bedrock entity definition.
 
     Args:
@@ -213,7 +219,9 @@ def generate_entity_definition(entity_data: Dict[str, Any], options: Optional[De
     return definition
 
 
-def generate_recipe_definition(recipe_data: Dict[str, Any], options: Optional[DefinitionOptions] = None) -> Dict[str, Any]:
+def generate_recipe_definition(
+    recipe_data: Dict[str, Any], options: Optional[DefinitionOptions] = None
+) -> Dict[str, Any]:
     """Generate a Bedrock recipe definition.
 
     Args:
@@ -281,7 +289,10 @@ def generate_definition_json(component_data_str: str, component_type: str) -> st
             {
                 "success": True,
                 "component_type": component_type,
-                "identifier": component_data.get("identifier", f"custom:{component_data.get('id', f'{component_type}_placeholder')}"),
+                "identifier": component_data.get(
+                    "identifier",
+                    f"custom:{component_data.get('id', f'{component_type}_placeholder')}",
+                ),
                 "definition_json": definition,
                 "message": f"Placeholder {component_type} definition generated successfully.",
             },
@@ -295,9 +306,14 @@ def generate_definition_json(component_data_str: str, component_type: str) -> st
             indent=2,
         )
     except Exception as e:
-        logger.error(f"Error generating placeholder {component_type} definition: {e}", exc_info=True)
+        logger.error(
+            f"Error generating placeholder {component_type} definition: {e}", exc_info=True
+        )
         return json.dumps(
-            {"success": False, "error": f"Failed to generate placeholder {component_type} definition: {e}"},
+            {
+                "success": False,
+                "error": f"Failed to generate placeholder {component_type} definition: {e}",
+            },
             indent=2,
         )
 
@@ -318,7 +334,7 @@ class BehaviorPlanner:
         self.format_version = format_version
         self._definitions: List[Dict[str, Any]] = []
 
-    def add_block(self, block_data: Dict[str, Any]) -> "BehaviorPlanner":
+    def add_block(self, block_data: Dict[str, Any]) -> BehaviorPlanner:
         """Add a block definition to the plan.
 
         Args:
@@ -331,7 +347,7 @@ class BehaviorPlanner:
         self._definitions.append(generate_block_definition(block_data, options))
         return self
 
-    def add_item(self, item_data: Dict[str, Any]) -> "BehaviorPlanner":
+    def add_item(self, item_data: Dict[str, Any]) -> BehaviorPlanner:
         """Add an item definition to the plan.
 
         Args:
@@ -344,7 +360,7 @@ class BehaviorPlanner:
         self._definitions.append(generate_item_definition(item_data, options))
         return self
 
-    def add_entity(self, entity_data: Dict[str, Any]) -> "BehaviorPlanner":
+    def add_entity(self, entity_data: Dict[str, Any]) -> BehaviorPlanner:
         """Add an entity definition to the plan.
 
         Args:
@@ -357,7 +373,7 @@ class BehaviorPlanner:
         self._definitions.append(generate_entity_definition(entity_data, options))
         return self
 
-    def add_recipe(self, recipe_data: Dict[str, Any]) -> "BehaviorPlanner":
+    def add_recipe(self, recipe_data: Dict[str, Any]) -> BehaviorPlanner:
         """Add a recipe definition to the plan.
 
         Args:

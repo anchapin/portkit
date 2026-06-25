@@ -68,9 +68,7 @@ class PatternDiscoveryEngine:
             config: Discovery configuration
         """
         self.config = config or DiscoveryConfig()
-        self.patterns: Dict[FeatureType, List[PatternCandidate]] = {
-            ft: [] for ft in FeatureType
-        }
+        self.patterns: Dict[FeatureType, List[PatternCandidate]] = {ft: [] for ft in FeatureType}
         self.performance_cache: Dict[str, PatternPerformance] = {}
         self._initialize_handcrafted()
 
@@ -153,9 +151,7 @@ class PatternDiscoveryEngine:
                 continue
 
             try:
-                success, reward, confidence = await validation_fn(
-                    candidate.pattern, feature_type
-                )
+                success, reward, confidence = await validation_fn(candidate.pattern, feature_type)
                 candidate.performance.record_attempt(success, reward, confidence)
                 evaluated += 1
             except Exception as e:
@@ -394,10 +390,16 @@ class PatternDiscoveryEngine:
     def _get_best_patterns(self, feature_type: FeatureType) -> List[ReasoningPattern]:
         """Get the best performing patterns for a feature type."""
         candidates = self.patterns.get(feature_type, [])
-        sorted_candidates = sorted(candidates, key=lambda c: c.performance.get_score(), reverse=True)
+        sorted_candidates = sorted(
+            candidates, key=lambda c: c.performance.get_score(), reverse=True
+        )
 
         discovered = [c for c in sorted_candidates if c.pattern.is_discovered]
-        handcrafted = [c for c in sorted_candidates if not c.pattern.is_discovered and c.performance.total_attempts > 0]
+        handcrafted = [
+            c
+            for c in sorted_candidates
+            if not c.pattern.is_discovered and c.performance.total_attempts > 0
+        ]
 
         return [c.pattern for c in (discovered + handcrafted)[:5]]
 
@@ -465,7 +467,10 @@ class PatternDiscoveryEngine:
         """Get statistics about pattern discovery."""
         total_candidates = sum(len(candidates) for candidates in self.patterns.values())
         discovered_count = sum(
-            1 for candidates in self.patterns.values() for c in candidates if c.pattern.is_discovered
+            1
+            for candidates in self.patterns.values()
+            for c in candidates
+            if c.pattern.is_discovered
         )
 
         return {

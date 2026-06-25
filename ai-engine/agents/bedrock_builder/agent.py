@@ -898,4 +898,3 @@ class BedrockBuilderAgent:
         """Package addon into .mcaddon file."""
         # Implementation placeholder
         return json.dumps({"success": True, "message": "Addon packaged"})
-

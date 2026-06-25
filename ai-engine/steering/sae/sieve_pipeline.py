@@ -38,6 +38,7 @@ logger = logging.getLogger(__name__)
 
 class GenerationMode(str, Enum):
     """Mode for code generation."""
+
     BEDROCK_CONVERSION = "bedrock_conversion"
     GENERAL = "general"
 
@@ -45,6 +46,7 @@ class GenerationMode(str, Enum):
 @dataclass
 class SievePipelineConfig:
     """Configuration for the Sieve steering pipeline."""
+
     enable_steering: bool = True
     steering_strength: float = 1.0
     conditional_steering: bool = True  # Only steer in BEDROCK_CONVERSION mode
@@ -67,6 +69,7 @@ class SievePipelineConfig:
 @dataclass
 class ActivationSample:
     """A single activation sample from the model."""
+
     features: List[float]
     position: int  # Token position in sequence
     mode: GenerationMode
@@ -77,6 +80,7 @@ class ActivationSample:
 @dataclass
 class SteeringEvent:
     """Records a steering intervention."""
+
     timestamp: str
     feature_index: int
     original_activation: float
@@ -134,7 +138,9 @@ class SievePipeline:
 
         java_targets = self.java_registry.get_suppression_targets()
         bedrock_targets = self.bedrock_registry.get_amplification_targets()
-        logger.debug(f"Steering targets: {len(java_targets)} suppress, {len(bedrock_targets)} amplify")
+        logger.debug(
+            f"Steering targets: {len(java_targets)} suppress, {len(bedrock_targets)} amplify"
+        )
 
         if java_targets:
             self.steerer.set_steering_targets(
@@ -323,7 +329,9 @@ class ActivationCollector:
                             feature_index=i,
                             original=orig,
                             steered=new,
-                            direction=SteeringDirection.SUPPRESS if new < orig else SteeringDirection.AMPLIFY,
+                            direction=SteeringDirection.SUPPRESS
+                            if new < orig
+                            else SteeringDirection.AMPLIFY,
                         )
 
 

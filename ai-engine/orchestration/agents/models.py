@@ -12,6 +12,7 @@ from typing import Any, Callable, Dict, List, Optional
 
 class StepStatus(Enum):
     """Status of a step in the RunAgent execution"""
+
     PENDING = "pending"
     VALIDATING = "validating"
     READY = "ready"
@@ -24,17 +25,20 @@ class StepStatus(Enum):
 
 class ConstraintViolation(Exception):
     """Raised when a step violates its constraints"""
+
     pass
 
 
 class StepOrderError(Exception):
     """Raised when steps are executed out of order"""
+
     pass
 
 
 @dataclass
 class Constraint:
     """A constraint that must be satisfied for step execution"""
+
     name: str
     description: str
     validator: Callable[["StepContext"], bool]
@@ -45,6 +49,7 @@ class Constraint:
 @dataclass
 class StepContext:
     """Context passed to each step during execution"""
+
     step_id: str
     step_name: str
     inputs: Dict[str, Any]
@@ -57,6 +62,7 @@ class StepContext:
 @dataclass
 class StepResult:
     """Result of a step execution"""
+
     step_id: str
     status: StepStatus
     output: Optional[Dict[str, Any]] = None
@@ -70,6 +76,7 @@ class StepResult:
 @dataclass
 class ExecutionTrace:
     """Complete trace of RunAgent execution"""
+
     execution_id: str
     plan_name: str
     start_time: float

@@ -115,9 +115,7 @@ class BedrockConstraintChecker:
         if isinstance(obj, dict):
             if not obj:
                 return current_depth
-            return max(
-                self._compute_json_depth(v, current_depth + 1) for v in obj.values()
-            )
+            return max(self._compute_json_depth(v, current_depth + 1) for v in obj.values())
         elif isinstance(obj, list):
             if not obj:
                 return current_depth
@@ -157,8 +155,14 @@ class BedrockConstraintChecker:
 
         # Check for blocking operations in tick handlers
         tick_handler_patterns = [
-            (r"world\.afterEvents\..*\.subscribe\([^)]*\bwhile\b", "Blocking while loop in event handler"),
-            (r"world\.afterEvents\..*\.subscribe\([^)]*\bfor\b\s*\(", "Blocking for loop in event handler"),
+            (
+                r"world\.afterEvents\..*\.subscribe\([^)]*\bwhile\b",
+                "Blocking while loop in event handler",
+            ),
+            (
+                r"world\.afterEvents\..*\.subscribe\([^)]*\bfor\b\s*\(",
+                "Blocking for loop in event handler",
+            ),
             (r"setTimeout|setInterval", "setTimeout/setInterval can cause tick issues"),
         ]
 
@@ -249,9 +253,7 @@ class RubricEvaluator:
             adjudication_notes=adjudication_notes,
         )
 
-    def _extract_components(
-        self, bedrock_output: str
-    ) -> tuple[Optional[str], list[str]]:
+    def _extract_components(self, bedrock_output: str) -> tuple[Optional[str], list[str]]:
         """Extract manifest.json and script files from bedrock output."""
         manifest = None
         scripts = []
@@ -264,9 +266,7 @@ class RubricEvaluator:
                 break
 
         # Extract JS blocks
-        js_blocks = re.findall(
-            r"```(?:javascript|js)\s*(.*?)\s*```", bedrock_output, re.DOTALL
-        )
+        js_blocks = re.findall(r"```(?:javascript|js)\s*(.*?)\s*```", bedrock_output, re.DOTALL)
         scripts = [b.strip() for b in js_blocks]
 
         return manifest, scripts
@@ -285,8 +285,7 @@ class RubricEvaluator:
             or re.search(r"EntityType|EntitySpawnEvent", java_source)
         )
         bedrock_has_entities = (
-            manifest is not None
-            and bool(re.search(r'"id".*"minecraft:', manifest, re.IGNORECASE))
+            manifest is not None and bool(re.search(r'"id".*"minecraft:', manifest, re.IGNORECASE))
         ) or any("entity" in s.lower() for s in scripts)
         evidence["entity_spawning_preserved"] = bedrock_has_entities if java_has_entities else True
 
@@ -420,9 +419,7 @@ class RubricEvaluator:
         partial_credits = definition["partial_credits"]
 
         # Check for idiomatic Bedrock Script usage
-        has_imports = any(
-            re.search(r"import.*from.*@minecraft/server", s) for s in scripts
-        )
+        has_imports = any(re.search(r"import.*from.*@minecraft/server", s) for s in scripts)
         has_world_access = any(
             re.search(r"world\.(afterEvents|beforeEvents|getBlock|getDimension)", s)
             for s in scripts
