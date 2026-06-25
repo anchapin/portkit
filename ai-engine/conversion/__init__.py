@@ -10,6 +10,20 @@ from conversion.multisage_augmentation import (
     augment_java_snippet_async,
 )
 
+from conversion.five_phase_pipeline import (
+    ConversionResult,
+    FivePhaseConverter,
+    Phase1StubGenerator,
+    Phase2DependencyAnalyzer,
+    Phase3APIMapper,
+    Phase4CompilationRepair,
+    Phase5QualityValidator,
+    PhaseReport,
+    PhaseStatus,
+    RepairAction,
+    ValidationReport,
+)
+
 from conversion.failure_taxonomy import (
     FailureClassifier,
     FailureType,
@@ -38,6 +52,18 @@ __all__ = [
     "augment_java_snippet",
     "augment_dataset",
     "augment_java_snippet_async",
+    # Five-phase pipeline
+    "FivePhaseConverter",
+    "ConversionResult",
+    "Phase1StubGenerator",
+    "Phase2DependencyAnalyzer",
+    "Phase3APIMapper",
+    "Phase4CompilationRepair",
+    "Phase5QualityValidator",
+    "PhaseReport",
+    "PhaseStatus",
+    "RepairAction",
+    "ValidationReport",
     # Failure taxonomy
     "FailureClassifier",
     "FailureType",
