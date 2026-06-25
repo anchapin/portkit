@@ -103,10 +103,12 @@ class AdaptionDatasetLoader:
                 for line in f:
                     if line.strip():
                         count += 1
-            stats["discovered_files"].append({
-                "path": filepath,
-                "pairs": count,
-            })
+            stats["discovered_files"].append(
+                {
+                    "path": filepath,
+                    "pairs": count,
+                }
+            )
             stats["total_pairs"] += count
 
         merged_path = self.get_merged_path()
