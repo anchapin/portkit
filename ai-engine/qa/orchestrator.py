@@ -107,6 +107,88 @@ class QAOrchestrator:
                 }
 
         context.current_agent = None
+
+        if context.strict_api:
+            context = await self._run_ast_postprocessor(context)
+
+        return context
+
+    async def _run_ast_postprocessor(self, context: QAContext) -> QAContext:
+        """Run AST Bedrock post-processor for hallucination detection (Issue #1721).
+
+        When strict_api mode is enabled, validates all generated TypeScript/JavaScript
+        code against the Bedrock API KB to catch hallucinated API calls.
+        """
+        try:
+            from conversion.ast_postprocessor import ASTBedrockPostprocessor
+
+            postprocessor = ASTBedrockPostprocessor(strict=True)
+            logger.info("Running AST Bedrock post-processor", job_id=context.job_id)
+
+            ts_files = list(context.output_bedrock_path.rglob("*.ts"))
+            all_hallucinations = []
+
+            for ts_file in ts_files:
+                try:
+                    code = ts_file.read_text(encoding="utf-8")
+                    result = postprocessor.process(code)
+
+                    if result.hallucinated_calls:
+                        all_hallucinations.extend(result.hallucinated_calls)
+                        logger.warning(
+                            "Hallucinated API calls detected",
+                            job_id=context.job_id,
+                            file=str(ts_file.relative_to(context.output_bedrock_path)),
+                            count=len(result.hallucinated_calls),
+                            rate=result.hallucination_rate,
+                        )
+                except Exception as e:
+                    logger.error(
+                        "AST post-processor failed for file",
+                        file=str(ts_file),
+                        error=str(e),
+                    )
+
+            context.validation_results["ast_postprocessor"] = {
+                "success": len(all_hallucinations) == 0,
+                "hallucinations_detected": len(all_hallucinations),
+                "hallucination_details": [
+                    {
+                        "call": h.api_call.full_call,
+                        "line": h.api_call.line,
+                        "severity": h.severity.value,
+                        "type": h.hallucination_type,
+                        "suggestion": h.suggestion,
+                    }
+                    for h in all_hallucinations
+                ],
+                "strict_api_enabled": True,
+            }
+
+            logger.info(
+                "AST post-processor completed",
+                job_id=context.job_id,
+                hallucinations=len(all_hallucinations),
+                valid=len(all_hallucinations) == 0,
+            )
+
+        except ImportError as e:
+            logger.warning(
+                "ASTBedrockPostprocessor not available, skipping",
+                error=str(e),
+            )
+            context.validation_results["ast_postprocessor"] = {
+                "success": True,
+                "skipped": True,
+                "reason": "Module not available",
+            }
+        except Exception as e:
+            logger.error("AST post-processor failed", job_id=context.job_id, error=str(e))
+            context.validation_results["ast_postprocessor"] = {
+                "success": False,
+                "error": str(e),
+            }
+
         return context
 
     async def run_agents_parallel(
@@ -241,6 +323,10 @@ class QAOrchestrator:
         context.metadata["parallel_speedup"] = self._calculate_speedup(execution_times)
 
         context.current_agent = None
+
+        if context.strict_api:
+            context = await self._run_ast_postprocessor(context)
+
         return context
 
     def _calculate_speedup(self, execution_times: Dict[str, float]) -> float:
