@@ -221,7 +221,7 @@ async def startup_event():
     init_sentry()
     logger.info("Sentry error monitoring initialized")
 
-    # Initialize OpenTelemetry tracing with Jaeger/OTLP exporters
+    # Initialize OpenTelemetry tracing (OTLP exporters)
     init_tracing(app)
     logger.info("OpenTelemetry tracing initialized")
 

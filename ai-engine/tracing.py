@@ -43,18 +43,21 @@ def get_service_version() -> str:
 
 
 def get_tracing_exporter() -> str:
-    """Get the tracing exporter type from environment."""
-    return os.getenv("TRACING_EXPORTER", "jaeger").lower()
+    """Get the tracing exporter type from environment.
 
-
-def get_jaeger_host() -> str:
-    """Get Jaeger host from environment."""
-    return os.getenv("JAEGER_HOST", "jaeger")
-
-
-def get_jaeger_port() -> int:
-    """Get Jaeger port from environment."""
-    return int(os.getenv("JAEGER_PORT", "14268"))
+    Defaults to ``otlp``. The deprecated ``jaeger`` value is accepted as an
+    alias for ``otlp`` (Jaeger natively ingests OTLP since v1.35) so existing
+    deployments keep working without configuration changes.
+    """
+    exporter = os.getenv("TRACING_EXPORTER", "otlp").lower()
+    if exporter == "jaeger":
+        logger.warning(
+            "TRACING_EXPORTER=jaeger is deprecated; the Jaeger exporter has been "
+            "removed in favor of OTLP (Jaeger natively accepts OTLP). "
+            "Falling back to the OTLP exporter. Set TRACING_EXPORTER=otlp to silence."
+        )
+        return "otlp"
+    return exporter
 
 
 def get_otlp_endpoint() -> str:
@@ -72,28 +75,8 @@ def _create_resource() -> Resource:
     )
 
 
-def _setup_jaeger_exporter() -> Optional[BatchSpanProcessor]:
-    """Setup Jaeger exporter.
-
-    The ``opentelemetry-exporter-jaeger`` package is optional (it is deprecated
-    and conflicts with protobuf pins). Import lazily so a missing package never
-    breaks module collection or OTLP-based deployments.
-    """
-    try:
-        from opentelemetry.exporter.jaeger.thrift import JaegerExporter
-
-        jaeger_exporter = JaegerExporter(
-            agent_host_name=get_jaeger_host(),
-            agent_port=get_jaeger_port(),
-        )
-        return BatchSpanProcessor(jaeger_exporter)
-    except Exception as e:
-        logger.warning(f"Failed to setup Jaeger exporter: {e}")
-        return None
-
-
 def _setup_otlp_exporter() -> Optional[BatchSpanProcessor]:
-    """Setup OTLP exporter."""
+    """Setup OTLP (gRPC) exporter."""
     try:
         otlp_exporter = OTLPSpanExporter(
             endpoint=get_otlp_endpoint(),
@@ -129,12 +112,6 @@ def init_tracing(app=None) -> None:
         exporter_type = get_tracing_exporter()
 
         # Add exporters based on configuration
-        if exporter_type in ("jaeger", "all"):
-            processor = _setup_jaeger_exporter()
-            if processor:
-                _tracer_provider.add_span_processor(processor)
-                logger.info(f"Jaeger exporter configured: {get_jaeger_host()}:{get_jaeger_port()}")
-
         if exporter_type in ("otlp", "all"):
             processor = _setup_otlp_exporter()
             if processor:
