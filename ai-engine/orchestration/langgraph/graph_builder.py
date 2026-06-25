@@ -693,22 +693,30 @@ class ConversionPipeline:
             }
 
     def _generate_confidence_segments(self, state: ConversionState) -> List[Dict[str, Any]]:
-        """Generate confidence segments for each converted item."""
+        """Generate confidence segments for each converted item.
+
+        Uses the confidence value stored in each converted script by the
+        converter nodes, NOT position-based heuristics.  Cross-framework
+        evidence (arxiv 2605.18332) shows that confidence heuristics
+        derived from one framework (e.g. SWE-Agent) can reverse direction
+        in another; PortKit-specific conversion quality should drive the
+        score so it can be validated empirically per constellation.
+        """
         segments = []
         scripts = state.get("converted_scripts", [])
 
         for i, script in enumerate(scripts):
-            confidence = 0.95 - (i * 0.01)
+            script_confidence = script.get("confidence", 0.85)
             segments.append(
                 {
                     "block_id": f"{script.get('type', 'unknown')}_{i}",
-                    "confidence": max(0.5, confidence),
-                    "review_flag": confidence < 0.80,
+                    "confidence": script_confidence,
+                    "review_flag": script.get("review_flag", script_confidence < 0.80),
                     "confidence_level": (
                         "hard_flag"
-                        if confidence < 0.60
+                        if script_confidence < 0.60
                         else "soft_flag"
-                        if confidence < 0.80
+                        if script_confidence < 0.80
                         else "high"
                     ),
                 }
