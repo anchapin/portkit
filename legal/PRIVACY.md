@@ -17,6 +17,32 @@ To improve our AI model, we collect and store the following types of data associ
 *   **Job Identifiers**: We use system-generated unique identifiers (Job IDs) to link your input files, output files, and any feedback you provide for a specific conversion task.
 *   **User Identifiers (Optional)**: If you provide a user identifier (e.g., username, email) when submitting feedback, this may be stored to help us understand feedback patterns or communicate with you if necessary. Providing this is optional.
 
+### OAuth Authentication Data (Discord, GitHub, Google)
+
+If you choose to sign in with a third-party provider (Discord, GitHub, or Google) instead of creating a password-based account, PortKit receives a limited set of profile data from that provider to authenticate you and create/link your PortKit account. We request only the minimum scopes required for sign-in.
+
+**Data we request and store per provider** (verified against our OAuth configuration):
+
+| Provider | OAuth scopes requested | Data we receive & store |
+|----------|------------------------|-------------------------|
+| **Discord** | `identify`, `email` | Discord account ID, username, and email address |
+| **GitHub** | `read:user`, `user:email` | GitHub account ID, username (login), and primary verified email address |
+| **Google** | `openid`, `email`, `profile` | Google account ID (`sub`), name, and email address |
+
+For each linked provider, we store: the provider name, your unique account ID at that provider, the email address and username returned by the provider, and an encrypted OAuth access/refresh token so we can keep your session signed in. These fields are defined in our user data model under `oauth_provider`, `oauth_provider_user_id`, `oauth_email`, and `oauth_username`.
+
+**What we do NOT request or collect** (the scopes above are intentionally minimal):
+
+*   **Your password** — OAuth never shares your provider password with us; we never see or store it.
+*   **Discord**: no access to your messages or DMs, your servers/guilds, or your friends/connections list (we do not request the `guilds`, `messages.read`, or `connections` scopes).
+*   **GitHub**: no access to your repositories or source code, gists, organizations, or the ability to create, edit, or post anything on your behalf (we do not request `repo`, `gist`, or any `write:*` scopes).
+*   **Google**: no access to your Gmail, contacts, calendar, Drive, or the ability to read or send anything on your behalf (we do not request Gmail, Contacts, or Drive scopes).
+*   We **never post, modify, or take actions on your behalf** on any provider account.
+
+**Purpose**: The OAuth data above is used **solely for authentication, account creation, and account linking** — so you can sign in without a separate password. It is **not** used for marketing, sold to third parties, or shared for advertising. The access/refresh tokens are used only to maintain your login session.
+
+**Retention**: OAuth profile data (provider, account ID, email, username) and the encrypted tokens are retained for the life of your PortKit account so that sign-in and account linking continue to work. They are deleted when your account is deleted. See our [Data Retention Policy](../data-retention.md) for details, including how to request erasure of your data under GDPR Article 17.
+
 ## 3. How We Use Your Data
 
 The data we collect is primarily used for the following purpose:
