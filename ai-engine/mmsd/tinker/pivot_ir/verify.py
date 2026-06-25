@@ -5,7 +5,14 @@ import sys
 
 sys.path.insert(0, "/home/alex/Projects/portkit/ai-engine/mmsd/tinker")
 
-from pivot_ir import parse_java_to_pivot_ir, emit_pivot_ir_to_bedrock, compute_apf_reward
+from pivot_ir import (
+    parse_java_to_pivot_ir,
+    emit_pivot_ir_to_bedrock,
+    compute_apf_reward,
+    compare_direct_vs_pivot,
+    SAMPLE_TEST_CASES,
+    DEFAULT_APF_CONFIG,
+)
 
 # Quick demo
 sample_java = """
