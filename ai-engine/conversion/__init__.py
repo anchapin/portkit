@@ -9,6 +9,17 @@ from conversion.multisage_augmentation import (
     augment_dataset,
     augment_java_snippet_async,
 )
+
+from conversion.failure_taxonomy import (
+    FailureClassifier,
+    FailureType,
+    Severity,
+    FailureClassification,
+    FailureEvidence,
+    classify_conversion_failure,
+    classify_all_failures,
+)
+
 from conversion.ast_postprocessor import (
     ASTBedrockPostprocessor,
     BedrockAPIMethodKB,
@@ -19,6 +30,7 @@ from conversion.ast_postprocessor import (
 )
 
 __all__ = [
+    # Multisage augmentation
     "MultisageAugmenter",
     "SemanticExtractor",
     "SemanticVariant",
@@ -26,6 +38,15 @@ __all__ = [
     "augment_java_snippet",
     "augment_dataset",
     "augment_java_snippet_async",
+    # Failure taxonomy
+    "FailureClassifier",
+    "FailureType",
+    "Severity",
+    "FailureClassification",
+    "FailureEvidence",
+    "classify_conversion_failure",
+    "classify_all_failures",
+    # AST postprocessor
     "ASTBedrockPostprocessor",
     "BedrockAPIMethodKB",
     "PostProcessorResult",
