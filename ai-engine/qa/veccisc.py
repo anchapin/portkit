@@ -33,6 +33,7 @@ DEFAULT_REASONING_TRACE_COUNT = 3
 
 class VecCISCSelectionMode(Enum):
     """Mode for VecCISC selection."""
+
     CLUSTER_COHERENCE = "cluster_coherence"
     ACCUMULATED_CONFIDENCE = "accumulated_confidence"
     HYBRID = "hybrid"
@@ -183,9 +184,7 @@ class VecCISCConsistencyChecker:
     def __init__(self, config: Optional[VecCISCConfig] = None):
         self.config = config or VecCISCConfig()
 
-    def compute_trace_similarity(
-        self, trace1: ReasoningTrace, trace2: ReasoningTrace
-    ) -> float:
+    def compute_trace_similarity(self, trace1: ReasoningTrace, trace2: ReasoningTrace) -> float:
         """
         Compute similarity between two reasoning traces.
 
@@ -220,9 +219,7 @@ class VecCISCConsistencyChecker:
             return 0.0
         return dot_product / (norm1 * norm2)
 
-    def compute_pairwise_similarity_matrix(
-        self, traces: List[ReasoningTrace]
-    ) -> List[List[float]]:
+    def compute_pairwise_similarity_matrix(self, traces: List[ReasoningTrace]) -> List[List[float]]:
         """Compute pairwise similarity matrix for all traces."""
         n = len(traces)
         matrix = [[0.0] * n for _ in range(n)]
@@ -238,9 +235,7 @@ class VecCISCConsistencyChecker:
 
         return matrix
 
-    def cluster_traces_agglomerative(
-        self, traces: List[ReasoningTrace]
-    ) -> List[TraceCluster]:
+    def cluster_traces_agglomerative(self, traces: List[ReasoningTrace]) -> List[TraceCluster]:
         """
         Agglomerative clustering of reasoning traces.
 
@@ -272,7 +267,9 @@ class VecCISCConsistencyChecker:
             # Find highest similarity pair
             for i in range(len(clusters)):
                 for j in range(i + 1, len(clusters)):
-                    sim = self._compute_cluster_similarity(clusters[i], clusters[j], sim_matrix, traces)
+                    sim = self._compute_cluster_similarity(
+                        clusters[i], clusters[j], sim_matrix, traces
+                    )
                     if sim > max_sim:
                         max_sim = sim
                         merge_pair = (i, j)
@@ -331,7 +328,9 @@ class VecCISCConsistencyChecker:
         new_id = max(cluster1.cluster_id, cluster2.cluster_id) + 100
 
         # Compute new centroid as mean of all trace embeddings
-        embeddings = [t.get_mean_embedding() for t in merged_traces if t.get_mean_embedding() is not None]
+        embeddings = [
+            t.get_mean_embedding() for t in merged_traces if t.get_mean_embedding() is not None
+        ]
         centroid = None
         if embeddings:
             dim = len(embeddings[0])
@@ -378,9 +377,7 @@ class VecCISCConsistencyChecker:
 
         return total_sim / count if count > 0 else 0.0
 
-    def cluster_traces(
-        self, traces: List[ReasoningTrace]
-    ) -> List[TraceCluster]:
+    def cluster_traces(self, traces: List[ReasoningTrace]) -> List[TraceCluster]:
         """Cluster reasoning traces using configured algorithm."""
         if self.config.clustering_algorithm == ClusteringAlgorithm.AGGLOMERATIVE:
             return self.cluster_traces_agglomerative(traces)
@@ -391,9 +388,7 @@ class VecCISCConsistencyChecker:
         else:
             return self.cluster_traces_agglomerative(traces)
 
-    def cluster_traces_dbscan(
-        self, traces: List[ReasoningTrace]
-    ) -> List[TraceCluster]:
+    def cluster_traces_dbscan(self, traces: List[ReasoningTrace]) -> List[TraceCluster]:
         """DBSCAN-style clustering for reasoning traces."""
         if not traces:
             return []
@@ -473,9 +468,7 @@ class VecCISCConsistencyChecker:
 
         return result
 
-    def cluster_traces_kmeans(
-        self, traces: List[ReasoningTrace]
-    ) -> List[TraceCluster]:
+    def cluster_traces_kmeans(self, traces: List[ReasoningTrace]) -> List[TraceCluster]:
         """K-means style clustering for reasoning traces."""
         if not traces:
             return []
@@ -488,6 +481,7 @@ class VecCISCConsistencyChecker:
 
         # Initialize clusters randomly
         import random
+
         random.seed(42)
         centroids = random.sample(range(n), k)
         cluster_traces: Dict[int, List[ReasoningTrace]] = {i: [] for i in range(k)}
@@ -534,9 +528,7 @@ class VecCISCConsistencyChecker:
 
         return result
 
-    def rank_clusters(
-        self, clusters: List[TraceCluster]
-    ) -> List[Tuple[int, float]]:
+    def rank_clusters(self, clusters: List[TraceCluster]) -> List[Tuple[int, float]]:
         """
         Rank clusters by combined score (coherence * confidence).
 
@@ -553,17 +545,13 @@ class VecCISCConsistencyChecker:
         rankings.sort(key=lambda x: x[1], reverse=True)
         return rankings
 
-    def select_best_from_cluster(
-        self, cluster: TraceCluster
-    ) -> ReasoningTrace:
+    def select_best_from_cluster(self, cluster: TraceCluster) -> ReasoningTrace:
         """Select best candidate from a cluster (highest confidence)."""
         if not cluster.traces:
             raise ValueError("Cannot select from empty cluster")
         return max(cluster.traces, key=lambda t: t.confidence)
 
-    def analyze_consistency(
-        self, traces: List[ReasoningTrace]
-    ) -> ClusteredResult:
+    def analyze_consistency(self, traces: List[ReasoningTrace]) -> ClusteredResult:
         """
         Analyze reasoning traces for VecCISC consistency.
 
@@ -890,10 +878,7 @@ class VecCISCSelector:
             traces, selected.candidate_id, clustered_result.clusters
         )
 
-        alternative_traces = [
-            t for t in traces
-            if t.candidate_id != selected.candidate_id
-        ]
+        alternative_traces = [t for t in traces if t.candidate_id != selected.candidate_id]
 
         needs_review = (
             clustered_result.needs_review
@@ -907,7 +892,9 @@ class VecCISCSelector:
             accumulated_confidence=accumulated_conf,
             cluster_coherence=clustered_result.cluster_coherence_score,
             confidence_score=clustered_result.confidence,
-            is_consistent=clustered_result.agreement_score >= 0.7 if hasattr(clustered_result, 'agreement_score') else True,
+            is_consistent=clustered_result.agreement_score >= 0.7
+            if hasattr(clustered_result, "agreement_score")
+            else True,
             needs_review=needs_review,
             alternative_traces=alternative_traces,
         )

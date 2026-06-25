@@ -43,9 +43,13 @@ class Step:
                 if not constraint.validator(context):
                     violations.append(f"{constraint.name}: {constraint.description}")
                     if constraint.severity == "error":
-                        logger.error(f"Constraint violation in step {self.step_id}: {constraint.name}")
+                        logger.error(
+                            f"Constraint violation in step {self.step_id}: {constraint.name}"
+                        )
                     else:
-                        logger.warning(f"Constraint warning in step {self.step_id}: {constraint.name}")
+                        logger.warning(
+                            f"Constraint warning in step {self.step_id}: {constraint.name}"
+                        )
             except Exception as e:
                 violations.append(f"{constraint.name}: validation error - {str(e)}")
                 logger.error(f"Constraint validation error in step {self.step_id}: {e}")

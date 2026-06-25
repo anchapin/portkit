@@ -390,9 +390,7 @@ class QAOrchestrator:
             "verified": True,
         }
 
-    async def run_qa_pipeline_constraint_guided(
-        self, context: QAContext
-    ) -> QAContext:
+    async def run_qa_pipeline_constraint_guided(self, context: QAContext) -> QAContext:
         """Run QA pipeline with constraint-guided execution using RunAgent."""
         if not self._run_agent_instance:
             self.setup_run_agent()
@@ -438,9 +436,7 @@ class QAOrchestrator:
             loop = asyncio.get_event_loop()
             if loop.is_running():
                 raise RuntimeError("Cannot run sync version in async context.")
-            return loop.run_until_complete(
-                self.run_qa_pipeline_constraint_guided(context)
-            )
+            return loop.run_until_complete(self.run_qa_pipeline_constraint_guided(context))
         except RuntimeError:
             return asyncio.run(self.run_qa_pipeline_constraint_guided(context))
 

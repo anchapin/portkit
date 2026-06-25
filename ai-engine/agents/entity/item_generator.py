@@ -251,9 +251,7 @@ def generate_consumable_item(data: Dict[str, Any]) -> Dict[str, Any]:
         consumable_props = props
 
     category = (
-        CREATIVE_CATEGORIES["brewing"]
-        if consumable_props.drink
-        else CREATIVE_CATEGORIES["food"]
+        CREATIVE_CATEGORIES["brewing"] if consumable_props.drink else CREATIVE_CATEGORIES["food"]
     )
 
     bedrock_item = {
@@ -429,6 +427,7 @@ def generate_items(java_items: List[Dict[str, Any]]) -> Dict[str, Any]:
         Dictionary of Bedrock item definitions
     """
     import logging
+
     logger = logging.getLogger(__name__)
 
     logger.info(f"Generating Bedrock items for {len(java_items)} Java items")
@@ -459,6 +458,7 @@ def write_items_to_disk(items: Dict[str, Any], bp_path: Path) -> List[Path]:
         List of written file paths
     """
     import json
+
     written_files = []
 
     if items:

@@ -163,9 +163,7 @@ def validate_enhanced_addon(addon_path: str) -> str:
         result = convert_paths(validation_result)
         result["addon_path"] = addon_path
 
-        logger.info(
-            f"Enhanced validation completed. Score: {result.get('overall_score', 0)}/100"
-        )
+        logger.info(f"Enhanced validation completed. Score: {result.get('overall_score', 0)}/100")
 
         return json.dumps(result)
 

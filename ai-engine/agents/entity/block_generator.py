@@ -113,6 +113,7 @@ def generate_blocks(java_blocks: List[Dict[str, Any]]) -> Dict[str, Any]:
         Dictionary of Bedrock block definitions
     """
     import logging
+
     logger = logging.getLogger(__name__)
 
     logger.info(f"Generating Bedrock blocks for {len(java_blocks)} Java blocks")
@@ -131,9 +132,7 @@ def generate_blocks(java_blocks: List[Dict[str, Any]]) -> Dict[str, Any]:
     return bedrock_blocks
 
 
-def write_blocks_to_disk(
-    blocks: Dict[str, Any], bp_path: Path, rp_path: Path
-) -> List[Path]:
+def write_blocks_to_disk(blocks: Dict[str, Any], bp_path: Path, rp_path: Path) -> List[Path]:
     """
     Write block definitions to disk.
 
@@ -146,6 +145,7 @@ def write_blocks_to_disk(
         List of written file paths
     """
     import json
+
     written_files = []
 
     if blocks:

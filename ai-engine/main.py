@@ -656,6 +656,7 @@ async def _process_with_langgraph_pipeline(
                 await job_manager.set_job_status(job_id, job_status)
 
             import asyncio
+
             await asyncio.sleep(0.5)
 
         # Check if output was produced
@@ -682,7 +683,9 @@ async def _process_with_langgraph_pipeline(
         logger.info(f"Completed LangGraph conversion for job {job_id}")
 
     except Exception as conversion_error:
-        logger.error(f"LangGraph pipeline failed for job {job_id}: {conversion_error}", exc_info=True)
+        logger.error(
+            f"LangGraph pipeline failed for job {job_id}: {conversion_error}", exc_info=True
+        )
         # Mark job as failed
         job_status = await job_manager.get_job_status(job_id)
         if job_status:
@@ -826,8 +829,12 @@ class TokenEstimateResponse(BaseModel):
     input_tokens: int = Field(..., description="Estimated input tokens")
     output_tokens: int = Field(..., description="Estimated output tokens")
     estimated_cost_usd: float = Field(..., description="Estimated cost in USD")
-    confidence_interval: tuple[float, float] = Field(..., description="Low and high confidence bounds")
-    complexity_tier: str = Field(..., description="Complexity tier: simple, moderate, complex, very_complex")
+    confidence_interval: tuple[float, float] = Field(
+        ..., description="Low and high confidence bounds"
+    )
+    complexity_tier: str = Field(
+        ..., description="Complexity tier: simple, moderate, complex, very_complex"
+    )
     model_used: str = Field(..., description="Model used for pricing")
     budget_check: Dict[str, Any] = Field(..., description="Budget cap check result")
     phases: Dict[str, Dict[str, int]] = Field(..., description="Per-phase token breakdown")

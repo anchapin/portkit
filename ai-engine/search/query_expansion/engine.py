@@ -257,9 +257,7 @@ class QueryExpansionEngine:
 
         return analysis
 
-    def _calculate_strategy_balance(
-        self, expansion_terms: List[ExpansionTerm]
-    ) -> Dict[str, float]:
+    def _calculate_strategy_balance(self, expansion_terms: List[ExpansionTerm]) -> Dict[str, float]:
         """Calculate balance between different expansion strategies."""
         if not expansion_terms:
             return {}

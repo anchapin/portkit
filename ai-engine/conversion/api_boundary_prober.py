@@ -92,7 +92,10 @@ class BedrockAPIBoundaryProber:
         "Block_onPlaced": ["world.afterEvents.blockPlace", "player.dimension.setBlock"],
         "Block_onBroken": ["world.afterEvents.playerBreakBlock", "block.destroy"],
         "BlockEntity_tick": ["system.runInterval", "world.afterEvents.tick"],
-        "PlayerInteractEvent": ["world.afterEvents.playerInteractWithBlock", "player.onScreenAchorToActionbar"],
+        "PlayerInteractEvent": [
+            "world.afterEvents.playerInteractWithBlock",
+            "player.onScreenAchorToActionbar",
+        ],
         "Entity_onDeath": ["world.afterEvents.entityDie", "entity.kill"],
         "EntityLivingBase_onUpdate": ["system.runInterval", "world.beforeEvents.tick"],
         "ItemStack": ["ItemStack", "container.addItem", "container.getItem"],
@@ -258,9 +261,7 @@ class BedrockAPIBoundaryProber:
                                 description=pattern.description,
                                 source_pattern=pattern.id,
                                 relevance_score=0.85,
-                                code_example=self._extract_relevant_snippet(
-                                    api_name, bedrock_code
-                                ),
+                                code_example=self._extract_relevant_snippet(api_name, bedrock_code),
                             )
                         )
                         seen_apis.add(api_name)
@@ -366,9 +367,7 @@ class BedrockAPIBoundaryProber:
         lines.append(
             "- Do NOT use `block.getBlockEntity()` — Bedrock doesn't have tile entities like Java"
         )
-        lines.append(
-            "- Use `block.setDynamicProperty()` for persistent data on blocks"
-        )
+        lines.append("- Use `block.setDynamicProperty()` for persistent data on blocks")
         lines.append(
             "- For world data, use `world.getDynamicProperty()` / `world.setDynamicProperty()`"
         )
@@ -419,16 +418,13 @@ class BedrockAPIBoundaryProber:
         script_api_hallucinations = self._detect_script_api_hallucinations(bedrock_code)
 
         component_hallucinations = [
-            hc.component_name for hc in report.hallucinated_components
-            if "." in hc.component_name
+            hc.component_name for hc in report.hallucinated_components if "." in hc.component_name
         ]
         all_hallucinated = component_hallucinations + script_api_hallucinations
 
         valid_apis = self._extract_valid_script_apis(bedrock_code)
 
-        hallucination_rate = (
-            len(all_hallucinated) / max(len(valid_apis) + len(all_hallucinated), 1)
-        )
+        hallucination_rate = len(all_hallucinated) / max(len(valid_apis) + len(all_hallucinated), 1)
 
         return HallucinationValidationResult(
             is_valid=len(all_hallucinated) == 0,

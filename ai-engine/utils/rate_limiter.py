@@ -303,13 +303,13 @@ def create_ollama_llm(
 
     if base_url is None:
         base_url = (
-            "http://ollama:11434"
-            if os.getenv("DOCKER_ENVIRONMENT")
-            else "http://localhost:11434"
+            "http://ollama:11434" if os.getenv("DOCKER_ENVIRONMENT") else "http://localhost:11434"
         )
 
     # Strip the ``ollama/`` prefix if a caller passed a LiteLLM-style id.
-    clean_model_name = model_name.removeprefix("ollama/") if model_name.startswith("ollama/") else model_name
+    clean_model_name = (
+        model_name.removeprefix("ollama/") if model_name.startswith("ollama/") else model_name
+    )
 
     logger.info(f"Creating Ollama LLM model={clean_model_name!r} base_url={base_url!r}")
 
@@ -344,9 +344,7 @@ def get_llm_backend() -> BaseChatModel:
 
     if cfg.LLM_BASE_URL:
         try:
-            logger.info(
-                f"Initializing OpenAI-compatible LLM backend (provider={cfg.LLM_PROVIDER})"
-            )
+            logger.info(f"Initializing OpenAI-compatible LLM backend (provider={cfg.LLM_PROVIDER})")
             return create_openai_compatible_llm()
         except Exception as e:
             logger.warning(f"Failed to initialize OpenAI-compatible backend: {e}")
@@ -390,7 +388,9 @@ def get_fallback_llm() -> BaseChatModel:
     )
     ollama_base_url = os.getenv("OLLAMA_BASE_URL", default_base_url)
 
-    logger.info(f"Initializing Ollama fallback LLM model={ollama_model!r} base_url={ollama_base_url!r}")
+    logger.info(
+        f"Initializing Ollama fallback LLM model={ollama_model!r} base_url={ollama_base_url!r}"
+    )
 
     try:
         return ChatOllama(

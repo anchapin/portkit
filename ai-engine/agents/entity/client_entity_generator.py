@@ -29,7 +29,9 @@ def _resolve_identifier(bedrock_bp_entity: Dict[str, Any]) -> str:
     try:
         return bedrock_bp_entity["minecraft:entity"]["description"]["identifier"]
     except (KeyError, TypeError) as exc:
-        raise ValueError("bedrock_bp_entity is missing minecraft:entity.description.identifier") from exc
+        raise ValueError(
+            "bedrock_bp_entity is missing minecraft:entity.description.identifier"
+        ) from exc
 
 
 def _resolve_texture_path(java_entity: Dict[str, Any], entity_name: str) -> str:
