@@ -828,11 +828,19 @@ class RecipeConverterAgent:
             return json.dumps({"valid": False, "issues": [str(e)]}, indent=2)
 
 
-# Attach tool instances to RecipeConverterAgent after class definition
+# Attach tool instances to RecipeConverterAgent after class definition.
+# Re-export both the *Input schema models and the *Tool wrappers so tests and
+# downstream code can import them from the package root (regression fix for #1819).
+# The ``*Input`` models use a redundant alias so ruff treats them as intentional
+# re-exports (F401); the ``*Tool`` classes are consumed by the assignments below.
 from .tools import (
+    _ConvertRecipeInput as _ConvertRecipeInput,
     _ConvertRecipeTool,
+    _ConvertRecipesBatchInput as _ConvertRecipesBatchInput,
     _ConvertRecipesBatchTool,
+    _MapItemIdInput as _MapItemIdInput,
     _MapItemIdTool,
+    _ValidateRecipeInput as _ValidateRecipeInput,
     _ValidateRecipeTool,
 )
 

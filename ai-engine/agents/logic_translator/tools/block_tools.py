@@ -182,8 +182,15 @@ class MapBlockPropertiesTool(_BaseLogicTranslatorTool):
     async def _arun(  # type: ignore[override]
         self, java_properties: Dict[str, Any]
     ) -> str:
+        # Resolve the helper through the package namespace
+        # (``agents.logic_translator.tools``) so callers can substitute it via
+        # ``patch("agents.logic_translator.tools._map_java_block_properties_to_bedrock")``.
+        # A direct module-global call would bypass that patch target. Lazy import
+        # avoids the circular dependency with the package ``__init__``.
+        from agents.logic_translator import tools as _tools_pkg
+
         try:
-            result = _map_java_block_properties_to_bedrock(java_properties)
+            result = _tools_pkg._map_java_block_properties_to_bedrock(java_properties)
             return json.dumps({"success": True, "bedrock_properties": result})
         except Exception as e:
             return json.dumps({"success": False, "error": str(e)})
