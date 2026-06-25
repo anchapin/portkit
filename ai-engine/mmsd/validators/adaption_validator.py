@@ -68,7 +68,9 @@ class AdaptionDatasetValidator:
         error_fields = ["reasoning_trace", "java_source", "bedrock_source"]
         for field in error_fields:
             val = entry.get(field, "")
-            if isinstance(val, str) and (val.startswith("Error:") or val.startswith("ERROR_PREFIX")):
+            if isinstance(val, str) and (
+                val.startswith("Error:") or val.startswith("ERROR_PREFIX")
+            ):
                 return True
         return False
 

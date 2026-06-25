@@ -241,7 +241,9 @@ class MMSDConverter:
 
         # In AB mode, we need API key for comparison
         if self.engine_mode == EngineMode.AB and not self.api_key:
-            logger.warning("A/B testing mode requires OPENROUTER_API_KEY, falling back to ollama-only")
+            logger.warning(
+                "A/B testing mode requires OPENROUTER_API_KEY, falling back to ollama-only"
+            )
             self.engine_mode = EngineMode.OLLAMA
 
         if self._ollama_available:
@@ -416,7 +418,8 @@ class MMSDConverter:
                 variants=variants,
                 model_used=best_result.source,
                 engine_mode="ab",
-                latency_ms=(ollama_result.latency_ms if ollama_result else 0) + api_result.latency_ms,
+                latency_ms=(ollama_result.latency_ms if ollama_result else 0)
+                + api_result.latency_ms,
                 ollama_available=self._ollama_available,
             )
         else:
