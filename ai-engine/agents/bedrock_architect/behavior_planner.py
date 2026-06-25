@@ -1,14 +1,13 @@
-"""Bedrock Architect Agent for conversion planning and smart assumption application.
+"""Behavior Planner — Bedrock conversion-plan behavior tools for the architect.
 
-This module provides the BedrockArchitectAgent class which orchestrates conversion
-strategies using smart assumptions as specified in PRD Feature 2.
+Seam: this is the main module. The :class:`BedrockArchitectAgent` class with
+its 10 typed LangChain tools, the 10 ``BaseTool`` subclasses, the 10 Pydantic
+``args_schema`` models, and the module-level tool-instance bindings all live
+here. The other modules in the subpackage (``namespace_mapper``,
+``manifest_generator``, ``layout_planner``, ``dimension_porter``) house the
+small helpers that the class delegates to.
 
-Phase 8 A4a (refs #1201): the legacy ``@tool @staticmethod`` wrappers have
-been replaced with typed :class:`langchain_core.tools.BaseTool` subclasses,
-each declaring an explicit Pydantic ``args_schema``. The single-string
-``<name>_data`` shape is preserved so chat models and existing call sites
-continue to invoke ``BedrockArchitectAgent.<tool_name>.invoke({...})``
-without changes.
+Issue #1707 — Extracted from bedrock_architect_original.py for subpackage layout.
 """
 
 from __future__ import annotations
@@ -25,6 +24,11 @@ from models.smart_assumptions import (
     FeatureContext,
     SmartAssumptionEngine,
 )
+
+from .dimension_porter import apply_dimension_warnings
+from .layout_planner import collect_plan_components
+from .manifest_generator import generate_placeholder_definition
+from .namespace_mapper import build_feature_context
 
 logger = logging.getLogger(__name__)
 
@@ -112,13 +116,8 @@ class BedrockArchitectAgent:
         try:
             data = json.loads(feature_data)
 
-            # Create FeatureContext from input data
-            feature_context = FeatureContext(
-                feature_id=data.get("feature_id", "unknown"),
-                feature_type=data.get("feature_type", "unknown"),
-                name=data.get("name"),
-                original_data=data.get("original_data", {}),
-            )
+            # Build FeatureContext from input data via the namespace_mapper helper
+            feature_context = build_feature_context(data)
 
             # Analyze using Smart Assumptions Engine
             result = agent.smart_assumption_engine.analyze_feature(feature_context)
@@ -253,18 +252,7 @@ class BedrockArchitectAgent:
                         for item in assumption_report.assumptions_applied
                     ]
                 },
-                "detailed_components": [
-                    {
-                        "original_feature_id": comp.original_feature_id,
-                        "original_feature_type": comp.original_feature_type,
-                        "assumption_type": comp.assumption_type,
-                        "bedrock_equivalent": comp.bedrock_equivalent,
-                        "impact_level": comp.impact_level,
-                        "user_explanation": comp.user_explanation,
-                        "technical_notes": comp.technical_notes,
-                    }
-                    for comp in plan_components
-                ],
+                "detailed_components": collect_plan_components(plan_components),
             }
 
             logger.info(f"Created conversion plan with {len(plan_components)} components")
@@ -301,7 +289,7 @@ class BedrockArchitectAgent:
 
         def _validate_component_compatibility(component: Dict[str, Any]) -> Dict[str, Any]:
             """Validate individual component compatibility with Bedrock"""
-            validation = {
+            validation: Dict[str, Any] = {
                 "component_id": component.get("original_feature_id", "unknown"),
                 "is_compatible": True,
                 "warnings": [],
@@ -321,15 +309,9 @@ class BedrockArchitectAgent:
                 )
 
             # Check for specific assumption types
-            if "dimension" in assumption_type:
-                validation["warnings"].append(
-                    "Custom dimension converted to static structure - dynamic generation lost"
-                )
-                validation["recommendations"].append(
-                    "Consider creating multiple structure variants for variety"
-                )
+            apply_dimension_warnings(validation, component)
 
-            elif "machinery" in assumption_type:
+            if "machinery" in assumption_type:
                 validation["warnings"].append(
                     "Complex machinery logic will be simplified or removed"
                 )
@@ -349,7 +331,7 @@ class BedrockArchitectAgent:
             plan_data = json.loads(compatibility_data)
             components = plan_data.get("components", [])
 
-            validation_results = {
+            validation_results: Dict[str, Any] = {
                 "is_compatible": True,
                 "warnings": [],
                 "recommendations": [],
@@ -400,7 +382,7 @@ class BedrockArchitectAgent:
 
     def _validate_component_compatibility(self, component: Dict[str, Any]) -> Dict[str, Any]:
         """Validate individual component compatibility with Bedrock"""
-        validation = {
+        validation: Dict[str, Any] = {
             "component_id": component.get("original_feature_id", "unknown"),
             "is_compatible": True,
             "warnings": [],
@@ -420,15 +402,9 @@ class BedrockArchitectAgent:
             )
 
         # Check for specific assumption types
-        if "dimension" in assumption_type:
-            validation["warnings"].append(
-                "Custom dimension converted to static structure - dynamic generation lost"
-            )
-            validation["recommendations"].append(
-                "Consider creating multiple structure variants for variety"
-            )
+        apply_dimension_warnings(validation, component)
 
-        elif "machinery" in assumption_type:
+        if "machinery" in assumption_type:
             validation["warnings"].append("Complex machinery logic will be simplified or removed")
             validation["recommendations"].append(
                 "Preserve visual aesthetics and consider alternative interaction methods"
@@ -447,126 +423,22 @@ class BedrockArchitectAgent:
     @staticmethod
     def _generate_block_definitions(block_data: str) -> str:
         """Generate Bedrock block definition files (placeholder)."""
-        return BedrockArchitectAgent._generate_placeholder_definition(block_data, "block")
+        return generate_placeholder_definition(block_data, "block")
 
     @staticmethod
     def _generate_item_definitions(item_data: str) -> str:
         """Generate Bedrock item definition files (placeholder)."""
-        return BedrockArchitectAgent._generate_placeholder_definition(item_data, "item")
+        return generate_placeholder_definition(item_data, "item")
 
     @staticmethod
     def _generate_recipe_definitions(recipe_data: str) -> str:
         """Generate Bedrock recipe JSON files (placeholder)."""
-        return BedrockArchitectAgent._generate_placeholder_definition(recipe_data, "recipe")
+        return generate_placeholder_definition(recipe_data, "recipe")
 
     @staticmethod
     def _generate_entity_definitions(entity_data: str) -> str:
         """Generate Bedrock entity definition files (placeholder)."""
-        return BedrockArchitectAgent._generate_placeholder_definition(entity_data, "entity")
-
-    @staticmethod
-    def _generate_placeholder_definition(component_data_str: str, component_type: str) -> str:
-        """
-        Generic placeholder for generating Bedrock component definitions.
-        """
-        try:
-            component_data = json.loads(component_data_str)
-            identifier = component_data.get(
-                "identifier", f"custom:{component_data.get('id', f'{component_type}_placeholder')}"
-            )
-            name = component_data.get("name", f"Custom {component_type.capitalize()}")
-
-            # Basic placeholder structure common to many Bedrock definitions
-            placeholder_definition = {
-                "format_version": "1.20.0",  # Using a recent common version
-                f"minecraft:{component_type}": {
-                    "description": {"identifier": identifier},
-                    "components": {
-                        "minecraft:display_name": {  # Common component for user-visible name
-                            "value": name
-                        },
-                        # Specific components would vary greatly depending on component_type
-                        # Example: A block might have "minecraft:material_instances"
-                        # An item might have "minecraft:icon"
-                        # An entity might have "minecraft:collision_box"
-                    },
-                    "metadata_generated": {  # Custom section for our tool's info
-                        "source_java_id": component_data.get("id", "unknown_java_id"),
-                        "conversion_tool": "ModPorterAI_BedrockArchitect",
-                        "conversion_notes": (
-                            f"This is an AI-generated placeholder {component_type} "
-                            "definition. Review and refine."
-                        ),
-                    },
-                },
-            }
-
-            # Add type-specific components if needed for a basic valid structure
-            if component_type == "block":
-                placeholder_definition[f"minecraft:{component_type}"]["components"][
-                    "minecraft:loot"
-                ] = f"loot_tables/blocks/{component_data.get('id', 'placeholder_block')}.json"
-                placeholder_definition[f"minecraft:{component_type}"]["components"][
-                    "minecraft:destructible_by_mining"
-                ] = {"seconds_to_destroy": 1.0}
-            elif component_type == "item":
-                placeholder_definition[f"minecraft:{component_type}"]["components"][
-                    "minecraft:icon"
-                ] = {"texture": component_data.get("id", "placeholder_item_icon")}
-                placeholder_definition[f"minecraft:{component_type}"]["components"][
-                    "minecraft:max_stack_size"
-                ] = 64
-            elif component_type == "entity":
-                placeholder_definition[f"minecraft:{component_type}"]["components"][
-                    "minecraft:type_family"
-                ] = {"family": [component_type, "mob"]}
-                placeholder_definition[f"minecraft:{component_type}"]["components"][
-                    "minecraft:health"
-                ] = {"value": 20, "max": 20}
-
-            logger.info(
-                f"Generated placeholder {component_type} definition for identifier: {identifier}"
-            )
-            return json.dumps(
-                {
-                    "success": True,
-                    "component_type": component_type,
-                    "identifier": identifier,
-                    "definition_json": placeholder_definition,
-                    "message": (
-                        f"Placeholder {component_type} definition generated successfully "
-                        f"for {identifier}."
-                    ),
-                },
-                indent=2,
-            )
-
-        except json.JSONDecodeError as e:
-            logger.error(
-                f"Invalid JSON input for placeholder {component_type} definition: "
-                f"{str(e)} - Input: {component_data_str[:500]}...",
-                exc_info=True,
-            )  # Log part of the input
-            return json.dumps(
-                {
-                    "success": False,
-                    "error": f"Invalid JSON input for {component_type} definition: {str(e)}",
-                },
-                indent=2,
-            )
-        except Exception as e:
-            logger.error(
-                f"Error generating placeholder {component_type} definition: {e}", exc_info=True
-            )
-            return json.dumps(
-                {
-                    "success": False,
-                    "error": (
-                        f"Failed to generate placeholder {component_type} definition: {str(e)}"
-                    ),
-                },
-                indent=2,
-            )
+        return generate_placeholder_definition(entity_data, "entity")
 
     @staticmethod
     def _create_llm_conversion_plan(plan_data: str) -> str:
@@ -921,3 +793,32 @@ BedrockArchitectAgent.generate_item_definitions_tool = _GenerateItemDefinitionsT
 BedrockArchitectAgent.generate_recipe_definitions_tool = _GenerateRecipeDefinitionsTool()
 BedrockArchitectAgent.generate_entity_definitions_tool = _GenerateEntityDefinitionsTool()
 BedrockArchitectAgent.create_llm_conversion_plan_tool = _CreateLlmConversionPlanTool()
+
+
+__all__ = [
+    # Agent class
+    "BedrockArchitectAgent",
+    # Input schemas
+    "_AnalyzeJavaFeatureInput",
+    "_ApplySmartAssumptionInput",
+    "_CreateConversionPlanInput",
+    "_GetAssumptionConflictsInput",
+    "_ValidateBedrockCompatibilityInput",
+    "_GenerateBlockDefinitionsInput",
+    "_GenerateItemDefinitionsInput",
+    "_GenerateRecipeDefinitionsInput",
+    "_GenerateEntityDefinitionsInput",
+    "_CreateLlmConversionPlanInput",
+    # Tool classes
+    "_BaseBedrockArchitectTool",
+    "_AnalyzeJavaFeatureTool",
+    "_ApplySmartAssumptionTool",
+    "_CreateConversionPlanTool",
+    "_GetAssumptionConflictsTool",
+    "_ValidateBedrockCompatibilityTool",
+    "_GenerateBlockDefinitionsTool",
+    "_GenerateItemDefinitionsTool",
+    "_GenerateRecipeDefinitionsTool",
+    "_GenerateEntityDefinitionsTool",
+    "_CreateLlmConversionPlanTool",
+]

@@ -14,8 +14,9 @@ Issue #1622 — Coordinator __init__.py for bedrock_architect subpackage.
 
 from __future__ import annotations
 
-# Re-export BedrockArchitectAgent from the original module for backward compat
-from agents.bedrock_architect_original import BedrockArchitectAgent
+# Re-export BedrockArchitectAgent from the new subpackage location for backward compat
+# (Issue #1707: monolith was split into ai-engine/agents/bedrock_architect/.)
+from agents.bedrock_architect import BedrockArchitectAgent
 
 # Import submodules using relative imports
 from . import namespace_mapper
