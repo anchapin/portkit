@@ -222,6 +222,7 @@ The Portkit Team
 - [ ] Test all conversion flows
 - [ ] Prepare support channels
 - [ ] Brief moderators
+- [ ] **Legal/Compliance:** Confirm DMCA agent registration with U.S. Copyright Office is complete and appears at https://www.copyright.gov/dmca-directory/ (see `docs/ip-policy.md` §5.1, issue #1664)
 
 **Day -3:**
 - [ ] Send teaser emails

@@ -106,13 +106,24 @@ Users agree to indemnify and hold harmless PortKit from any claims arising from 
 
 ## 5. DMCA Takedown Procedure
 
-### 5.1 DMCA Agent Information
+### 5.1 DMCA Designated Agent Information
 
-**Designated Agent:** Alex Chapin (PortKit Founder)
-**Email:** dmca@portkit.ai
-**Address:** Available upon formal written request
+Under 17 U.S.C. § 512(c)(2), a service provider designates an agent to receive notifications of claimed infringement. The following agent is designated to receive DMCA notices on behalf of PortKit:
 
-*Note: DMCA agent registration with US Copyright Office is required before beta launch. Estimated cost: $6/year.*
+| Field | Value |
+|-------|-------|
+| **Designated Agent** | Designated Copyright Agent, PortKit |
+| **Role/Organization** | PortKit — Attn: Copyright Agent |
+| **Email** | dmca@portkit.ai |
+| **Phone** | [Phone number to be added upon agent registration] |
+| **Mailing Address** | [Mailing address to be added upon agent registration] |
+| **Available Methods** | Email (primary); written notice via postal mail once address is registered |
+
+DMCA takedown notices may be sent to **dmca@portkit.ai**. The `dmca@portkit.ai` mailbox is monitored continuously, and notices are triaged per the timeline in §5.4.
+
+> **REGISTRATION STATUS (PENDING):** DMCA agent registration with the U.S. Copyright Office is **PENDING**. Registration is a real-world operational action (submission + ~$6/year fee to the Copyright Office) that cannot be completed via code. Upon completion, the agent will appear in the public directory at **https://www.copyright.gov/dmca-directory/** (expected entry: `w-portkit.html`), and this section will be updated with the registered agent name, physical address, phone, and the registration confirmation. Until the registration is finalized, the placeholder fields above (`[Phone number...]`, `[Mailing address...]`) will remain.
+>
+> **Owner of this action:** PortKit operations/legal team. **Tracking:** GitHub issue #1664.
 
 ### 5.2 Takedown Notice Requirements
 
