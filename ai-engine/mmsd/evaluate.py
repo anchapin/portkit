@@ -188,6 +188,7 @@ def check_hallucination(js_code: Optional[str]) -> dict:
     ]
 
     import re
+
     for pattern_str, name in forbidden_patterns:
         if re.search(pattern_str, js_code, re.IGNORECASE):
             hallucinated_apis.append(name)
@@ -422,7 +423,9 @@ def main():
             else 0,
             # Hallucination metrics (issue #1678)
             "hallucination_rate": total_hallucination_rate / len(eval_pairs) if eval_pairs else 0.0,
-            "hallucination_pct": 100 * hallucinated_samples / len(eval_pairs) if eval_pairs else 0.0,
+            "hallucination_pct": 100 * hallucinated_samples / len(eval_pairs)
+            if eval_pairs
+            else 0.0,
             "hallucinated_samples": hallucinated_samples,
         }
         results[model_label] = model_results
@@ -447,11 +450,19 @@ def main():
         print("=" * 60)
         print(f"{'Metric':<25} {'Baseline':>15} {'Fine-tuned':>15}")
         print("-" * 60)
-        for metric in ["bleu", "json_valid_pct", "js_valid_pct", "hallucination_rate", "perplexity"]:
+        for metric in [
+            "bleu",
+            "json_valid_pct",
+            "js_valid_pct",
+            "hallucination_rate",
+            "perplexity",
+        ]:
             baseline_val = results.get("baseline", {}).get(metric, "N/A")
             ft_val = results.get("finetuned", {}).get(metric, "N/A")
             if metric == "hallucination_rate":
-                baseline_val = f"{baseline_val:.1%}" if isinstance(baseline_val, float) else baseline_val
+                baseline_val = (
+                    f"{baseline_val:.1%}" if isinstance(baseline_val, float) else baseline_val
+                )
                 ft_val = f"{ft_val:.1%}" if isinstance(ft_val, float) else ft_val
             print(f"{metric:<25} {str(baseline_val):>15} {str(ft_val):>15}")
 

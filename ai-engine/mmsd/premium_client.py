@@ -701,12 +701,18 @@ class PortKitPremium:
         # Extract valid APIs for rate calculation
         valid_apis = []
         valid_patterns = [
-            r"world\.afterEvents", r"world\.beforeEvents",
-            r"player\.afterEvents", r"player\.beforeEvents",
-            r"system\.run", r"dimension\.spawnEntity",
-            r"player\.sendMessage", r"player\.getComponent",
-            r"\.subscribe\(", r"world\.getDimension",
-            r"world\.playSound", r"world\.getBlock",
+            r"world\.afterEvents",
+            r"world\.beforeEvents",
+            r"player\.afterEvents",
+            r"player\.beforeEvents",
+            r"system\.run",
+            r"dimension\.spawnEntity",
+            r"player\.sendMessage",
+            r"player\.getComponent",
+            r"\.subscribe\(",
+            r"world\.getDimension",
+            r"world\.playSound",
+            r"world\.getBlock",
         ]
         for vp in valid_patterns:
             if re.search(vp, script):
@@ -749,7 +755,9 @@ class PortKitPremium:
         success = bool(reasoning and (manifest or script))
 
         # Hallucination validation (issue #1678)
-        has_halluc, hallucinated_apis, halluc_rate, halluc_signal = self._validate_hallucinations(script)
+        has_halluc, hallucinated_apis, halluc_rate, halluc_signal = self._validate_hallucinations(
+            script
+        )
 
         return ConversionResult(
             success=success,
