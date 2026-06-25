@@ -171,8 +171,11 @@ We respond to valid DMCA takedown notices within 24 hours:
 3. **Remove** or disable access within 24 hours
 4. **Notify** affected user within 48 hours
 
-**DMCA Agent:** Alex Chapin (PortKit Founder)
+**DMCA Agent:** Designated Copyright Agent, PortKit (registration with U.S. Copyright Office PENDING)
 **Email:** dmca@portkit.ai
+**Directory (once registered):** https://www.copyright.gov/dmca-directory/
+
+*See `docs/ip-policy.md` §5.1 for the full designation and pending-registration status.*
 
 ---
 
