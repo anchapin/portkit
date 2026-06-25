@@ -86,13 +86,13 @@ If you are a California resident, you have the right to:
 - Not be discriminated against for exercising your privacy rights
 
 ### Do Not Sell My Personal Information
-To opt out of any potential sale of your personal information, please contact us at [privacy@example-portkit.com](mailto:privacy@example-portkit.com) with the subject line "Do Not Sell My Data."
+To opt out of any potential sale of your personal information, please contact us at [privacy@portkit.ai](mailto:privacy@portkit.ai) with the subject line "Do Not Sell My Data."
 
 ## 9. Contact Us
 
 If you have any questions or concerns about this privacy notice or our data handling practices, please contact us:
 
-*   **Email**: [privacy@example-portkit.com](mailto:privacy@example-portkit.com) (Please replace with a real contact method if available)
+*   **Email**: [privacy@portkit.ai](mailto:privacy@portkit.ai)
 *   **Issue Tracker**: You can also raise an issue on our project's GitHub issue tracker (if applicable, provide link).
 
 We value your trust and are committed to handling your data responsibly.

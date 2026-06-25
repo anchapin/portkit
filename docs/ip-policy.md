@@ -109,7 +109,7 @@ Users agree to indemnify and hold harmless PortKit from any claims arising from 
 ### 5.1 DMCA Agent Information
 
 **Designated Agent:** Alex Chapin (PortKit Founder)
-**Email:** privacy@portkit.ai
+**Email:** dmca@portkit.ai
 **Address:** Available upon formal written request
 
 *Note: DMCA agent registration with US Copyright Office is required before beta launch. Estimated cost: $6/year.*
@@ -260,6 +260,6 @@ Query API for author + license
 
 For IP-related inquiries, contact:
 
-- **General IP questions:** privacy@portkit.ai
-- **DMCA notices:** privacy@portkit.ai
-- **Legal matters:** privacy@portkit.ai
+- **General IP questions:** ip@portkit.ai
+- **DMCA notices:** dmca@portkit.ai
+- **Legal matters:** legal@portkit.ai
