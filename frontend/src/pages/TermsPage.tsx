@@ -160,7 +160,7 @@ export const TermsPage: React.FC = () => {
           please contact our designated DMCA agent:
         </p>
         <p>
-          <strong>Email:</strong> dmca@portkit.example-portkit.com
+          <strong>Email:</strong> dmca@portkit.ai
         </p>
         <p>
           Upon receiving a valid DMCA takedown notice, we will remove the

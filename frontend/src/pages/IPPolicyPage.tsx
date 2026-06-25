@@ -115,7 +115,7 @@ export const IPPolicyPage: React.FC = () => {
         </p>
         <h3 className={styles.sectionTitle}>Submit a Takedown Notice</h3>
         <p>
-          Email: <strong>dmca@portkit.example-portkit.com</strong>
+          Email: <strong>dmca@portkit.ai</strong>
         </p>
         <p>
           Valid notices must include: (1) identification of copyrighted work,
@@ -176,11 +176,11 @@ export const IPPolicyPage: React.FC = () => {
         <h2 className={styles.sectionTitle}>7. Contact</h2>
         <p>For IP-related inquiries:</p>
         <p>
-          <strong>General IP questions:</strong> ip@portkit.example-portkit.com
+          <strong>General IP questions:</strong> ip@portkit.ai
           <br />
-          <strong>DMCA notices:</strong> dmca@portkit.example-portkit.com
+          <strong>DMCA notices:</strong> dmca@portkit.ai
           <br />
-          <strong>Legal matters:</strong> legal@portkit.example-portkit.com
+          <strong>Legal matters:</strong> legal@portkit.ai
         </p>
       </section>
     </div>

@@ -152,7 +152,7 @@ Nothing in this section prevents either party from seeking injunctive or other e
 
 If you have any questions about these Terms, please contact us:
 
-*   **Email**: [legal@example-portkit.com](mailto:legal@example-portkit.com) (Please replace with a real contact method if available)
+*   **Email**: [legal@portkit.ai](mailto:legal@portkit.ai)
 *   **Issue Tracker**: [GitHub Issue Tracker](https://github.com/anchapin/portkit/issues)
 
 We will do our best to respond to your inquiry in a timely manner.

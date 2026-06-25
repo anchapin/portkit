@@ -15,7 +15,7 @@
 # -------------------------------------------------------------------------
 # * ENABLE_SCHEDULED_LOAD_TESTS  Set to "true" to enable nightly load tests.
 # * STAGING_BASE_URL             Default base URL for scheduled smoke tests
-#                                (e.g. https://staging.portkit.example.com).
+#                                (e.g. https://staging.portkit.ai).
 #                                If unset for an enabled scheduled run, the
 #                                job exits 0 with a clear notice instead of
 #                                failing.
