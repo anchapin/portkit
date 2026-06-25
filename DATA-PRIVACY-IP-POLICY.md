@@ -160,7 +160,7 @@ For commercial users with additional IP requirements:
 | **DPA (Data Processing Agreement)** | Contractual data processing terms per GDPR Art. 28 |
 | **Custom Terms** | Enterprise agreements available upon request |
 
-**Contact:** enterprise@portkit.example-portkit.com for NDA/DPA agreements.
+**Contact:** enterprise@portkit.ai for NDA/DPA agreements.
 
 ### 4.4 DMCA Compliance
 
@@ -172,7 +172,7 @@ We respond to valid DMCA takedown notices within 24 hours:
 4. **Notify** affected user within 48 hours
 
 **DMCA Agent:** Alex Chapin (PortKit Founder)
-**Email:** dmca@portkit.example-portkit.com
+**Email:** dmca@portkit.ai
 
 ---
 
@@ -261,7 +261,7 @@ For commercial developers and enterprises with heightened IP requirements:
 
 ### 7.3 Getting Started with Enterprise
 
-Contact **enterprise@portkit.example-portkit.com** for:
+Contact **enterprise@portkit.ai** for:
 - Pricing and availability
 - Custom agreement drafting
 - Proof of concept for your use case
@@ -319,13 +319,13 @@ We may update this policy to reflect changes in our practices or legal requireme
 
 | Purpose | Contact |
 |---------|---------|
-| **General Privacy Questions** | privacy@portkit.example-portkit.com |
-| **Data Deletion Requests** | privacy@portkit.example-portkit.com |
-| **GDPR Inquiries** | privacy@portkit.example-portkit.com |
-| **Enterprise Agreements (NDA/DPA)** | enterprise@portkit.example-portkit.com |
-| **DMCA Notices** | dmca@portkit.example-portkit.com |
-| **IP Questions** | ip@portkit.example-portkit.com |
-| **Legal Matters** | legal@portkit.example-portkit.com |
+| **General Privacy Questions** | privacy@portkit.ai |
+| **Data Deletion Requests** | privacy@portkit.ai |
+| **GDPR Inquiries** | privacy@portkit.ai |
+| **Enterprise Agreements (NDA/DPA)** | enterprise@portkit.ai |
+| **DMCA Notices** | dmca@portkit.ai |
+| **IP Questions** | ip@portkit.ai |
+| **Legal Matters** | legal@portkit.ai |
 
 ---
 
