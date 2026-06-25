@@ -427,27 +427,57 @@ class BedrockAPIMethodKB:
             "world.getBlock": {"arity": 1, "description": "world.getBlock(location)"},
             "world.setBlock": {"arity": 2, "description": "world.setBlock(location, blockState)"},
             "world.getDimension": {"arity": 1, "description": "world.getDimension(dimensionId)"},
-            "world.spawnEntity": {"arity": 2, "description": "world.spawnEntity(identifier, location)"},
+            "world.spawnEntity": {
+                "arity": 2,
+                "description": "world.spawnEntity(identifier, location)",
+            },
             "world.playSound": {"arity": 2, "description": "world.playSound(soundId, location)"},
             "world.sendMessage": {"arity": 1, "description": "world.sendMessage(message)"},
             "player.getComponent": {"arity": 1, "description": "player.getComponent(componentId)"},
             "player.sendMessage": {"arity": 1, "description": "player.sendMessage(message)"},
             "player.runCommand": {"arity": 1, "description": "player.runCommand(command)"},
-            "player.runCommandAsync": {"arity": 1, "description": "player.runCommandAsync(command)"},
-            "player.getItemStackInHand": {"arity": 0, "description": "player.getItemStackInHand(hand)"},
+            "player.runCommandAsync": {
+                "arity": 1,
+                "description": "player.runCommandAsync(command)",
+            },
+            "player.getItemStackInHand": {
+                "arity": 0,
+                "description": "player.getItemStackInHand(hand)",
+            },
             "player.equippedItem": {"arity": 0, "description": "player.equippedItem"},
-            "player.getInventory": {"arity": 0, "description": "player.inventory (property, not method)"},
-            "player.getContainer": {"arity": 0, "description": "player.getContainer() (use container property)"},
-            "block.setPermutation": {"arity": 1, "description": "block.setPermutation(permutation)"},
+            "player.getInventory": {
+                "arity": 0,
+                "description": "player.inventory (property, not method)",
+            },
+            "player.getContainer": {
+                "arity": 0,
+                "description": "player.getContainer() (use container property)",
+            },
+            "block.setPermutation": {
+                "arity": 1,
+                "description": "block.setPermutation(permutation)",
+            },
             "block.setBlock": {"arity": 1, "description": "block.setPermutation (not setBlock)"},
-            "block.getBlockEntity": {"arity": 0, "description": "block.getBlockEntity() (doesn't exist)"},
-            "entity.getCustomName": {"arity": 0, "description": "entity.name (property, not getCustomName)"},
+            "block.getBlockEntity": {
+                "arity": 0,
+                "description": "block.getBlockEntity() (doesn't exist)",
+            },
+            "entity.getCustomName": {
+                "arity": 0,
+                "description": "entity.name (property, not getCustomName)",
+            },
             "entity.sendMessage": {"arity": 1, "description": "entity.sendMessage(message)"},
             "container.getItem": {"arity": 1, "description": "container.getItem(slot)"},
             "container.setItem": {"arity": 2, "description": "container.setItem(slot, itemStack)"},
             "container.addItem": {"arity": 1, "description": "container.addItem(itemStack)"},
-            "system.runInterval": {"arity": 1, "description": "system.runInterval(callback, tickInterval)"},
-            "system.runTimeout": {"arity": 2, "description": "system.runTimeout(callback, tickDelay)"},
+            "system.runInterval": {
+                "arity": 1,
+                "description": "system.runInterval(callback, tickInterval)",
+            },
+            "system.runTimeout": {
+                "arity": 2,
+                "description": "system.runTimeout(callback, tickDelay)",
+            },
             "dimension.getBlock": {"arity": 1, "description": "dimension.getBlock(location)"},
         }
         for key, sig in signatures.items():
@@ -644,9 +674,7 @@ class ASTBedrockPostprocessor:
             else:
                 valid_calls.append(call)
 
-        hallucination_rate = (
-            len(hallucinated_calls) / len(api_calls) if api_calls else 0.0
-        )
+        hallucination_rate = len(hallucinated_calls) / len(api_calls) if api_calls else 0.0
 
         severity_counts = {"critical": 0, "high": 0, "medium": 0, "low": 0}
         for h in hallucinated_calls:
@@ -654,9 +682,7 @@ class ASTBedrockPostprocessor:
 
         is_valid = len(hallucinated_calls) == 0 or hallucination_rate < 0.1
 
-        report = self._build_report(
-            api_calls, hallucinated_calls, valid_calls, hallucination_rate
-        )
+        report = self._build_report(api_calls, hallucinated_calls, valid_calls, hallucination_rate)
 
         return PostProcessorResult(
             is_valid=is_valid,
@@ -769,17 +795,14 @@ class ASTBedrockPostprocessor:
 
         return arg_count + 1 if depth == 1 else 0
 
-    def _validate_call(
-        self, call: APICall, code: str
-    ) -> Optional[HallucinatedCall]:
+    def _validate_call(self, call: APICall, code: str) -> Optional[HallucinatedCall]:
         """Validate a single API call against the KB."""
         full_method = f"{call.receiver}.{call.method}"
 
         if full_method in self._known_hallucinations:
             suggestion = self.HALLUCINATION_PATTERNS.get(
                 full_method,
-                f"{full_method} is a known hallucination. "
-                f"Did you mean something different?",
+                f"{full_method} is a known hallucination. Did you mean something different?",
             )
 
             correction = self._get_correction(call)
@@ -793,9 +816,7 @@ class ASTBedrockPostprocessor:
                 correction=correction,
             )
 
-        is_valid, hallucination_type = self._kb.is_valid_call(
-            call.receiver, call.method
-        )
+        is_valid, hallucination_type = self._kb.is_valid_call(call.receiver, call.method)
 
         if is_valid:
             return None
@@ -851,9 +872,7 @@ class ASTBedrockPostprocessor:
         }
         return corrections.get(f"{call.receiver}.{call.method}")
 
-    def _determine_severity(
-        self, call: APICall, hallucination_type: str
-    ) -> HallucinationSeverity:
+    def _determine_severity(self, call: APICall, hallucination_type: str) -> HallucinationSeverity:
         """Determine the severity of a hallucination."""
         if hallucination_type == "known_hallucination":
             return HallucinationSeverity.HIGH
@@ -898,9 +917,7 @@ class ASTBedrockPostprocessor:
         }
 
 
-def process_bedrock_code(
-    code: str, strict: bool = False
-) -> PostProcessorResult:
+def process_bedrock_code(code: str, strict: bool = False) -> PostProcessorResult:
     """
     Convenience function to process Bedrock code for hallucinated API calls.
 
