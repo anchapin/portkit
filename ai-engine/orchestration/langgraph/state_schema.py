@@ -111,6 +111,8 @@ class ConversionState(TypedDict, total=False):
     execution_time: float
     interrupted_segments: List[str]
 
+    corrected_segment_keys: Annotated[List[str], _concat_lists]
+
     # Final report assembled by ``_final_report_node``.
     final_report: Dict[str, Any]
     status: str

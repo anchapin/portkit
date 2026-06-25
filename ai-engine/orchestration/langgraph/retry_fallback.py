@@ -8,7 +8,7 @@ the retry counter and handing control back to the QA validator.
 """
 
 import logging
-from typing import Any, Dict
+from typing import Any, Dict, List
 
 from tracing import add_span_attributes, create_span, end_span, record_span_exception
 
@@ -42,19 +42,44 @@ def execute_logic_translator_retry(
     try:
         interrupted = state.get("interrupted_segments", [])
         hitl_feedback = state.get("hitl_feedback", {})
+        converted = list(state.get("converted_scripts", []))
 
-        logger.info(f"[{job_id}] Retrying {len(interrupted)} failed segments")
-
+        corrections = {}
         if hitl_feedback:
             corrections = hitl_feedback.get("corrections", {})
-            for segment_id, _correction in corrections.items():
-                logger.info(f"[{job_id}] Applying HITL correction for segment {segment_id}")
 
-        logger.info(f"[{job_id}] Logic translator retry completed (attempt {retry_count + 1})")
-        add_span_attributes(span, {"success": "true", "retry_count": str(retry_count + 1)})
+        corrected_count = 0
+        corrected_keys: List[str] = []
+        for segment_id, correction_data in corrections.items():
+            for i, script in enumerate(converted):
+                script_key = f"{script.get('type', 'unknown')}_{i}"
+                if script_key == segment_id or script.get("name") == segment_id:
+                    if isinstance(correction_data, dict):
+                        script["data"] = correction_data.get("bedrock_data", script.get("data", {}))
+                        script["confidence"] = correction_data.get("confidence", script.get("confidence", 0.95))
+                        script["review_flag"] = correction_data.get("review_flag", False)
+                        script["corrected"] = True
+                    corrected_keys.append(script_key)
+                    corrected_count += 1
+                    logger.info(f"[{job_id}] Applied HITL correction for segment {segment_id}")
+
+        logger.info(f"[{job_id}] Logic translator retry completed (attempt {retry_count + 1}): "
+                     f"{len(interrupted)} segments retried, {corrected_count} corrections applied")
+        add_span_attributes(span, {
+            "success": "true",
+            "retry_count": str(retry_count + 1),
+            "segments_retried": str(len(interrupted)),
+            "corrections_applied": str(corrected_count),
+        })
         end_span(span)
+
+        # Do NOT return converted_scripts here — the Annotated[..., _concat_lists]
+        # reducer would duplicate the scripts list on every retry cycle.
+        # HITL-corrected scripts are flagged in-place via the 'corrected' key.
+        # The corrected flag is checked downstream (output_assembler, final_report).
         return {
             "retry_count": retry_count + 1,
+            "corrected_segment_keys": corrected_keys,
             "node_status": {"logic_translator_retry": NodeStatus.COMPLETED.value},
         }
     except Exception as e:
