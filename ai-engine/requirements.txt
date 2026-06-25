@@ -62,9 +62,7 @@ pydantic-settings~=2.14.2
 prometheus_client>=0.25.0
 structlog>=26.1.0
 
-# Distributed Tracing - OpenTelemetry
-# Note: chromadb provides opentelemetry-exporter-otlp-proto-grpc which conflicts
-# with opentelemetry-exporter-jaeger-proto-grpc on protobuf versions.
+# Distributed Tracing - OpenTelemetry (OTLP; Jaeger exporter is deprecated upstream)
 # Using flexible versions and letting pip/legacy-resolver find a solution.
 opentelemetry-api>=1.43.0
 opentelemetry-sdk>=1.43.0

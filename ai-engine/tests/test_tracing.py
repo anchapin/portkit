@@ -1,34 +1,39 @@
 """Tests for the distributed tracing module.
 
-Covers the lazy/optional Jaeger import path (issue #1781): the
-``opentelemetry-exporter-jaeger`` package is deprecated and frequently
-unavailable, so ``_setup_jaeger_exporter`` must never raise and must return
-``None`` when the package is missing or broken.
+Covers the OTLP exporter migration (issue #1821): the deprecated
+``opentelemetry-exporter-jaeger`` package has been removed in favor of
+``opentelemetry-exporter-otlp`` (Jaeger natively ingests OTLP since v1.35).
+The ``TRACING_EXPORTER=jaeger`` value is accepted as a backwards-compatible
+alias for ``otlp``.
 """
 
-import sys
-import types
 from unittest.mock import MagicMock, patch
 
-import pytest
 
-
-def test_get_tracing_exporter_default_and_override():
-    """Exporter selection reads TRACING_EXPORTER (default 'jaeger')."""
+def test_get_tracing_exporter_default_is_otlp():
+    """Exporter selection defaults to 'otlp'."""
     import tracing
 
-    assert tracing.get_tracing_exporter() == "jaeger"
-    with patch.dict("os.environ", {"TRACING_EXPORTER": "OTLP"}):
+    with patch.dict("os.environ", {}, clear=True):
         assert tracing.get_tracing_exporter() == "otlp"
 
 
-def test_jaeger_host_port_helpers():
-    """Jaeger host/port helpers honor env overrides."""
+def test_get_tracing_exporter_jaeger_alias():
+    """'jaeger' is accepted as a backwards-compatible alias for 'otlp'."""
     import tracing
 
-    with patch.dict("os.environ", {"JAEGER_HOST": "myjaeger", "JAEGER_PORT": "12345"}):
-        assert tracing.get_jaeger_host() == "myjaeger"
-        assert tracing.get_jaeger_port() == 12345
+    with patch.dict("os.environ", {"TRACING_EXPORTER": "jaeger"}):
+        assert tracing.get_tracing_exporter() == "otlp"
+
+
+def test_get_otlp_endpoint_default_and_override():
+    """OTLP endpoint honors OTLP_ENDPOINT env var."""
+    import tracing
+
+    with patch.dict("os.environ", {}, clear=True):
+        assert tracing.get_otlp_endpoint() == "http://localhost:4317"
+    with patch.dict("os.environ", {"OTLP_ENDPOINT": "http://collector:4317"}):
+        assert tracing.get_otlp_endpoint() == "http://collector:4317"
 
 
 def test_create_resource_carries_service_metadata():
@@ -41,44 +46,30 @@ def test_create_resource_carries_service_metadata():
         assert resource.attributes.get("service.version") == "9.9"
 
 
-def test_setup_jaeger_exporter_returns_none_when_import_fails(monkeypatch):
-    """When the jaeger package is missing/broken, return None and do not raise."""
+def test_setup_otlp_exporter_returns_processor():
+    """_setup_otlp_exporter returns a BatchSpanProcessor wrapping OTLPSpanExporter."""
     import tracing
 
-    real_import = __builtins__.__import__ if hasattr(__builtins__, "__import__") else __import__
-
-    def _block_jaeger(name, *args, **kwargs):
-        if "jaeger.thrift" in name:
-            raise ImportError("simulated missing jaeger package")
-        return real_import(name, *args, **kwargs)
-
-    monkeypatch.setattr("builtins.__import__", _block_jaeger)
-    # Ensure no stale cached module interferes.
-    monkeypatch.delitem(sys.modules, "opentelemetry.exporter.jaeger.thrift", raising=False)
-
-    result = tracing._setup_jaeger_exporter()
-    assert result is None
-
-
-def test_setup_jaeger_exporter_returns_processor_when_available(monkeypatch):
-    """When the jaeger package imports cleanly, a BatchSpanProcessor is returned."""
-    import tracing
-
-    fake_exporter_cls = MagicMock(name="JaegerExporter")
-    fake_module = types.ModuleType("opentelemetry.exporter.jaeger.thrift")
-    fake_module.JaegerExporter = fake_exporter_cls
-
-    parent_pkg = types.ModuleType("opentelemetry.exporter.jaeger")
-    parent_pkg.thrift = fake_module
-
-    monkeypatch.setitem(sys.modules, "opentelemetry.exporter.jaeger", parent_pkg)
-    monkeypatch.setitem(sys.modules, "opentelemetry.exporter.jaeger.thrift", fake_module)
-
-    with patch.dict("os.environ", {"JAEGER_HOST": "jh", "JAEGER_PORT": "6831"}):
-        result = tracing._setup_jaeger_exporter()
+    with patch("tracing.OTLPSpanExporter") as mock_otlp, patch(
+        "tracing.BatchSpanProcessor"
+    ) as mock_bsp:
+        mock_otlp.return_value = MagicMock(name="exporter")
+        mock_bsp.return_value = MagicMock(name="processor")
+        result = tracing._setup_otlp_exporter()
 
     assert result is not None
-    fake_exporter_cls.assert_called_once_with(agent_host_name="jh", agent_port=6831)
+    mock_otlp.assert_called_once()
+    mock_bsp.assert_called_once()
+
+
+def test_setup_otlp_exporter_returns_none_on_failure():
+    """When OTLPSpanExporter raises, _setup_otlp_exporter returns None and does not propagate."""
+    import tracing
+
+    with patch("tracing.OTLPSpanExporter", side_effect=Exception("otlp failed")):
+        result = tracing._setup_otlp_exporter()
+
+    assert result is None
 
 
 def test_get_tracer_returns_noop_when_uninitialized():
@@ -100,3 +91,4 @@ def test_create_span_and_attributes_smoke():
     assert span is not None
     tracing.add_span_attributes(span, {"k": "v", "empty": None})
     tracing.end_span(span)
+
