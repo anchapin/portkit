@@ -1,17 +1,17 @@
 # Core FastAPI for AI Engine API - align with backend version
-fastapi==0.136.3
-uvicorn[standard]==0.48.0
-python-multipart==0.0.31
+fastapi==0.138.0
+uvicorn[standard]==0.49.0
+python-multipart==0.0.32
 
 # AI Framework — LangChain/LangGraph stack (issue #1201 — legacy multi-agent framework removed)
 # Use Python >= 3.11 for langchain/langgraph compatibility.
-openai>=2.38.0,<3.0.0
-langgraph>=1.2.2
-langchain-core>=1.4.0
-langchain-openai>=1.2.2,<2.0
+openai>=2.44.0,<3.0.0
+langgraph>=1.2.6
+langchain-core>=1.4.8
+langchain-openai>=1.3.3,<2.0
 langchain-ollama>=1.1.0
 langgraph-checkpoint-sqlite>=3.1.0
-sentence-transformers>=5.5.1,<6.0.0
+sentence-transformers>=5.6.0,<6.0.0
 
 # Vector Database — pin relaxed after legacy framework removal (#1439, unblocked by #1201)
 chromadb>=1.5.9,<2.0
@@ -33,11 +33,11 @@ pydub
 jsonschema
 
 # Database - used by learning/correction_store and knowledge/schema
-sqlalchemy>=2.0.50
+sqlalchemy>=2.0.51
 
 # HTTP Client - align with backend version
 httpx==0.28.1
-beautifulsoup4>=4.14.3 # For web scraping (BedrockDocsScraper)
+beautifulsoup4>=4.15.0 # For web scraping (BedrockDocsScraper)
 aiofiles>=25.1.0     # For async file operations (potentially in scraper or other utils)
 validators>=0.35.0   # For URL validation (BedrockDocsScraper)
 
@@ -48,7 +48,7 @@ duckduckgo-search>=8.1.1
 rank_bm25>=0.2.2
 
 # Redis for job management - align with backend version
-redis>=8.0.0
+redis>=8.0.1
 async-timeout>=5.0.1
 
 # Security overrides for transitive dependencies (CVE-2026-23949, Issue #1483)
@@ -60,15 +60,15 @@ pydantic-settings~=2.14.2
 
 # Monitoring - align with backend version
 prometheus_client>=0.25.0
-structlog>=24.0.0
+structlog>=26.1.0
 
 # Distributed Tracing - OpenTelemetry
 # Note: chromadb provides opentelemetry-exporter-otlp-proto-grpc which conflicts
 # with opentelemetry-exporter-jaeger-proto-grpc on protobuf versions.
 # Using flexible versions and letting pip/legacy-resolver find a solution.
-opentelemetry-api>=1.42.1
-opentelemetry-sdk>=1.42.1
-opentelemetry-exporter-otlp>=1.42.1
-opentelemetry-instrumentation-fastapi>=0.63b1
-opentelemetry-instrumentation-httpx>=0.63b1
-opentelemetry-instrumentation-redis>=0.63b1
+opentelemetry-api>=1.43.0
+opentelemetry-sdk>=1.43.0
+opentelemetry-exporter-otlp>=1.43.0
+opentelemetry-instrumentation-fastapi>=0.64b0
+opentelemetry-instrumentation-httpx>=0.64b0
+opentelemetry-instrumentation-redis>=0.64b0
