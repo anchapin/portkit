@@ -13,7 +13,7 @@ import tempfile
 import zipfile
 from pathlib import Path
 
-from agents.modpack_orchestrator import (
+from agents.modpack.orchestrator import (
     ModpackOrchestrator,
     ModpackConversionCrew,
     ModpackInfo,
