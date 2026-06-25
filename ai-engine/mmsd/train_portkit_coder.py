@@ -13,6 +13,11 @@ Data pipeline:
 6. 90/10 train/eval split (no shuffle, deterministic)
 7. QLoRA fine-tuning with SFTTrainer
 8. Push LoRA adapter + merged model to HF Hub
+
+Adaption Lab Integration (Issue #1677):
+- Adaption lab datasets at ai-engine/mmsd/data/processed/adaption_*.jsonl
+- Validated adaption data is merged into adaption_lab_merged.jsonl
+- Include via --include-adaption flag or INCLUDE_ADAPTION=1 env var
 """
 
 import os
@@ -29,6 +34,12 @@ from datasets import Dataset
 from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig
 from peft import LoraConfig, TaskType
 from trl import SFTTrainer, SFTConfig
+
+try:
+    from mmsd.adaption_data_loader import AdaptionDatasetLoader, load_training_data
+except ImportError:
+    AdaptionDatasetLoader = None
+    load_training_data = None
 
 # ── Config ─────────────────────────────────────────────────────────────────
 
@@ -61,6 +72,11 @@ GENERAL_CODE_DATASET = "m-a-p/CodeFeedback-Filtered-Instruction"
 GENERAL_CODE_LANGUAGES = ["java", "javascript"]
 GENERAL_CODE_SAMPLE_SIZE = 200
 MIX_RATIO = 0.12  # ~12% of training tokens from general code
+
+# Adaption lab integration (Issue #1677)
+INCLUDE_ADAPTION = os.environ.get("INCLUDE_ADAPTION", "0") == "1"
+ADAPTION_DATA_DIR = "ai-engine/mmsd/data/processed"
+ADAPTION_WEIGHT = float(os.environ.get("ADAPTION_WEIGHT", "1.0"))
 
 SYSTEM_PROMPT = (
     "You are PortKit, an expert at converting Minecraft Java Edition mods (Forge) "
@@ -207,22 +223,27 @@ def _run_validation(input_path: str, output_path: str):
 
 
 def format_stage_a(example: dict) -> dict:
+    instruction = example.get("instruction", example.get("description", ""))
+    java_source = example.get("java_source", example.get("source", ""))
+    reasoning_trace = example.get("reasoning_trace", example.get("reasoning", ""))
+    bedrock_source = example.get("bedrock_source", example.get("target", ""))
+
     return {
         "messages": [
             {"role": "system", "content": SYSTEM_PROMPT},
             {
                 "role": "user",
                 "content": (
-                    f"Mod Description: {example['instruction']}\n\n"
-                    f"Java Source:\n{example['java_source']}\n\n"
+                    f"Mod Description: {instruction}\n\n"
+                    f"Java Source:\n{java_source}\n\n"
                     "Convert this to a Bedrock Add-on. First explain your conversion approach, then provide the files."
                 ),
             },
             {
                 "role": "assistant",
                 "content": (
-                    f"## Conversion Plan\n{example['reasoning_trace']}\n\n"
-                    f"## Bedrock Add-on Output\n{example['bedrock_source']}"
+                    f"## Conversion Plan\n{reasoning_trace}\n\n"
+                    f"## Bedrock Add-on Output\n{bedrock_source}"
                 ),
             },
         ]
@@ -400,10 +421,26 @@ def main():
             if line.strip():
                 pairs.append(json.loads(line))
 
-    n = len(pairs)
-    split = int(n * TRAIN_RATIO)
+    adaption_pairs = []
+    if INCLUDE_ADAPTION and load_training_data is not None:
+        _, adaption_pairs, data_stats = load_training_data(
+            mmsd_path=data_path,
+            adaption_data_dir=ADAPTION_DATA_DIR,
+            include_adaption=True,
+            adaption_weight=ADAPTION_WEIGHT,
+        )
+        print(f"[adaption] Loaded {len(adaption_pairs)} adaption pairs")
+        print(f"[adaption] Stats: {data_stats}")
+
+    n = len(pairs) + len(adaption_pairs)
+    split = int(len(pairs) * TRAIN_RATIO)
     mmsd_train = [format_stage_a(p) for p in pairs[:split]]
     eval_ds = Dataset.from_list([format_stage_a(p) for p in pairs[split:]])
+
+    if adaption_pairs:
+        adaption_train = [format_stage_a(p) for p in adaption_pairs]
+        mmsd_train.extend(adaption_train)
+        print(f"[adaption] Extended training set with {len(adaption_pairs)} adaption pairs")
 
     general_examples = load_general_code_dataset()
     if general_examples:
@@ -548,6 +585,9 @@ def main():
             "total": n,
             "train": len(train_ds),
             "eval": len(eval_ds),
+            "mmsd_pairs": len(pairs),
+            "adaption_pairs": len(adaption_pairs),
+            "adaption_weight": ADAPTION_WEIGHT if INCLUDE_ADAPTION else None,
             "general_code_mix": {
                 "dataset": GENERAL_CODE_DATASET,
                 "sample_size": GENERAL_CODE_SAMPLE_SIZE,
