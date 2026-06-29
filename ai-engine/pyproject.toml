@@ -230,7 +230,7 @@ classifiers = [
 
 dependencies = [
     # Core FastAPI for AI Engine API
-    "fastapi>=0.138.0",
+    "fastapi>=0.138.1",
     "uvicorn[standard]>=0.49.0",
     "python-multipart>=0.0.32",
 
