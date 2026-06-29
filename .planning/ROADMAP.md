@@ -875,3 +875,30 @@ Phase 21.0 (Coverage Optimization)
 - *Beyond Pass Rate: Multilingual, Execution-Grounded Eval* (75%) — 63.25% of open LLM code failures are compile errors before semantic correctness is even tested; reinforces #1268 (contract-repair loop) as high-ROI. Also informs MMSD model selection: Qwen2.5-Coder-14B strongest on hard/complex problems, relevant to selecting the base model for MMSD fine-tuning.
 
 *Full digest: [.planning/research/digest-2026-06-22.md](.planning/research/digest-2026-06-22.md)*
+---
+
+## 🔬 PortKit Research Scout — Week of 2026-06-29
+
+*(Manual web search sweep — arxiv API rate-limited 8th consecutive week; GitHub CONNECTED — 2 issues created)*
+
+### New Issues Created from Research Findings
+
+| Issue | Paper | Priority | Relevance |
+|-------|-------|----------|-----------|
+| [#1856 — Adopt Reboot Feature-Reduction Milestone Pipeline for Java-to-Bedrock Translation](https://github.com/anchapin/portkit/issues/1856) | [Mostly Automatic Translation of Language Interpreters from C to Safe Rust (Reboot)](https://arxiv.org/abs/2606.27122) | High | 90% |
+| [#1857 — Add Library-Aware Bedrock API Stubs and Compile-Dispatch Repair Loop for TypeScript Test Generation](https://github.com/anchapin/portkit/issues/1857) | [Library-Aware Doubles and Iterative Repair for LLM-Generated Unit Tests in OpenSIL Firmware](https://arxiv.org/abs/2606.19725) | High | 80% |
+
+### Roadmap Implications
+
+**Phase 0.2/0.6 (Core Architecture + AI Integration) — Feature-Reduction Milestone Decomposition**
+- Reboot's empirical finding: feature-level decomposition improves translation correctness by 6-20% over multi-agent translation alone, independent of model quality. PortKit's primary failure mode is all-or-nothing translation of large complex mods that fail in final assembly. Feature-reduction milestones decompose mods into tiers (simple registration first, complex behavior last), validate via tsc + Bedrock schema check at each step, and persist partial progress as intermediate artifacts. This is a pure pipeline restructuring improvement — model-agnostic and immediately actionable. The contract-repair loop (#1268) becomes the per-milestone retry primitive; milestone checkpoints surface as a B2B "guided conversion" tier. (Issue #1856)
+
+**Phase 0.3/0.6 (QA + AI Integration) — Library-Aware Bedrock Doubles + Coverage-Guided Repair**
+- Current PortKit has no automated unit test generation for converted Bedrock code — testing requires a live Minecraft server instance. The AMD firmware pattern (96.1% compile rate, 98.8% coverage) directly applies: auto-generate Bedrock API type-doubles (mock implementations of @minecraft/server interfaces), drive LLM unit test generation against them, and run a compile-dispatch-coverage repair loop in standard CI. Every converted mod ships with a test suite as part of the B2B deliverable. Extends #1268 with a coverage feedback dimension. (Issue #1857)
+
+**Horizon Notes (not issues yet)**
+- *Deterministic Anchoring for LLM Agents* (75%) — injecting call graph + inheritance topology as plain-text structural anchors into PortKit's LangGraph translator improves navigation reproducibility and shortens trajectories; low-cost experiment to validate.
+- *icat-agent adaptive routing* (70%) — rubric-based mod quality classifier routes simple mods through lean parallel pipeline vs. complex mods through milestone decomposition (#1856); natural complement to the two-tier pipeline.
+- *Iterative Feedback: reasoning models only* (70%) — confirms contract-repair loop (#1268) should use reasoning models for repair iterations; logical/algorithmic failures remain intractable through iteration (reinforcing #1856's decomposition approach for complex features).
+
+*Full digest: [.planning/research/digest-2026-06-29.md](.planning/research/digest-2026-06-29.md)*
