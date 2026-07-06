@@ -902,3 +902,25 @@ Phase 21.0 (Coverage Optimization)
 - *Iterative Feedback: reasoning models only* (70%) — confirms contract-repair loop (#1268) should use reasoning models for repair iterations; logical/algorithmic failures remain intractable through iteration (reinforcing #1856's decomposition approach for complex features).
 
 *Full digest: [.planning/research/digest-2026-06-29.md](.planning/research/digest-2026-06-29.md)*
+---
+
+## 🔬 PortKit Research Scout — Week of 2026-07-06
+
+*(Manual web search sweep — arxiv API rate-limited 9th consecutive week; GitHub CONNECTED — 1 issue created)*
+
+### New Issue Created from Research Findings
+
+| Issue | Paper | Priority | Relevance |
+|-------|-------|----------|-----------|
+| [#1866 — Adopt Multisage Multi-Semantic Augmentation and Self-Calibration for Java-to-Bedrock Translation](https://github.com/anchapin/portkit/issues/1866) | [Enhancing LLM-Based Code Translation with Verified Multi-Semantic Representations (Multisage)](https://arxiv.org/abs/2606.11863) | High | 85% |
+
+### Roadmap Implications
+
+**Phase 0.2/0.6 (Core Architecture + AI Integration) — Structured Semantic Scaffolding for Translation**
+- PortKit's Bedrock output can compile and pass schema validation yet still diverge behaviorally from the source Java mod — a silent semantic-drift failure mode distinct from the compile/schema failures #1268/#1857 already target. Multisage's approach — extracting data-flow graphs, type constraints, and external API manifests from Java source, then using semantics-preserving mutation + cross-semantic consistency verification to calibrate generated semantics before they guide translation — gives the LangGraph translator a structured anchor beyond raw source text. External API-call manifests also narrow Bedrock RAG retrieval (#1189) for API-heavy mods, and generated test-case sketches can seed #1857's auto-generated Bedrock unit tests with real behavioral assertions instead of compile/coverage-only signals. (Issue #1866)
+
+**Horizon Notes (not issues yet)**
+- *ClarifyCodeBench — ambiguity clarification benchmark* (70%) — finds that stronger/reasoning models don't inherently ask better clarifying questions ("Reasoning Paradox"); relevant to #1856's B2B guided-conversion tier, where genuinely ambiguous Java-to-Bedrock mappings should trigger an explicit clarifying question to the mod owner rather than a silent guess — needs a dedicated ambiguity-detection step, not just a better model.
+- *Self-GC — context lifecycle management for long-horizon agents* (70%) — object-lifecycle context pruning (43.95% token reduction, 84.85% no-impact rate) vs. chronological/summary heuristics; worth a cost audit once #1856's milestone pipeline is in production and mod translation runs accumulate more pipeline-stage context.
+
+*Full digest: [.planning/research/digest-2026-07-06.md](.planning/research/digest-2026-07-06.md)*
