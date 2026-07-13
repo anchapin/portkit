@@ -46,15 +46,15 @@
   "author": "PortKit Team",
   "license": "MIT",
   "devDependencies": {
-    "@commitlint/cli": "^21.0.2",
-    "@commitlint/config-conventional": "^21.0.2",
+    "@commitlint/cli": "^21.2.1",
+    "@commitlint/config-conventional": "^21.2.0",
     "@composio/ao-core": "^0.2.0",
     "@composio/ao-web": "^0.2.2",
     "@eslint/js": "^10.0.1",
     "@types/jest": "^30.0.0",
     "concurrently": "^10.0.3",
     "husky": "^9.1.7",
-    "prettier": "^3.8.4"
+    "prettier": "^3.9.5"
   },
   "engines": {
     "node": ">=20.0.0",
