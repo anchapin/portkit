@@ -924,3 +924,24 @@ Phase 21.0 (Coverage Optimization)
 - *Self-GC — context lifecycle management for long-horizon agents* (70%) — object-lifecycle context pruning (43.95% token reduction, 84.85% no-impact rate) vs. chronological/summary heuristics; worth a cost audit once #1856's milestone pipeline is in production and mod translation runs accumulate more pipeline-stage context.
 
 *Full digest: [.planning/research/digest-2026-07-06.md](.planning/research/digest-2026-07-06.md)*
+---
+
+## 🔬 PortKit Research Scout — Week of 2026-07-13
+
+*(Manual web search sweep — arxiv API rate-limited 10th consecutive week; GitHub CONNECTED — 1 issue created)*
+
+### New Issue Created from Research Findings
+
+| Issue | Paper | Priority | Relevance |
+|-------|-------|----------|-----------|
+| [#1876 — Adopt TraceProbe-Style Trajectory Diagnostics for the Translation Pipeline](https://github.com/anchapin/portkit/issues/1876) | [What Resolve Rate Hides: Trajectory Structure Diagnostics for Coding Agents (TraceProbe)](https://arxiv.org/abs/2607.06184) | Medium | 80% |
+
+### Roadmap Implications
+
+**Phase 0.4/0.6 (Evaluation + AI Integration) — Trajectory-Level Diagnostics for the Translation Pipeline**
+- PortKit currently tracks conversions as binary pass/fail against compile + schema validation, with no structured view into *how* a run reached that outcome. TraceProbe's methodology — canonicalizing execution trajectories into a nine-type action taxonomy, then detecting anti-patterns (search loops, verification skips) and aligning pairs of runs to localize divergence — maps directly onto concrete PortKit failure modes: repeated non-converging Bedrock RAG lookups (#1189), or segments accepted without passing the compile-dispatch repair loop (#1857). It also gives a real regression-testing tool for safely rolling out #1856 (milestone pipeline) and #1866 (Multisage) by comparing *how* translation happens across pipeline versions, not just pass rate. Strong synergy with #1267 (execution diagnostic suite) and #1577 (eval pipeline audit). (Issue #1876)
+
+**Horizon Notes (not issues yet)**
+- *Failure as a Process — CLI coding agent failure-trajectory study* (72%) — large-scale empirical finding that agent failures are driven by epistemic errors, begin within the first few execution steps, and stay hidden until unrecoverable; reinforces the case for instrumenting earlier validation checkpoints in the repair loop (right after semantic chunking, before full translation) rather than only checking at compile/schema time. Supporting evidence for prioritizing #1876/#1856-style early-validation work, not yet a standalone issue.
+
+*Full digest: [.planning/research/digest-2026-07-13.md](.planning/research/digest-2026-07-13.md)*
