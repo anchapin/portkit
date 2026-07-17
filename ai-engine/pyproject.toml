@@ -283,7 +283,7 @@ dependencies = [
 [project.optional-dependencies]
 # NVIDIA GPU acceleration (CUDA)
 gpu-nvidia = [
-    "torch>=2.12.1",
+    "torch>=2.13.0",
     "torchvision>=0.27.1",
     "torchaudio>=2.11.0", 
     "onnxruntime-gpu>=1.27.0",
@@ -294,7 +294,7 @@ gpu-nvidia = [
 # Note: Install with specific index URL when needed:
 # pip install .[gpu-amd] -f https://download.pytorch.org/whl/rocm6.0 
 gpu-amd = [
-    "torch>=2.12.1",
+    "torch>=2.13.0",
     "torchvision>=0.27.1", 
     "torchaudio>=2.11.0",
     "onnxruntime-rocm>=1.22.2.post1; sys_platform == 'linux'",
@@ -306,7 +306,7 @@ gpu-amd = [
 # Note: Install with specific index URL when needed:
 # pip install .[cpu-only] -f https://download.pytorch.org/whl/cpu
 cpu-only = [
-    "torch>=2.12.1",
+    "torch>=2.13.0",
     "torchvision>=0.27.1", 
     "torchaudio>=2.11.0",
     "onnxruntime>=1.27.0",

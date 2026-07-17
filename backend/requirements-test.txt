@@ -18,7 +18,7 @@ cryptography>=49.0.0
 
 # ML dependencies needed for tests
 scikit-learn>=1.9.0
-torch>=2.12.1
+torch>=2.13.0
 aiofiles>=25.1.0
 
 # Additional ML dependencies for comprehensive test coverage
