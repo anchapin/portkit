@@ -10,13 +10,13 @@ pytest-timeout==2.4.0
 pytest-mock>=3.15.1
 
 # Code Quality - align with backend version
-ruff==0.15.19
+ruff==0.16.0
 black==26.5.1
-mypy>=2.1.0
+mypy>=2.3.0
 
 # Development Tools
-pre-commit>=4.6.0
+pre-commit>=4.6.1
 
 # Dependency checking
 pip-audit>=2.10.1
-pipdeptree>=3.1.0
+pipdeptree>=4.1.0

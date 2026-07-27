@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=82.0.1", "wheel>=0.47.0"]
+requires = ["setuptools>=83.0.0", "wheel>=0.47.0"]
 build-backend = "setuptools.build_meta"
 
 [tool.ruff]
@@ -230,17 +230,17 @@ classifiers = [
 
 dependencies = [
     # Core FastAPI for AI Engine API
-    "fastapi>=0.138.0",
-    "uvicorn[standard]>=0.49.0",
+    "fastapi>=0.140.0",
+    "uvicorn[standard]>=0.51.0",
     "python-multipart>=0.0.32",
 
     # AI Framework — LangChain/LangGraph stack (issue #1201)
-    "langchain>=1.3.11",
-    "langchain-core>=1.4.8",
-    "langchain-openai>=1.3.3",
+    "langchain>=1.3.14",
+    "langchain-core>=1.5.1",
+    "langchain-openai>=1.4.1",
     "langchain-ollama>=1.1.0",
-    "langgraph>=1.2.6",
-    "openai>=2.44.0",
+    "langgraph>=1.2.9",
+    "openai>=2.48.0",
     "sentence-transformers",
 
     # Vector Database — pin relaxed after legacy framework removal (#1439, unblocked by #1201)
@@ -251,7 +251,7 @@ dependencies = [
     "python-dotenv",
 
     # Java analysis
-    "tree-sitter>=0.25.2",
+    "tree-sitter>=0.26.0",
     "tree-sitter-java",
 
     # Minecraft data for item mappings
@@ -261,7 +261,7 @@ dependencies = [
     "rank-bm25>=0.2.2",
 
     # File processing
-    "Pillow>=12.2.0",  # For texture conversion
+    "Pillow>=12.3.0",  # For texture conversion
     "pydub",
     
     # HTTP Client
@@ -283,10 +283,10 @@ dependencies = [
 [project.optional-dependencies]
 # NVIDIA GPU acceleration (CUDA)
 gpu-nvidia = [
-    "torch>=2.12.1",
-    "torchvision>=0.27.1",
+    "torch>=2.13.0",
+    "torchvision>=0.28.0",
     "torchaudio>=2.11.0", 
-    "onnxruntime-gpu>=1.27.0",
+    "onnxruntime-gpu>=1.28.0",
     "accelerate>=1.14.0",
 ]
 
@@ -294,10 +294,10 @@ gpu-nvidia = [
 # Note: Install with specific index URL when needed:
 # pip install .[gpu-amd] -f https://download.pytorch.org/whl/rocm6.0 
 gpu-amd = [
-    "torch>=2.12.1",
-    "torchvision>=0.27.1", 
+    "torch>=2.13.0",
+    "torchvision>=0.28.0", 
     "torchaudio>=2.11.0",
-    "onnxruntime-rocm>=1.22.2.post1; sys_platform == 'linux'",
+    "onnxruntime-rocm>=1.22.2.post3; sys_platform == 'linux'",
     "onnxruntime-directml>=1.24.4; sys_platform == 'win32'",
     "accelerate>=1.14.0",
 ]
@@ -306,10 +306,10 @@ gpu-amd = [
 # Note: Install with specific index URL when needed:
 # pip install .[cpu-only] -f https://download.pytorch.org/whl/cpu
 cpu-only = [
-    "torch>=2.12.1",
-    "torchvision>=0.27.1", 
+    "torch>=2.13.0",
+    "torchvision>=0.28.0", 
     "torchaudio>=2.11.0",
-    "onnxruntime>=1.27.0",
+    "onnxruntime>=1.28.0",
 ]
 
 # Development dependencies
