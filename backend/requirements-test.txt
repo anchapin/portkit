@@ -7,9 +7,9 @@
 # Additional testing tools
 pytest-mock>=3.11.0
 pytest-docker>=3.2.5
-docker>=7.1.0
+docker>=7.2.0
 mutmut>=3.6.0
-hypothesis>=6.155.7
+hypothesis>=6.161.5
 
 # Missing test dependencies (Issue #984)
 PyJWT>=2.13.0
@@ -18,12 +18,12 @@ cryptography>=49.0.0
 
 # ML dependencies needed for tests
 scikit-learn>=1.9.0
-torch>=2.12.1
+torch>=2.13.0
 aiofiles>=25.1.0
 
 # Additional ML dependencies for comprehensive test coverage
-numpy>=2.5.0
+numpy>=2.5.1
 scipy>=1.18.0
 
 # Development tools
-pre-commit>=4.6.0
+pre-commit>=4.6.1
