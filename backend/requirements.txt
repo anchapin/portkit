@@ -2,8 +2,8 @@
 httpx==0.28.1
 
 # Core Framework (updated for CI fix)
-fastapi==0.138.0
-uvicorn[standard]==0.49.0
+fastapi==0.141.1
+uvicorn[standard]==0.52.0
 pydantic~=2.13.4
 pydantic-settings~=2.14.2
 python-dateutil==2.9.0.post0
@@ -12,33 +12,33 @@ python-dateutil==2.9.0.post0
 sqlalchemy>=2.0.51
 asyncpg>=0.31.0
 psycopg2-binary>=2.9.12
-alembic==1.18.4
-pgvector>=0.4.2
+alembic==1.18.5
+pgvector>=0.5.0
 aiosqlite>=0.22.1  # For SQLite async support in tests
 
 # Caching
-redis>=8.0.0
+redis>=8.1.0
 async-timeout>=5.0.1
 
 # Task Queue (Celery for distributed task processing - Issue #1098)
 celery>=5.6.3
 
 # File handling
-python-multipart==0.0.31
+python-multipart==0.0.32
 tomli~=2.4.1  # TOML parsing for Python <3.11
 python-magic==0.4.27
 javalang==0.13.0  # Java source code parsing for JavaAnalyzerAgent
 
 # Document processing for ingestion pipeline
-markdown==3.10.2
+markdown==3.10.3
 beautifulsoup4>=4.15.0
 
 # HTTP Client for file downloads
 httpx==0.28.1
 
 # Monitoring
-prometheus_client>=0.25.0
-sentry-sdk[fastapi]>=2.63.0
+prometheus_client>=0.26.0
+sentry-sdk[fastapi]>=2.66.1
 structlog>=26.1.0
 
 # Testing
@@ -49,7 +49,7 @@ pytest-timeout==2.4.0
 pytest-xdist>=3.8.0
 
 # Code Quality
-ruff==0.15.18
+ruff==0.16.1
 black==26.5.1
 
 # Security overrides for transitive dependencies (CVE-2026-23949, Issue #1483)
@@ -62,18 +62,18 @@ bcrypt>=5.0.0
 cryptography>=49.0.0
 psutil>=7.2.2
 email-validator>=2.3.0
-Pillow>=12.2.0
-setuptools>=82.0.1  # Required by opentelemetry-instrumentation packages for pkg_resources
-stripe>=15.2.1  # Stripe payment integration (Issue #970)
-resend>=2.32.2  # Transactional email sending (switched from SendGrid)
+Pillow>=12.3.0
+setuptools>=83.0.0  # Required by opentelemetry-instrumentation packages for pkg_resources
+stripe>=15.4.0  # Stripe payment integration (Issue #970)
+resend>=2.35.0  # Transactional email sending (switched from SendGrid)
 
 # Distributed Tracing - OpenTelemetry
-opentelemetry-api>=1.42.1
-opentelemetry-sdk>=1.42.1
-opentelemetry-exporter-otlp>=1.42.1
-opentelemetry-instrumentation-fastapi>=0.63b1
-opentelemetry-instrumentation-httpx>=0.63b1
-opentelemetry-instrumentation-redis>=0.63b1
+opentelemetry-api>=1.44.0
+opentelemetry-sdk>=1.44.0
+opentelemetry-exporter-otlp>=1.44.0
+opentelemetry-instrumentation-fastapi>=0.65b0
+opentelemetry-instrumentation-httpx>=0.65b0
+opentelemetry-instrumentation-redis>=0.65b0
 
 # Optional Secrets Management Dependencies
 # Install only what you need:
