@@ -4,19 +4,19 @@
 numpy>=2.4.6
 pydantic>=2.13.4
 httpx>=0.24.0
-sentence-transformers>=5.6.0
+sentence-transformers>=6.0.0
 
 # Multi-modal models
-torch>=2.12.1
-torchvision>=0.27.1
-transformers>=5.12.1
-pillow>=12.2.0
+torch>=2.13.0
+torchvision>=0.28.0
+transformers>=5.15.1
+pillow>=12.3.0
 
 # OpenCLIP for multi-modal embeddings
 open-clip-torch>=3.3.0
 
 # Optional: Hugging Face models
-datasets>=5.0.0
+datasets>=5.0.1
 accelerate>=1.14.0
 
 # Testing and development
