@@ -1,39 +1,39 @@
 # Core FastAPI for AI Engine API - align with backend version
-fastapi==0.138.0
-uvicorn[standard]==0.49.0
+fastapi==0.141.1
+uvicorn[standard]==0.52.4
 python-multipart==0.0.32
 
 # AI Framework — LangChain/LangGraph stack (issue #1201 — legacy multi-agent framework removed)
 # Use Python >= 3.11 for langchain/langgraph compatibility.
-openai>=2.44.0,<3.0.0
-langgraph>=1.2.6
-langchain-core>=1.4.8
-langchain-openai>=1.3.3,<2.0
+openai>=3.8.0,<4.0.0
+langgraph>=1.2.11
+langchain-core>=1.6.1
+langchain-openai>=1.6.0,<2.0
 langchain-ollama>=1.1.0
-langgraph-checkpoint-sqlite>=3.1.0
-sentence-transformers>=5.6.0,<6.0.0
+langgraph-checkpoint-sqlite>=3.1.1
+sentence-transformers>=6.0.1,<7.0.0
 
 # Vector Database — pin relaxed after legacy framework removal (#1439, unblocked by #1201)
 chromadb>=1.5.9,<2.0
 
 # Data Processing - align with backend version
 numpy
-python-dotenv~=1.2.2
+python-dotenv~=1.2.3
 
 # Java analysis - tree-sitter for Java 17+ support
 # Note: javalang is still required by logic_translator.py
-tree-sitter>=0.25.2
+tree-sitter>=0.26.0
 tree-sitter-java
 javalang==0.13.0
 
 # File processing - align with backend version
 python-magic==0.4.27
-Pillow>=12.2.0
+Pillow>=12.3.0
 pydub
 jsonschema
 
 # Database - used by learning/correction_store and knowledge/schema
-sqlalchemy>=2.0.51
+sqlalchemy>=2.0.52
 
 # HTTP Client - align with backend version
 httpx==0.28.1
@@ -48,25 +48,25 @@ duckduckgo-search>=8.1.1
 rank_bm25>=0.2.2
 
 # Redis for job management - align with backend version
-redis>=8.0.1
+redis>=8.1.0
 async-timeout>=5.0.1
 
 # Security overrides for transitive dependencies (CVE-2026-23949, Issue #1483)
 jaraco.context>=6.1.2
 
 # Configuration Management - align with backend version
-pydantic~=2.13.4
-pydantic-settings~=2.14.2
+pydantic~=2.13.5
+pydantic-settings~=2.15.0
 
 # Monitoring - align with backend version
-prometheus_client>=0.25.0
+prometheus_client>=0.26.0
 structlog>=26.1.0
 
 # Distributed Tracing - OpenTelemetry (OTLP; Jaeger exporter is deprecated upstream)
 # Using flexible versions and letting pip/legacy-resolver find a solution.
-opentelemetry-api>=1.43.0
-opentelemetry-sdk>=1.43.0
-opentelemetry-exporter-otlp>=1.43.0
-opentelemetry-instrumentation-fastapi>=0.64b0
-opentelemetry-instrumentation-httpx>=0.64b0
-opentelemetry-instrumentation-redis>=0.64b0
+opentelemetry-api>=1.44.0
+opentelemetry-sdk>=1.44.0
+opentelemetry-exporter-otlp>=1.44.0
+opentelemetry-instrumentation-fastapi>=0.65b0
+opentelemetry-instrumentation-httpx>=0.65b0
+opentelemetry-instrumentation-redis>=0.65b0
