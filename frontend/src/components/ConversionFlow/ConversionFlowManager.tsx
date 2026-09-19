@@ -58,7 +58,6 @@ export const ConversionFlowManager: React.FC<ConversionFlowManagerProps> = ({
     resultUrl: null,
   });
 
-  const [currentStatus, setCurrentStatus] = useState<any>(null);
   const resetTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const successNotification = useSuccessNotification();
@@ -92,7 +91,6 @@ export const ConversionFlowManager: React.FC<ConversionFlowManagerProps> = ({
       error: null,
       resultUrl: null,
     });
-    setCurrentStatus(null);
   }, []);
 
   // Handle conversion start
@@ -243,13 +241,17 @@ export const ConversionFlowManager: React.FC<ConversionFlowManagerProps> = ({
             </button>
           </div>
 
-          {currentStatus && (
+          {flowState.jobId && (
             <ConversionProgress
               jobId={flowState.jobId}
-              status={currentStatus.status}
-              progress={currentStatus.progress}
-              message={currentStatus.message}
-              stage={currentStatus.stage}
+              onTerminalState={(jobId, status, error) => {
+                if (status === 'completed') {
+                  handleConversionComplete(jobId);
+                } else if (status === 'failed') {
+                  handleConversionFailed(jobId, error || 'Conversion failed');
+                }
+                // cancelled: stay in converting view, user can reset
+              }}
             />
           )}
 

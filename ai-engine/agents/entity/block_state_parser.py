@@ -35,12 +35,13 @@ def determine_block_category(java_block: Dict[str, Any]) -> Optional[str]:
         Creative category string or None
     """
     return _determine_category(
-        java_block, "building",
+        java_block,
+        "building",
         {
             "building": (["building", "construction"], []),
             "decoration": (["decoration", "decorative"], ["door", "gate"]),
             "redstone": (["redstone", "power"], []),
-        }
+        },
     )
 
 
@@ -81,10 +82,11 @@ def determine_item_category(java_item: Dict[str, Any]) -> Optional[str]:
         Creative category string or None
     """
     return _determine_category(
-        java_item, "misc",
+        java_item,
+        "misc",
         {
             "tools": (["tool", "tools"], ["pickaxe", "axe", "shovel", "hoe"]),
             "combat": (["weapon", "combat"], ["sword", "bow"]),
             "food": (["food", "edible"], []),
-        }
+        },
     )

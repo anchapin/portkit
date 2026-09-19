@@ -19,6 +19,24 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
+@pytest.fixture(autouse=True)
+def _huggingface_offline(monkeypatch):
+    """Force HuggingFace into offline mode for the RAG integration tests.
+
+    The Advanced RAG agent eagerly loads ``sentence-transformers/all-MiniLM-L6-v2``
+    via ``LocalEmbeddingGenerator``. Without offline mode, a cache miss triggers a
+    HuggingFace download that CI rate-limits (HTTP 429) and that exceeds the
+    pytest-timeout budget (>120 s) during fixture setup. With offline mode set, a
+    cache miss fails fast and ``LocalEmbeddingGenerator._init_model`` falls back to
+    its deterministic fallback vectors, so the agent still constructs and the
+    integration flow remains exercisable — no network, no flakiness, coverage
+    preserved. When the model IS cached the real embeddings are used.
+    """
+    monkeypatch.setenv("HF_HUB_OFFLINE", "1")
+    monkeypatch.setenv("TRANSFORMERS_OFFLINE", "1")
+    monkeypatch.setenv("HF_HUB_DISABLE_TELEMETRY", "1")
+
+
 class TestAdvancedRAGIntegration:
     """Integration tests for the Advanced RAG system."""
 

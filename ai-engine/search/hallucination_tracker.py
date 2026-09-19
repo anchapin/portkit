@@ -71,7 +71,6 @@ KNOWN_VALID_COMPONENTS: Set[str] = {
     "minecraft:behavior.wolf_seduce",
     "minecraft:behavior.zombie_attack",
     "minecraft:behavior.cat_sleep_on_owner_bed",
-
     # Entity Components
     "minecraft:entity_definition_event",
     "minecraft:entity_event_response",
@@ -144,7 +143,6 @@ KNOWN_VALID_COMPONENTS: Set[str] = {
     "minecraft:walk_animation_rate",
     "minecraft:wants_jockey",
     "minecraft:water_movement",
-
     # Block Components
     "minecraft:geometry",
     "minecraft:material_instances",
@@ -158,7 +156,6 @@ KNOWN_VALID_COMPONENTS: Set[str] = {
     "minecraft:placement_filter",
     "minecraft:prevent_mobile_ending",
     "minecraft:material_reduce_blocking",
-
     # Item Components
     "minecraft:icon",
     "minecraft:render_offsets",
@@ -182,7 +179,6 @@ KNOWN_VALID_COMPONENTS: Set[str] = {
     "minecraft:tag",
     "minecraft:tool",
     "minecraft:wearable",
-
     # Events
     "minecraft:event.my_event",
     "minecraft:event.add",
@@ -392,9 +388,7 @@ class BedrockComponentHallucinationTracker:
         before_report = self.detect_hallucinations(before_text)
         after_report = self.detect_hallucinations(after_text)
 
-        reduction = (
-            before_report.hallucination_rate - after_report.hallucination_rate
-        )
+        reduction = before_report.hallucination_rate - after_report.hallucination_rate
 
         return {
             "before": {

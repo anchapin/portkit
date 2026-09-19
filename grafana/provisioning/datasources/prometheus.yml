@@ -1,0 +1,15 @@
+# Grafana Datasource Provisioning
+# Resolves: #1780 — provision Prometheus as default datasource on Grafana boot
+
+apiVersion: 1
+
+datasources:
+  - name: Prometheus
+    type: prometheus
+    access: proxy
+    orgId: 1
+    url: http://prometheus:9090
+    basicAuth: false
+    isDefault: true
+    version: 1
+    editable: true

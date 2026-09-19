@@ -16,6 +16,7 @@ from agents.audio_converter import (
 try:
     from pydub import AudioSegment
     from pydub.exceptions import CouldntDecodeError
+
     HAS_AUDIO_SUPPORT = True
 except ImportError:
     HAS_AUDIO_SUPPORT = False
@@ -41,5 +42,10 @@ def _generate_sound_structure(agent, sounds: List[Dict]) -> Dict:
 def convert_audio(audio_list: str, output_path: str) -> str:
     """Convert audio to Bedrock format (standalone function)."""
     from agents.asset_converter.base import AssetConverterAgent
+
     agent = AssetConverterAgent.get_instance()
-    return agent.convert_audio_tool(audio_list) if hasattr(agent, 'convert_audio_tool') else str({"success": False, "error": "Audio conversion not available"})
+    return (
+        agent.convert_audio_tool(audio_list)
+        if hasattr(agent, "convert_audio_tool")
+        else str({"success": False, "error": "Audio conversion not available"})
+    )

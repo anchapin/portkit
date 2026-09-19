@@ -17,7 +17,7 @@ import os
 from pathlib import Path
 from datetime import datetime
 
-from agents.gameplay_comparison_agent import (
+from agents.modpack.gameplay_comparator import (
     MinecraftLauncher,
     GameplayTestRunner,
     ScreenshotComparator,

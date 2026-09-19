@@ -96,6 +96,7 @@ class SAEClient:
 
     def run(self, text: str, top_k: Optional[int] = None) -> SAEResult:
         import asyncio
+
         try:
             if asyncio.get_event_loop().is_running():
                 future = asyncio.ensure_future(self.run_async(text, top_k))

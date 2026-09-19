@@ -1,0 +1,45 @@
+{
+  "agent_type": "test_agent",
+  "total_episodes": 12,
+  "success_rate": 1.0,
+  "average_reward": 0.555,
+  "reward_variance": 0.001299999999999999,
+  "improvement_trend": "stable",
+  "convergence_score": 0.0,
+  "quality_scores": {
+    "completeness": 0.0,
+    "correctness": 0.0,
+    "performance": 0.0,
+    "compatibility": 0.0,
+    "user_experience": 0.0
+  },
+  "processing_speeds": [
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0
+  ],
+  "error_rates": {
+    "critical_errors": 0.0,
+    "conversion_failures": 0.0,
+    "quality_failures": 0.0,
+    "timeout_errors": 0.0
+  },
+  "recent_performance": 0.6,
+  "performance_stability": 0.935035112153802,
+  "learning_velocity": 0.00999999999999999,
+  "optimization_recommendations": [
+    "Suggest: Performance has plateaued - try new training strategies",
+    "Focus on: completeness, correctness, performance, compatibility, user_experience quality improvement"
+  ],
+  "training_priority": "medium",
+  "last_updated": "2026-06-25T01:17:25.258158"
+}

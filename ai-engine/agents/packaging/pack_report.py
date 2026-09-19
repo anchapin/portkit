@@ -43,9 +43,7 @@ def generate_validation_report(result: ValidationResult) -> str:
 
     lines.append("Compatibility:")
     comp = result.compatibility
-    lines.append(
-        f"  Minimum Version: {'.'.join(map(str, comp.get('min_version', [1, 16, 0])))}"
-    )
+    lines.append(f"  Minimum Version: {'.'.join(map(str, comp.get('min_version', [1, 16, 0])))}")
     lines.append(f"  Experimental Features: {len(comp.get('experimental_features', []))}")
     lines.append("")
 

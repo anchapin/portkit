@@ -49,7 +49,7 @@ from agents.texture_converter.validation import (
     validate_texture,
     validate_textures_batch,
 )
-from agents.texture_converter.diffusion_lora import (
+from agents.texture_converter.diffusion import (
     MinecraftTextureLoRA,
     TextureConversionPipeline,
     TextureConversionConfig,

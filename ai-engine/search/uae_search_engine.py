@@ -67,7 +67,9 @@ class UAESearchEngine:
         if self.config.use_uae:
             self._init_uae_retriever()
 
-        logger.info(f"UAESearchEngine initialized with UAE={'enabled' if self.config.use_uae else 'disabled'}")
+        logger.info(
+            f"UAESearchEngine initialized with UAE={'enabled' if self.config.use_uae else 'disabled'}"
+        )
 
     def _init_uae_retriever(self) -> None:
         """Initialize the UAE retriever."""
@@ -190,8 +192,12 @@ class UAESearchEngine:
                 keyword_score=candidate.keyword_score,
                 final_score=candidate.final_score,
                 rank=i + 1,
-                embedding_model_used="UAE-all-MiniLM-L6-v2" if self._is_fine_tuned else "all-MiniLM-L6-v2",
-                matched_content=candidate.document.content_text[:200] if candidate.document.content_text else None,
+                embedding_model_used="UAE-all-MiniLM-L6-v2"
+                if self._is_fine_tuned
+                else "all-MiniLM-L6-v2",
+                matched_content=candidate.document.content_text[:200]
+                if candidate.document.content_text
+                else None,
                 match_explanation="; ".join(candidate.explanation),
             )
             results.append(result)
@@ -199,7 +205,9 @@ class UAESearchEngine:
         logger.info(f"UAE search returned {len(results)} results (search #{self._search_count})")
         return results
 
-    def _calculate_vector_similarity(self, query_embedding: List[float], doc_embeddings: List) -> float:
+    def _calculate_vector_similarity(
+        self, query_embedding: List[float], doc_embeddings: List
+    ) -> float:
         """Calculate vector similarity score."""
         if not doc_embeddings:
             return 0.0
@@ -251,8 +259,16 @@ class UAESearchEngine:
         """
         query_lower = query.lower()
         utility_indicators = [
-            "api", "script", "command", "event", "handler",
-            "entity", "block", "item", "component", "module",
+            "api",
+            "script",
+            "command",
+            "event",
+            "handler",
+            "entity",
+            "block",
+            "item",
+            "component",
+            "module",
         ]
 
         indicator_count = sum(1 for ind in utility_indicators if ind in query_lower)
@@ -388,6 +404,7 @@ class UAESearchEngine:
             self._uae_metrics.append(benchmark)
         else:
             from utils.uae_utils import RetrievalBenchmarker
+
             benchmarker = RetrievalBenchmarker(k=5)
             benchmark = benchmarker.benchmark(
                 queries=test_queries,
@@ -411,8 +428,16 @@ class UAESearchEngine:
         baseline = self._baseline_metrics[-1]
         uae = self._uae_metrics[-1]
 
-        precision_improvement = ((uae.precision_at_k - baseline.precision_at_k) / baseline.precision_at_k * 100) if baseline.precision_at_k > 0 else 0
-        recall_improvement = ((uae.recall_at_k - baseline.recall_at_k) / baseline.recall_at_k * 100) if baseline.recall_at_k > 0 else 0
+        precision_improvement = (
+            ((uae.precision_at_k - baseline.precision_at_k) / baseline.precision_at_k * 100)
+            if baseline.precision_at_k > 0
+            else 0
+        )
+        recall_improvement = (
+            ((uae.recall_at_k - baseline.recall_at_k) / baseline.recall_at_k * 100)
+            if baseline.recall_at_k > 0
+            else 0
+        )
         mrr_improvement = ((uae.mrr - baseline.mrr) / baseline.mrr * 100) if baseline.mrr > 0 else 0
 
         return {

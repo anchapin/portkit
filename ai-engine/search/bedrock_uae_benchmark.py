@@ -28,7 +28,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class BedrockDoc:
     """A Bedrock API documentation document."""
-    
+
     doc_id: str
     title: str
     content: str
@@ -36,12 +36,12 @@ class BedrockDoc:
     api_class: str
     minecraft_version: str
     tags: List[str]
-    
+
 
 @dataclass
 class EvaluationQuery:
     """A query for evaluation with ground truth useful documents."""
-    
+
     query_id: str
     java_query: str
     description: str
@@ -53,7 +53,7 @@ class EvaluationQuery:
 @dataclass
 class ConversionHistoryEntry:
     """A historical conversion entry with utility labels."""
-    
+
     job_id: str
     java_query: str
     retrieved_doc_ids: List[str]
@@ -66,13 +66,13 @@ class ConversionHistoryEntry:
 class BedrockUAEBenchmarkDataset:
     """
     Dataset for benchmarking UAE retriever vs baseline on Bedrock API documentation.
-    
+
     This dataset contains:
     1. Core Bedrock API documents (30 docs covering essential components)
     2. Evaluation queries with ground truth useful documents
     3. Simulated conversion history for training
     """
-    
+
     CORE_BEDROCK_DOCS = [
         BedrockDoc(
             doc_id="bedrock_entity_001",
@@ -485,7 +485,7 @@ Description: Unique identifier for the entity type
             tags=["entity", "navigation", "pathfinding", "walk", "swim"],
         ),
     ]
-    
+
     EVALUATION_QUERIES = [
         EvaluationQuery(
             query_id="eval_001",
@@ -568,12 +568,18 @@ Description: Unique identifier for the entity type
             expected_components=["minecraft:navigation.generic", "can_walk"],
         ),
     ]
-    
+
     SIMULATED_CONVERSION_HISTORY = [
         ConversionHistoryEntry(
             job_id="job_001",
             java_query="register custom AI goal for entity",
-            retrieved_doc_ids=["bedrock_entity_001", "bedrock_entity_002", "bedrock_ai_001", "bedrock_block_001", "bedrock_events_001"],
+            retrieved_doc_ids=[
+                "bedrock_entity_001",
+                "bedrock_entity_002",
+                "bedrock_ai_001",
+                "bedrock_block_001",
+                "bedrock_events_001",
+            ],
             output="Used EntityComponent.register('minecraft:behavior.custom_goal') and event handlers",
             successful=True,
             hallucinated_components=[],
@@ -582,7 +588,12 @@ Description: Unique identifier for the entity type
         ConversionHistoryEntry(
             job_id="job_002",
             java_query="entity nearest attackable",
-            retrieved_doc_ids=["bedrock_entity_001", "bedrock_ai_001", "bedrock_block_001", "bedrock_ai_002"],
+            retrieved_doc_ids=[
+                "bedrock_entity_001",
+                "bedrock_ai_001",
+                "bedrock_block_001",
+                "bedrock_ai_002",
+            ],
             output="Applied behavior.nearest_attackable with priority 2",
             successful=True,
             hallucinated_components=[],
@@ -591,7 +602,12 @@ Description: Unique identifier for the entity type
         ConversionHistoryEntry(
             job_id="job_003",
             java_query="entity wander behavior",
-            retrieved_doc_ids=["bedrock_ai_003", "bedrock_ai_004", "bedrock_ai_001", "bedrock_block_001"],
+            retrieved_doc_ids=[
+                "bedrock_ai_003",
+                "bedrock_ai_004",
+                "bedrock_ai_001",
+                "bedrock_block_001",
+            ],
             output="Added wander and float behaviors",
             successful=True,
             hallucinated_components=[],
@@ -600,7 +616,12 @@ Description: Unique identifier for the entity type
         ConversionHistoryEntry(
             job_id="job_004",
             java_query="block geometry",
-            retrieved_doc_ids=["bedrock_block_001", "bedrock_geometry_001", "bedrock_block_002", "bedrock_material_001"],
+            retrieved_doc_ids=[
+                "bedrock_block_001",
+                "bedrock_geometry_001",
+                "bedrock_block_002",
+                "bedrock_material_001",
+            ],
             output="Registered geometry component with block",
             successful=True,
             hallucinated_components=[],
@@ -618,7 +639,12 @@ Description: Unique identifier for the entity type
         ConversionHistoryEntry(
             job_id="job_006",
             java_query="custom entity AI",
-            retrieved_doc_ids=["bedrock_entity_001", "bedrock_entity_002", "bedrock_ai_005", "bedrock_events_001"],
+            retrieved_doc_ids=[
+                "bedrock_entity_001",
+                "bedrock_entity_002",
+                "bedrock_ai_005",
+                "bedrock_events_001",
+            ],
             output="Created custom AI behavior using EntityComponent.register",
             successful=True,
             hallucinated_components=[],
@@ -636,7 +662,12 @@ Description: Unique identifier for the entity type
         ConversionHistoryEntry(
             job_id="job_008",
             java_query="entity loot on death",
-            retrieved_doc_ids=["bedrock_loot_001", "bedrock_loot_002", "bedrock_equipment_001", "bedrock_equipment_002"],
+            retrieved_doc_ids=[
+                "bedrock_loot_001",
+                "bedrock_loot_002",
+                "bedrock_equipment_001",
+                "bedrock_equipment_002",
+            ],
             output="Applied loot table to entity",
             successful=True,
             hallucinated_components=[],
@@ -661,65 +692,61 @@ Description: Unique identifier for the entity type
             used_doc_ids=["bedrock_navigation_001"],
         ),
     ]
-    
+
     def __init__(self):
         self.documents = {doc.doc_id: doc for doc in self.CORE_BEDROCK_DOCS}
         self.queries = {q.query_id: q for q in self.EVALUATION_QUERIES}
         self.conversion_history = self.SIMULATED_CONVERSION_HISTORY
-    
+
     def get_document(self, doc_id: str) -> Optional[BedrockDoc]:
         """Get a document by ID."""
         return self.documents.get(doc_id)
-    
+
     def get_all_documents(self) -> List[BedrockDoc]:
         """Get all documents."""
         return list(self.documents.values())
-    
+
     def get_evaluation_queries(self) -> List[EvaluationQuery]:
         """Get all evaluation queries."""
         return list(self.queries.values())
-    
+
     def get_conversion_history(self) -> List[ConversionHistoryEntry]:
         """Get simulated conversion history."""
         return self.conversion_history
-    
+
     def get_documents_by_type(self, component_type: str) -> List[BedrockDoc]:
         """Get documents filtered by component type."""
         return [doc for doc in self.documents.values() if doc.component_type == component_type]
-    
+
     def get_retrieved_docs_for_query(self, query: str) -> Dict[str, float]:
         """Get mock retrieval scores for a query based on keyword overlap."""
         scores = {}
         query_terms = set(query.lower().split())
-        
+
         for doc_id, doc in self.documents.items():
             doc_terms = set(doc.content.lower().split()) | set(doc.title.lower().split())
             overlap = len(query_terms & doc_terms)
             if overlap > 0:
                 scores[doc_id] = overlap / len(query_terms)
-        
+
         return scores
-    
+
     def export_to_json(self, path: str) -> None:
         """Export dataset to JSON file."""
         data = {
-            "documents": [
-                {**asdict(doc), "_type": "BedrockDoc"} 
-                for doc in self.CORE_BEDROCK_DOCS
-            ],
+            "documents": [{**asdict(doc), "_type": "BedrockDoc"} for doc in self.CORE_BEDROCK_DOCS],
             "evaluation_queries": [
-                {**asdict(q), "_type": "EvaluationQuery"}
-                for q in self.EVALUATION_QUERIES
+                {**asdict(q), "_type": "EvaluationQuery"} for q in self.EVALUATION_QUERIES
             ],
             "conversion_history": [
                 {**asdict(h), "_type": "ConversionHistoryEntry"}
                 for h in self.SIMULATED_CONVERSION_HISTORY
             ],
         }
-        
+
         with open(path, "w") as f:
             json.dump(data, f, indent=2)
-        
+
         logger.info(f"Exported dataset to {path}")
 
 

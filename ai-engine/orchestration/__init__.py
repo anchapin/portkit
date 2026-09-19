@@ -12,7 +12,7 @@ from .orchestrator import ParallelOrchestrator
 from .strategy_selector import OrchestrationStrategy, StrategySelector
 from .task_graph import TaskGraph, TaskNode, TaskStatus
 from .worker_pool import WorkerPool
-from .langgraph_pipeline import (
+from .langgraph import (
     ConversionPipeline,
     ConversionState,
     LangGraphOrchestrator,

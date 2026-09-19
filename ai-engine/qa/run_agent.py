@@ -221,11 +221,21 @@ class ConversionDAG:
             ConversionStep(
                 step_id="extract",
                 description="Parse Java AST and extract components",
-                required_actions={"parse_ast", "extract_imports", "extract_classes", "extract_methods"},
+                required_actions={
+                    "parse_ast",
+                    "extract_imports",
+                    "extract_classes",
+                    "extract_methods",
+                },
                 dependencies=[],
                 agent_type="java_analyzer",
                 rubric=StepRubric(
-                    required_actions={"parse_ast", "extract_imports", "extract_classes", "extract_methods"},
+                    required_actions={
+                        "parse_ast",
+                        "extract_imports",
+                        "extract_classes",
+                        "extract_methods",
+                    },
                     forbidden_actions={"generate_code", "validate_schema"},
                     min_duration_ms=100,
                 ),
@@ -240,7 +250,12 @@ class ConversionDAG:
                 dependencies=["extract"],
                 agent_type="translator",
                 rubric=StepRubric(
-                    required_actions={"identify_mappings", "map_classes", "map_methods", "map_events"},
+                    required_actions={
+                        "identify_mappings",
+                        "map_classes",
+                        "map_methods",
+                        "map_events",
+                    },
                     forbidden_actions={"validate_schema", "generate_bedrock_json"},
                     min_duration_ms=100,
                 ),
@@ -251,11 +266,21 @@ class ConversionDAG:
             ConversionStep(
                 step_id="generate",
                 description="Generate Bedrock JSON and Script API code",
-                required_actions={"generate_json", "generate_scripts", "generate_manifest", "generate_component_files"},
+                required_actions={
+                    "generate_json",
+                    "generate_scripts",
+                    "generate_manifest",
+                    "generate_component_files",
+                },
                 dependencies=["map"],
                 agent_type="translator",
                 rubric=StepRubric(
-                    required_actions={"generate_json", "generate_scripts", "generate_manifest", "generate_component_files"},
+                    required_actions={
+                        "generate_json",
+                        "generate_scripts",
+                        "generate_manifest",
+                        "generate_component_files",
+                    },
                     forbidden_actions={"validate_schema", "repair_errors"},
                     min_duration_ms=100,
                 ),
@@ -266,11 +291,21 @@ class ConversionDAG:
             ConversionStep(
                 step_id="validate",
                 description="Run schema and semantic validation",
-                required_actions={"validate_json_schema", "validate_scripts", "validate_semantics", "check_api_compatibility"},
+                required_actions={
+                    "validate_json_schema",
+                    "validate_scripts",
+                    "validate_semantics",
+                    "check_api_compatibility",
+                },
                 dependencies=["generate"],
                 agent_type="reviewer",
                 rubric=StepRubric(
-                    required_actions={"validate_json_schema", "validate_scripts", "validate_semantics", "check_api_compatibility"},
+                    required_actions={
+                        "validate_json_schema",
+                        "validate_scripts",
+                        "validate_semantics",
+                        "check_api_compatibility",
+                    },
                     forbidden_actions={"modify_code", "skip_validation"},
                     min_duration_ms=50,
                 ),
@@ -285,7 +320,12 @@ class ConversionDAG:
                 dependencies=["validate"],
                 agent_type="fixer",
                 rubric=StepRubric(
-                    required_actions={"identify_issues", "apply_fixes", "re_validate", "verify_fixes"},
+                    required_actions={
+                        "identify_issues",
+                        "apply_fixes",
+                        "re_validate",
+                        "verify_fixes",
+                    },
                     forbidden_actions={"skip_validation"},
                     min_duration_ms=50,
                     max_retries=2,
@@ -313,14 +353,14 @@ class StepValidator:
         rubric_valid, errors = step.rubric.validate_actions(actions)
 
         if step.rubric.min_duration_ms > 0 and duration_ms < step.rubric.min_duration_ms:
-            errors.append(f"Step completed too quickly ({duration_ms}ms < {step.rubric.min_duration_ms}ms)")
+            errors.append(
+                f"Step completed too quickly ({duration_ms}ms < {step.rubric.min_duration_ms}ms)"
+            )
 
         is_valid = rubric_valid and len(errors) == 0
         return is_valid, errors
 
-    def validate_dag_completion(
-        self, completed_steps: Set[str]
-    ) -> tuple[bool, List[str]]:
+    def validate_dag_completion(self, completed_steps: Set[str]) -> tuple[bool, List[str]]:
         errors = []
         all_steps = set(self.dag._steps.keys())
 
@@ -338,31 +378,37 @@ class ExecutionTrace:
         self.step_results: Dict[str, StepResult] = {}
 
     def record_action(self, step_id: str, action: str, timestamp: datetime = None):
-        self.entries.append({
-            "type": "action",
-            "step_id": step_id,
-            "action": action,
-            "timestamp": (timestamp or datetime.now()).isoformat(),
-        })
+        self.entries.append(
+            {
+                "type": "action",
+                "step_id": step_id,
+                "action": action,
+                "timestamp": (timestamp or datetime.now()).isoformat(),
+            }
+        )
 
     def record_state_change(self, step_id: str, old_state: Dict, new_state: Dict):
-        self.entries.append({
-            "type": "state_change",
-            "step_id": step_id,
-            "old_state": old_state,
-            "new_state": new_state,
-            "timestamp": datetime.now().isoformat(),
-        })
+        self.entries.append(
+            {
+                "type": "state_change",
+                "step_id": step_id,
+                "old_state": old_state,
+                "new_state": new_state,
+                "timestamp": datetime.now().isoformat(),
+            }
+        )
 
     def record_result(self, result: StepResult):
         self.step_results[result.step_id] = result
-        self.entries.append({
-            "type": "result",
-            "step_id": result.step_id,
-            "success": result.success,
-            "duration_ms": result.duration_ms,
-            "timestamp": datetime.now().isoformat(),
-        })
+        self.entries.append(
+            {
+                "type": "result",
+                "step_id": result.step_id,
+                "success": result.success,
+                "duration_ms": result.duration_ms,
+                "timestamp": datetime.now().isoformat(),
+            }
+        )
 
     def can_verify_step_order(self, expected_order: List[str]) -> bool:
         actual_order = [

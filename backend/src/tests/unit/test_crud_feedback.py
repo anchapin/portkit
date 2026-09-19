@@ -47,7 +47,8 @@ async def test_create_feedback():
     assert feedback.job_id == job_id
     assert feedback.feedback_type == feedback_type
     assert feedback.comment == comment
-    assert feedback.user_id == user_id
+    assert feedback.user_id == "6f36b5ffce979219"
+    assert feedback.is_anonymized is True
     assert feedback.created_at is not None
 
     # Verify session methods were called

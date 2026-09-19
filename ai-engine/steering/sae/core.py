@@ -12,14 +12,16 @@ logger = logging.getLogger(__name__)
 
 class SteeringDirection(str, Enum):
     """Direction of steering intervention."""
+
     SUPPRESS = "suppress"  # Zero out the feature (for Java idioms)
-    AMPLIFY = "amplify"    # Boost the feature (for Bedrock idioms)
-    NEUTRAL = "neutral"    # No intervention
+    AMPLIFY = "amplify"  # Boost the feature (for Bedrock idioms)
+    NEUTRAL = "neutral"  # No intervention
 
 
 @dataclass
 class FeatureSteeringConfig:
     """Configuration for feature steering."""
+
     steering_strength: float = 1.0  # Multiplier for steering magnitude
     feature_threshold: float = 0.1  # Minimum activation to consider for steering
     enable_conditional: bool = True  # Only steer during Bedrock generation
@@ -38,6 +40,7 @@ class FeatureSteeringConfig:
 @dataclass
 class FeatureSearchResult:
     """Result from automated feature search."""
+
     feature_index: int
     feature_activation: float
     steering_direction: SteeringDirection
@@ -93,15 +96,10 @@ class SAEDecoder:
         n_samples = len(activations)
 
         # Mean activation per feature
-        self._feature_mean = [
-            sum(a[i] for a in activations) / n_samples
-            for i in range(n_features)
-        ]
+        self._feature_mean = [sum(a[i] for a in activations) / n_samples for i in range(n_features)]
 
         # Initialize decoder weights (placeholder - would be learned)
-        self._decoder_weights = {
-            i: [0.0] * n_features for i in range(n_features)
-        }
+        self._decoder_weights = {i: [0.0] * n_features for i in range(n_features)}
 
         self._is_fitted = True
         logger.info(f"SAE decoder fitted with {n_features} features from {n_samples} samples")
@@ -178,10 +176,7 @@ class SAEDecoder:
         features = self.encode(activations)
 
         # Apply steering mask
-        steered_features = [
-            features[i] * steering_mask.get(i, 1.0)
-            for i in range(len(features))
-        ]
+        steered_features = [features[i] * steering_mask.get(i, 1.0) for i in range(len(features))]
 
         return self.decode(steered_features)
 

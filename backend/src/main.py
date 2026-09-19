@@ -54,6 +54,7 @@ from services.sentry_config import (
     track_conversion_failure_rate,
     flush,
 )
+from services.tracing import init_tracing
 
 # Import API routers
 from api import (
@@ -85,6 +86,8 @@ from api import (
     status,
     plugins,
     pre_conversion_scan,
+    premium_conversion,
+    model_conversion,
 )
 from api.rate_limit_dashboard import router as rate_limit_dashboard_router
 
@@ -220,6 +223,10 @@ async def startup_event():
     init_sentry()
     logger.info("Sentry error monitoring initialized")
 
+    # Initialize OpenTelemetry tracing (OTLP exporters)
+    init_tracing(app)
+    logger.info("OpenTelemetry tracing initialized")
+
     # Configure structured logging
     debug_mode = os.getenv("DEBUG", "false").lower() == "true"
     configure_structlog(debug_mode=debug_mode)
@@ -255,6 +262,8 @@ app.include_router(waitlist.router, prefix="/api/v1", tags=["waitlist"])
 app.include_router(mode_classification.router, tags=["mode-classification"])
 app.include_router(automation_metrics.router, prefix="/api/v1", tags=["automation-metrics"])
 app.include_router(version_info.router, prefix="/api/v1", tags=["version-info"])
+app.include_router(premium_conversion.router, prefix="/api/v1/premium", tags=["premium-conversion"])
+app.include_router(model_conversion.router, prefix="/api/v1/model", tags=["model-conversion"])
 
 # Health check endpoints (no prefix - used for Kubernetes probes)
 app.include_router(health.router)

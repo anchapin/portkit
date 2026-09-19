@@ -54,43 +54,127 @@ class ContractViolation:
 
 VALID_SCRIPT_API_METHODS = {
     "Entity": {
-        "addTag", "getTags", "removeTag", "hasTag", "getId", "getRotation",
-        "setRotation", "getVelocity", "setVelocity", "getPosition", "setPosition",
-        "dimension", "kill", "isValid", "matches", "name", "hasComponent",
-        "getComponent", "getComponents", "applyDamage", "getEntityData",
+        "addTag",
+        "getTags",
+        "removeTag",
+        "hasTag",
+        "getId",
+        "getRotation",
+        "setRotation",
+        "getVelocity",
+        "setVelocity",
+        "getPosition",
+        "setPosition",
+        "dimension",
+        "kill",
+        "isValid",
+        "matches",
+        "name",
+        "hasComponent",
+        "getComponent",
+        "getComponents",
+        "applyDamage",
+        "getEntityData",
     },
     "Player": {
-        "addTag", "getTags", "removeTag", "hasTag", "getId", "getRotation",
-        "setRotation", "getVelocity", "setVelocity", "getPosition", "setPosition",
-        "dimension", "kill", "isValid", "matches", "name", "hasComponent",
-        "getComponent", "getComponents", "applyDamage", "getEntityData",
-        "sendMessage", "getInventory", "isSneaking", "isSprinting",
+        "addTag",
+        "getTags",
+        "removeTag",
+        "hasTag",
+        "getId",
+        "getRotation",
+        "setRotation",
+        "getVelocity",
+        "setVelocity",
+        "getPosition",
+        "setPosition",
+        "dimension",
+        "kill",
+        "isValid",
+        "matches",
+        "name",
+        "hasComponent",
+        "getComponent",
+        "getComponents",
+        "applyDamage",
+        "getEntityData",
+        "sendMessage",
+        "getInventory",
+        "isSneaking",
+        "isSprinting",
     },
     "World": {
-        "getAllEntities", "getEntities", "getBlock", "getDimension", "setBlock",
-        "getPlayers", "getEntity", "broadcastMessage", "getTime",
+        "getAllEntities",
+        "getEntities",
+        "getBlock",
+        "getDimension",
+        "setBlock",
+        "getPlayers",
+        "getEntity",
+        "broadcastMessage",
+        "getTime",
     },
     "Block": {
-        "getId", "getType", "setType", "getPosition", "isAir", "isLiquid",
-        "getRedstonePower", "getBlockData",
+        "getId",
+        "getType",
+        "setType",
+        "getPosition",
+        "isAir",
+        "isLiquid",
+        "getRedstonePower",
+        "getBlockData",
     },
     "ItemStack": {
-        "amount", "setAmount", "getId", "getName", "setName", "isStackable",
-        "clone", "getMaxAmount",
+        "amount",
+        "setAmount",
+        "getId",
+        "getName",
+        "setName",
+        "isStackable",
+        "clone",
+        "getMaxAmount",
     },
     "Container": {
-        "addItem", "getItem", "setItem", "removeItem", "clear",
-        "getSize", "getSlot", "setSlot",
+        "addItem",
+        "getItem",
+        "setItem",
+        "removeItem",
+        "clear",
+        "getSize",
+        "getSlot",
+        "setSlot",
     },
     "Dimension": {
-        "getBlock", "spawnEntity", "getEntities", "getPlayers", "getTime",
-        "setTime", "getWeather", "setWeather",
+        "getBlock",
+        "spawnEntity",
+        "getEntities",
+        "getPlayers",
+        "getTime",
+        "setTime",
+        "getWeather",
+        "setWeather",
     },
     "Location": {
-        "x", "y", "z", "dimension", "distance", "clone", "add", "subtract",
+        "x",
+        "y",
+        "z",
+        "dimension",
+        "distance",
+        "clone",
+        "add",
+        "subtract",
     },
     "Vector3": {
-        "x", "y", "z", "length", "normalize", "add", "subtract", "multiply", "dot", "cross",
+        "x",
+        "y",
+        "z",
+        "length",
+        "normalize",
+        "add",
+        "subtract",
+        "multiply",
+        "dot",
+        "cross",
     },
 }
 
@@ -111,12 +195,24 @@ COMPONENT_SCHEMA = {
 }
 
 ENTITY_COMPONENTS = {
-    "minecraft:health", "minecraft:health_scaling", "minecraft:attack",
-    "minecraft:burning", "minecraft:falling", "minecraft:fire_immune",
-    "minecraft:flying", "minecraft:pushable", "minecraft:pushable_by_piston",
-    "minecraft:loot", "minecraft:equipment", "minecraft:equippable",
-    "minecraft:interact", "minecraft:behavior", "minecraft:movement",
-    "minecraft:navigation", "minecraft:physics", "minecraft:spawn_conditions",
+    "minecraft:health",
+    "minecraft:health_scaling",
+    "minecraft:attack",
+    "minecraft:burning",
+    "minecraft:falling",
+    "minecraft:fire_immune",
+    "minecraft:flying",
+    "minecraft:pushable",
+    "minecraft:pushable_by_piston",
+    "minecraft:loot",
+    "minecraft:equipment",
+    "minecraft:equippable",
+    "minecraft:interact",
+    "minecraft:behavior",
+    "minecraft:movement",
+    "minecraft:navigation",
+    "minecraft:physics",
+    "minecraft:spawn_conditions",
 }
 
 NUMERIC_RANGES = {
@@ -137,6 +233,175 @@ COORDINATE_SCHEMA = {
     "z": {"type": "number", "min": -30000000, "max": 30000000},
 }
 
+VALID_BEDROCK_BEHAVIORS: set = {
+    "minecraft:behavior.acquiring_target",
+    "minecraft:behavior.admire_item",
+    "minecraft:behavior.avoid_block",
+    "minecraft:behavior.avoid_entity",
+    "minecraft:behavior.barter",
+    "minecraft:behavior.behavior",
+    "minecraft:behavior.beg",
+    "minecraft:behavior.break_door",
+    "minecraft:behavior.breed",
+    "minecraft:behavior.celebrate",
+    "minecraft:behavior.charge",
+    "minecraft:behavior.claim",
+    "minecraft:behavior.tempt",
+    "minecraft:behavior.look_at",
+    "minecraft:behavior.look_at_player",
+    "minecraft:behavior.look_at_trading",
+    "minecraft:behavior.melee_attack",
+    "minecraft:behavior.mount_pathing",
+    "minecraft:behavior.move_to_land",
+    "minecraft:behavior.move_through_village",
+    "minecraft:behavior.move_towards_target",
+    "minecraft:behavior.nectar_gathering",
+    "minecraft:behavior.nearest_attackable",
+    "minecraft:behavior.nearest_entity",
+    "minecraft:behavior.ocelot_sneeze",
+    "minecraft:behavior.offer_flower",
+    "minecraft:behavior.open_door",
+    "minecraft:behavior.parent",
+    "minecraft:behavior.panic",
+    "minecraft:behavior.parrot_poop",
+    "minecraft:behavior.perch",
+    "minecraft:behavior.pet_sleep_with_owner",
+    "minecraft:behavior.pickup_items",
+    "minecraft:behavior.player_water_transport",
+    "minecraft:behavior.raid_garden",
+    "minecraft:behavior.random_look_around",
+    "minecraft:behavior.random_stroll",
+    "minecraft:behavior.ride_tamed_horse",
+    "minecraft:behavior.skeleton_ride",
+    "minecraft:behavior.sleep",
+    "minecraft:behavior.slime_attack",
+    "minecraft:behavior.spin_attack",
+    "minecraft:behavior.stay_while_sitting",
+    "minecraft:behavior.stomp",
+    "minecraft:behavior.strider_wander",
+    "minecraft:behavior.swell",
+    "minecraft:behavior.take_flower",
+    "minecraft:behavior.tame",
+    "minecraft:behavior.target_nearest",
+    "minecraft:behavior.target_when_pushed",
+    "minecraft:behavior.trade_interest",
+    "minecraft:behavior.trade_with_player",
+    "minecraft:behavior.villager_baby",
+    "minecraft:behavior.villager_work",
+    "minecraft:behavior.walk_towards_point",
+    "minecraft:behavior.walk_back_home",
+    "minecraft:behavior.wander",
+    "minecraft:behavior.wolf_defend_owner",
+    "minecraft:behavior.vex_copy_owner_target",
+    "minecraft:behavior.jump_to_block",
+    "minecraft:behavior.lay_spawn",
+    "minecraft:behavior.lay_egg",
+    "minecraft:behavior.item_consume",
+    "minecraft:behavior.interact",
+    "minecraft:behavior.fish_jump",
+    "minecraft:behavior.flop",
+    "minecraft:behavior.float",
+    "minecraft:behavior.fly",
+    "minecraft:behavior.follow_entity",
+    "minecraft:behavior.follow_owner",
+    "minecraft:behavior.follow_player",
+    "minecraft:behavior.flee_sun",
+    "minecraft:behavior.freeze",
+    "minecraft:behavior.get_angry",
+    "minecraft:behavior.graze",
+    "minecraft:behavior.guardian_attack",
+    "minecraft:behavior.hero_of_the_village",
+    "minecraft:behavior.honey_consume",
+    "minecraft:behavior.horse_walk",
+    "minecraft:behavior.hunt",
+    "minecraft:behavior.investigate_suspicious",
+    "minecraft:behavior.irongolem_walk",
+    "minecraft:behavior.jump",
+    "minecraft:behavior.leap_at_target",
+    "minecraft:behavior.leash",
+    "minecraft:behavior.leave_water",
+    "minecraft:behavior.limited_water_temperature",
+    "minecraft:behavior.llama_trade",
+    "minecraft:behavior.love",
+    "minecraft:behavior.mark_territory",
+    "minecraft:behavior.mate",
+    "minecraft:behavior.minecd",
+    "minecraft:behavior.modify_sentence",
+    "minecraft:behavior.mount_pathing",
+    "minecraft:behavior.move_towards_target",
+    "minecraft:behavior.nearest_prioritized",
+    "minecraft:behavior.neighbor_check",
+    "minecraft:behavior.npc_work",
+    "minecraft:behavior.ocelot_sneeze",
+    "minecraft:behavior.other_selected",
+    "minecraft:behavior.owner_hurt_by_target",
+    "minecraft:behavior.owner_hurt_target",
+    "minecraft:behavior.panic",
+    "minecraft:behavior.parent",
+    "minecraft:behavior.peak",
+    "minecraft:behavior.people_automation",
+    "minecraft:behavior.pet_sleep_with_owner",
+    "minecraft:behavior.pickup_items",
+    "minecraft:behavior.play_dead",
+    "minecraft:behavior.player_water_transport",
+    "minecraft:behavior.raid_garden",
+    "minecraft:behavior.random_look_around",
+    "minecraft:behavior.random_sitting",
+    "minecraft:behavior.random_stroll",
+    "minecraft:behavior.receive_love",
+    "minecraft:behavior.relax_on_owner",
+    "minecraft:behavior.ride_tamed_horse",
+    "minecraft:behavior.rise_and_walk",
+    "minecraft:behavior.sandstorm",
+    "minecraft:behavior.search_for_interesting_door_to_open",
+    "minecraft:behavior.seek_shelter",
+    "minecraft:behavior.shared_pathing",
+    "minecraft:behavior.shear",
+    "minecraft:behavior.shelter",
+    "minecraft:behavior.silverfish_wake_up_friends",
+    "minecraft:behavior.skeleton_ranged_attack",
+    "minecraft:behavior.sleep",
+    "minecraft:behavior.slime_float",
+    "minecraft:behavior.smooth_sitting",
+    "minecraft:behavior.snacking",
+    "minecraft:behavior.sneak",
+    "minecraft:behavior.sniff",
+    "minecraft:behavior.stalk",
+    "minecraft:behavior.stay_while_sitting",
+    "minecraft:behavior.stomp",
+    "minecraft:behavior.strider_wander",
+    "minecraft:behavior.swim",
+    "minecraft:behavior.swim_in_water",
+    "minecraft:behavior.take_flower",
+    "minecraft:behavior.tame",
+    "minecraft:behavior.target_nearest",
+    "minecraft:behavior.target_when_pushed",
+    "minecraft:behavior.tempt",
+    "minecraft:behavior.trade_interest",
+    "minecraft:behavior.trade_with_player",
+    "minecraft:behavior.unequip",
+    "minecraft:behavior.unleash",
+    "minecraft:behavior.vex_copy_owner_target",
+    "minecraft:behavior.walk_back_home",
+    "minecraft:behavior.walk_towards_point",
+    "minecraft:behavior.wander",
+    "minecraft:behavior.warden_walk",
+    "minecraft:behavior.wolf_defend_owner",
+    "minecraft:behavior.wolf_seduce",
+    "minecraft:behavior.zombie_attack",
+    "minecraft:behavior.door_interact",
+    "minecraft:behavior.strafe",
+    "minecraft:behavior.siege",
+    "minecraft:behavior.nudge",
+    "minecraft:behavior.become_angry",
+    "minecraft:behavior.equipped_item_chance",
+    "minecraft:behavior.find_mount",
+    "minecraft:behavior.ram_attack",
+    "minecraft:behavior.spit",
+    "minecraft:behavior.swell",
+    "Offers:behavior.trade_with_player",
+}
+
 SPAWN_RULE_COORDS = {
     "x": {"type": "integer", "min": -30000000, "max": 30000000},
     "y": {"type": "integer", "min": -64, "max": 320},
@@ -153,12 +418,15 @@ class MinecraftContract:
     def __post_init__(self):
         self.violations: List[ContractViolation] = []
 
-    def validate_bedrock_json(self, data: Dict[str, Any], file_path: str) -> Tuple[bool, List[ContractViolation]]:
+    def validate_bedrock_json(
+        self, data: Dict[str, Any], file_path: str
+    ) -> Tuple[bool, List[ContractViolation]]:
         self.violations = []
         self._validate_entity_nesting(data, file_path)
         self._validate_component_fields(data, file_path)
         self._validate_numeric_ranges(data, file_path)
         self._validate_coordinate_semantics(data, file_path)
+        self._validate_entity_behaviors(data, file_path)
         passed = len(self.violations) == 0
         return passed, self.violations
 
@@ -168,25 +436,31 @@ class MinecraftContract:
             content = json.loads(file_path.read_text(encoding="utf-8"))
             return self.validate_bedrock_json(content, str(file_path))
         except json.JSONDecodeError as e:
-            self.violations.append(ContractViolation(
-                severity=Severity.CRITICAL,
-                message=f"Invalid JSON: {e}",
-                location=str(file_path),
-                suggestion="Fix JSON syntax errors",
-                rule_id="json_syntax",
-            ))
+            self.violations.append(
+                ContractViolation(
+                    severity=Severity.CRITICAL,
+                    message=f"Invalid JSON: {e}",
+                    location=str(file_path),
+                    suggestion="Fix JSON syntax errors",
+                    rule_id="json_syntax",
+                )
+            )
             return False, self.violations
         except Exception as e:
-            self.violations.append(ContractViolation(
-                severity=Severity.CRITICAL,
-                message=f"Failed to read file: {e}",
-                location=str(file_path),
-                suggestion="Check file permissions and format",
-                rule_id="file_read",
-            ))
+            self.violations.append(
+                ContractViolation(
+                    severity=Severity.CRITICAL,
+                    message=f"Failed to read file: {e}",
+                    location=str(file_path),
+                    suggestion="Check file permissions and format",
+                    rule_id="file_read",
+                )
+            )
             return False, self.violations
 
-    def validate_directory(self, dir_path: Path, pattern: str = "*.json") -> Tuple[bool, List[ContractViolation]]:
+    def validate_directory(
+        self, dir_path: Path, pattern: str = "*.json"
+    ) -> Tuple[bool, List[ContractViolation]]:
         all_violations = []
         for file_path in dir_path.rglob(pattern):
             _, violations = self.validate_bedrock_file(file_path)
@@ -195,7 +469,9 @@ class MinecraftContract:
                 break
         return len(all_violations) == 0, all_violations
 
-    def validate_script_api(self, script_content: str, file_path: str) -> Tuple[bool, List[ContractViolation]]:
+    def validate_script_api(
+        self, script_content: str, file_path: str
+    ) -> Tuple[bool, List[ContractViolation]]:
         self.violations = []
         self._extract_and_validate_api_calls(script_content, file_path)
         passed = len(self.violations) == 0
@@ -207,17 +483,19 @@ class MinecraftContract:
             content = file_path.read_text(encoding="utf-8")
             return self.validate_script_api(content, str(file_path))
         except Exception as e:
-            self.violations.append(ContractViolation(
-                severity=Severity.CRITICAL,
-                message=f"Failed to read script file: {e}",
-                location=str(file_path),
-                suggestion="Check file permissions",
-                rule_id="file_read",
-            ))
+            self.violations.append(
+                ContractViolation(
+                    severity=Severity.CRITICAL,
+                    message=f"Failed to read script file: {e}",
+                    location=str(file_path),
+                    suggestion="Check file permissions",
+                    rule_id="file_read",
+                )
+            )
             return False, self.violations
 
     def _extract_and_validate_api_calls(self, content: str, file_path: str) -> None:
-        api_pattern = re.compile(r'(\w+)\.(\w+)\s*\(')
+        api_pattern = re.compile(r"(\w+)\.(\w+)\s*\(")
         matches = api_pattern.findall(content)
         valid_objects_lower = {k.lower(): k for k in VALID_SCRIPT_API_METHODS}
         for obj, method in matches:
@@ -225,24 +503,55 @@ class MinecraftContract:
             if obj_lower in valid_objects_lower:
                 canonical = valid_objects_lower[obj_lower]
                 if method not in VALID_SCRIPT_API_METHODS[canonical]:
-                    self.violations.append(ContractViolation(
-                        severity=Severity.MEDIUM,
-                        message=f"Unknown method '{method}' on Script API object '{obj}'",
-                        location=f"{file_path}",
-                        suggestion=f"Use a valid method from {canonical}. Valid methods: {', '.join(list(VALID_SCRIPT_API_METHODS[canonical])[:10])}...",
-                        rule_id="script_api_method",
-                    ))
-            elif obj_lower not in ["console", "json", "math", "array", "object", "string", "number", "boolean", "promise", "module", "require", "exports"]:
-                common_props = {"afterEvents", "beforeEvents", "getEntity", "subscribe", "unsubscribe", "then", "catch", "finally", "on", "off", "once", "emit", "listen"}
+                    self.violations.append(
+                        ContractViolation(
+                            severity=Severity.MEDIUM,
+                            message=f"Unknown method '{method}' on Script API object '{obj}'",
+                            location=f"{file_path}",
+                            suggestion=f"Use a valid method from {canonical}. Valid methods: {', '.join(list(VALID_SCRIPT_API_METHODS[canonical])[:10])}...",
+                            rule_id="script_api_method",
+                        )
+                    )
+            elif obj_lower not in [
+                "console",
+                "json",
+                "math",
+                "array",
+                "object",
+                "string",
+                "number",
+                "boolean",
+                "promise",
+                "module",
+                "require",
+                "exports",
+            ]:
+                common_props = {
+                    "afterEvents",
+                    "beforeEvents",
+                    "getEntity",
+                    "subscribe",
+                    "unsubscribe",
+                    "then",
+                    "catch",
+                    "finally",
+                    "on",
+                    "off",
+                    "once",
+                    "emit",
+                    "listen",
+                }
                 if method in common_props:
                     continue
-                self.violations.append(ContractViolation(
-                    severity=Severity.LOW,
-                    message=f"Unknown object '{obj}' - not in Script API surface",
-                    location=f"{file_path}",
-                    suggestion=f"Verify '{obj}' is a valid Script API object",
-                    rule_id="script_api_object",
-                ))
+                self.violations.append(
+                    ContractViolation(
+                        severity=Severity.LOW,
+                        message=f"Unknown object '{obj}' - not in Script API surface",
+                        location=f"{file_path}",
+                        suggestion=f"Verify '{obj}' is a valid Script API object",
+                        rule_id="script_api_object",
+                    )
+                )
 
     def _validate_entity_nesting(self, data: Dict[str, Any], file_path: str) -> None:
         if not isinstance(data, dict):
@@ -250,13 +559,15 @@ class MinecraftContract:
         if "minecraft:entity" in data:
             entity = data["minecraft:entity"]
             if "events" in entity and "components" not in entity:
-                self.violations.append(ContractViolation(
-                    severity=Severity.HIGH,
-                    message="Events defined outside entity components",
-                    location=f"{file_path}:minecraft:entity",
-                    suggestion="Move events inside the entity definition under the 'components' key or ensure components are defined",
-                    rule_id="entity_event_nesting",
-                ))
+                self.violations.append(
+                    ContractViolation(
+                        severity=Severity.HIGH,
+                        message="Events defined outside entity components",
+                        location=f"{file_path}:minecraft:entity",
+                        suggestion="Move events inside the entity definition under the 'components' key or ensure components are defined",
+                        rule_id="entity_event_nesting",
+                    )
+                )
         for value in data.values():
             if isinstance(value, dict):
                 self._validate_entity_nesting(value, file_path)
@@ -264,6 +575,44 @@ class MinecraftContract:
                 for item in value:
                     if isinstance(item, dict):
                         self._validate_entity_nesting(item, file_path)
+
+    def _validate_entity_behaviors(self, data: Dict[str, Any], file_path: str) -> None:
+        if not isinstance(data, dict):
+            return
+        if "minecraft:entity" in data:
+            entity = data["minecraft:entity"]
+            if isinstance(entity, dict):
+                components = entity.get("components", {})
+                if isinstance(components, dict):
+                    self._check_behavior_components(components, file_path)
+                component_groups = entity.get("component_groups", {})
+                if isinstance(component_groups, dict):
+                    for group in component_groups.values():
+                        if isinstance(group, dict):
+                            group_components = group.get("components", {})
+                            if isinstance(group_components, dict):
+                                self._check_behavior_components(group_components, file_path)
+        for value in data.values():
+            if isinstance(value, dict):
+                self._validate_entity_behaviors(value, file_path)
+            elif isinstance(value, list):
+                for item in value:
+                    if isinstance(item, dict):
+                        self._validate_entity_behaviors(item, file_path)
+
+    def _check_behavior_components(self, components: Dict[str, Any], file_path: str) -> None:
+        for key in components:
+            if key.startswith("minecraft:behavior."):
+                if key not in VALID_BEDROCK_BEHAVIORS:
+                    self.violations.append(
+                        ContractViolation(
+                            severity=Severity.HIGH,
+                            message=f"Unknown entity behavior '{key}' is not a valid Bedrock behavior",
+                            location=f"{file_path}:{key}",
+                            suggestion=f"Remove '{key}' or replace with a valid Bedrock behavior component. See Bedrock entity behavior documentation.",
+                            rule_id="entity_behavior_contract",
+                        )
+                    )
 
     def _validate_component_fields(self, data: Dict[str, Any], file_path: str) -> None:
         if not isinstance(data, dict):
@@ -274,13 +623,15 @@ class MinecraftContract:
                 if isinstance(component, dict):
                     for req_field in schema.get("required_fields", []):
                         if req_field not in component:
-                            self.violations.append(ContractViolation(
-                                severity=Severity.HIGH,
-                                message=f"Missing required field '{req_field}' in {key}",
-                                location=f"{file_path}:{key}",
-                                suggestion=f"Add required field '{req_field}' to {key}",
-                                rule_id="required_field",
-                            ))
+                            self.violations.append(
+                                ContractViolation(
+                                    severity=Severity.HIGH,
+                                    message=f"Missing required field '{req_field}' in {key}",
+                                    location=f"{file_path}:{key}",
+                                    suggestion=f"Add required field '{req_field}' to {key}",
+                                    rule_id="required_field",
+                                )
+                            )
         for value in data.values():
             if isinstance(value, dict):
                 self._validate_component_fields(value, file_path)
@@ -298,34 +649,40 @@ class MinecraftContract:
                 min_val, max_val = NUMERIC_RANGES[check_key]
                 if isinstance(value, (int, float)):
                     if not min_val <= value <= max_val:
-                        self.violations.append(ContractViolation(
-                            severity=Severity.MEDIUM,
-                            message=f"Value {value} for '{key}' outside valid range [{min_val}, {max_val}]",
-                            location=f"{file_path}:{key}",
-                            suggestion=f"Adjust '{key}' to be between {min_val} and {max_val}",
-                            rule_id="numeric_range",
-                        ))
+                        self.violations.append(
+                            ContractViolation(
+                                severity=Severity.MEDIUM,
+                                message=f"Value {value} for '{key}' outside valid range [{min_val}, {max_val}]",
+                                location=f"{file_path}:{key}",
+                                suggestion=f"Adjust '{key}' to be between {min_val} and {max_val}",
+                                rule_id="numeric_range",
+                            )
+                        )
                 elif isinstance(value, dict):
                     for sub_key, sub_val in value.items():
                         if sub_key in NUMERIC_RANGES and isinstance(sub_val, (int, float)):
                             min_val, max_val = NUMERIC_RANGES[sub_key]
                             if not min_val <= sub_val <= max_val:
-                                self.violations.append(ContractViolation(
-                                    severity=Severity.MEDIUM,
-                                    message=f"Value {sub_val} for '{sub_key}' outside valid range [{min_val}, {max_val}]",
-                                    location=f"{file_path}:{key}.{sub_key}",
-                                    suggestion=f"Adjust '{sub_key}' to be between {min_val} and {max_val}",
-                                    rule_id="numeric_range",
-                                ))
+                                self.violations.append(
+                                    ContractViolation(
+                                        severity=Severity.MEDIUM,
+                                        message=f"Value {sub_val} for '{sub_key}' outside valid range [{min_val}, {max_val}]",
+                                        location=f"{file_path}:{key}.{sub_key}",
+                                        suggestion=f"Adjust '{sub_key}' to be between {min_val} and {max_val}",
+                                        rule_id="numeric_range",
+                                    )
+                                )
                         elif sub_key == "value" and isinstance(sub_val, (int, float)):
                             if not min_val <= sub_val <= max_val:
-                                self.violations.append(ContractViolation(
-                                    severity=Severity.MEDIUM,
-                                    message=f"Value {sub_val} for '{key}.{sub_key}' outside valid range [{min_val}, {max_val}]",
-                                    location=f"{file_path}:{key}.{sub_key}",
-                                    suggestion=f"Adjust '{key}' value to be between {min_val} and {max_val}",
-                                    rule_id="numeric_range",
-                                ))
+                                self.violations.append(
+                                    ContractViolation(
+                                        severity=Severity.MEDIUM,
+                                        message=f"Value {sub_val} for '{key}.{sub_key}' outside valid range [{min_val}, {max_val}]",
+                                        location=f"{file_path}:{key}.{sub_key}",
+                                        suggestion=f"Adjust '{key}' value to be between {min_val} and {max_val}",
+                                        rule_id="numeric_range",
+                                    )
+                                )
         for value in data.values():
             if isinstance(value, dict):
                 self._validate_numeric_ranges(value, file_path)
@@ -352,13 +709,15 @@ class MinecraftContract:
                     min_val = schema.get("min", float("-inf"))
                     max_val = schema.get("max", float("inf"))
                     if not min_val <= value <= max_val:
-                        self.violations.append(ContractViolation(
-                            severity=Severity.HIGH,
-                            message=f"Coordinate {coord_key}={value} outside world bounds",
-                            location=f"{file_path}",
-                            suggestion=f"Ensure {coord_key} is between {min_val} and {max_val}",
-                            rule_id="coordinate_bounds",
-                        ))
+                        self.violations.append(
+                            ContractViolation(
+                                severity=Severity.HIGH,
+                                message=f"Coordinate {coord_key}={value} outside world bounds",
+                                location=f"{file_path}",
+                                suggestion=f"Ensure {coord_key} is between {min_val} and {max_val}",
+                                rule_id="coordinate_bounds",
+                            )
+                        )
         for value in data.values():
             if isinstance(value, dict):
                 self._validate_coordinate_semantics(value, file_path)
@@ -396,7 +755,9 @@ class MinecraftContract:
     ) -> str:
         violation_summary = []
         for v in violations[:10]:
-            violation_summary.append(f"- [{v.severity.value.upper()}] {v.rule_id}: {v.message} at {v.location}")
+            violation_summary.append(
+                f"- [{v.severity.value.upper()}] {v.rule_id}: {v.message} at {v.location}"
+            )
             if v.suggestion:
                 violation_summary.append(f"  Suggestion: {v.suggestion}")
         if len(violations) > 10:
@@ -452,12 +813,16 @@ Instructions:
         return "\n".join(report_lines)
 
 
-def validate_bedrock_json(data: Dict[str, Any], file_path: str = "") -> Tuple[bool, List[ContractViolation]]:
+def validate_bedrock_json(
+    data: Dict[str, Any], file_path: str = ""
+) -> Tuple[bool, List[ContractViolation]]:
     contract = MinecraftContract()
     return contract.validate_bedrock_json(data, file_path)
 
 
-def validate_script_api(script_content: str, file_path: str = "") -> Tuple[bool, List[ContractViolation]]:
+def validate_script_api(
+    script_content: str, file_path: str = ""
+) -> Tuple[bool, List[ContractViolation]]:
     contract = MinecraftContract()
     return contract.validate_script_api(script_content, file_path)
 

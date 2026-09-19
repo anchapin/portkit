@@ -16,6 +16,8 @@ import logging
 from enum import Enum
 from typing import Optional
 
+import httpx
+
 from cryptography.fernet import Fernet, InvalidToken
 from sqlalchemy import String, Text, Enum as SQLEnum
 from sqlalchemy.dialects.postgresql import BYTEA
@@ -164,8 +166,6 @@ async def validate_api_key(api_key: str, provider: LLMProvider) -> bool:
     Raises:
         BYOKValidationError: If validation fails with a clear error message
     """
-    import httpx
-
     if provider == LLMProvider.OPENROUTER:
         return await _validate_openrouter_key(api_key)
     elif provider == LLMProvider.OPENAI:

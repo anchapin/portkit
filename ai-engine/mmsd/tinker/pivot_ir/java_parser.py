@@ -23,20 +23,15 @@ Issues: #1578, #1599, #1617
 """
 
 import re
-import uuid
 from dataclasses import dataclass, field
-from typing import Optional
 
 from pivot_ir.schema import (
     PivotIR,
-    Manifest,
     BlockDef,
     ItemDef,
     EntityDef,
     EventHandler,
     APICall,
-    EventType,
-    create_pivot_ir,
 )
 
 
@@ -130,6 +125,7 @@ JAVA_CLASS_PATTERNS = [
 @dataclass
 class ParsedJavaEntity:
     """Represents a parsed Java entity/class."""
+
     name: str
     entity_type: str  # "block", "item", "entity", "mod"
     class_body: str
@@ -142,6 +138,7 @@ class ParsedJavaEntity:
 @dataclass
 class ParsedEventHandler:
     """Represents a parsed event handler."""
+
     java_event: str
     bedrock_event: str
     method_name: str
@@ -154,36 +151,37 @@ class ParsedEventHandler:
 # Java Parser
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 class JavaParser:
     """Parse Java mod code into structured components."""
-    
+
     def __init__(self, java_source: str):
         self.source = java_source
         self.entities: list[ParsedJavaEntity] = []
         self.global_events: list[ParsedEventHandler] = []
         self.imports: list[str] = []
-        
+
     def parse(self) -> tuple[list[ParsedJavaEntity], list[ParsedEventHandler]]:
         """Parse the Java source and extract entities and events."""
         self._extract_imports()
         self._extract_entities()
         self._extract_global_events()
         return self.entities, self.global_events
-    
+
     def _extract_imports(self) -> None:
         """Extract all import statements."""
         import_pattern = r"import\s+([\w.]+);"
         self.imports = re.findall(import_pattern, self.source)
-    
+
     def _extract_entities(self) -> None:
         """Extract class definitions and their bodies."""
         # Match class definitions with their bodies
         class_pattern = r"(class\s+\w+(?:\s+extends\s+\w+)?(?:\s+implements\s+[\w,\s]+)?\s*\{[^}]*(?:\{[^}]*\}[^}]*)*\})"
-        
+
         for match in re.finditer(class_pattern, self.source, re.DOTALL):
             class_def = match.group(1)
             self._parse_class_body(class_def)
-    
+
     def _parse_class_body(self, class_body: str) -> None:
         """Parse a single class definition."""
         # Extract class name and type
@@ -191,25 +189,27 @@ class JavaParser:
         if not class_name_match:
             return
         class_name = class_name_match.group(1)
-        
+
         # Determine entity type
         entity_type = "unknown"
         for pattern, etype in JAVA_CLASS_PATTERNS:
             if re.search(pattern, class_body):
                 entity_type = etype
                 break
-        
+
         # Extract annotations
         annotations = re.findall(r"@(\w+)(?:\([^)]*\))?", class_body)
-        
+
         # Extract methods
         method_pattern = r"(?:public|private|protected)?\s*(?:static)?\s*\w+\s+(\w+)\s*\([^)]*\)\s*\{[^}]*(?:\{[^}]*\}[^}]*)*\}"
         methods = re.findall(method_pattern, class_body, re.DOTALL)
-        
+
         # Extract fields
-        field_pattern = r"(?:public|private|protected)?\s*(?:static)?\s*(?:final)?\s*[\w<>]+\s+(\w+)\s*;"
+        field_pattern = (
+            r"(?:public|private|protected)?\s*(?:static)?\s*(?:final)?\s*[\w<>]+\s+(\w+)\s*;"
+        )
         fields = re.findall(field_pattern, class_body)
-        
+
         entity = ParsedJavaEntity(
             name=class_name,
             entity_type=entity_type,
@@ -220,16 +220,18 @@ class JavaParser:
             imports=self.imports.copy(),
         )
         self.entities.append(entity)
-    
+
     def _extract_global_events(self) -> None:
         """Extract global event handlers (not tied to a class)."""
         # Find @SubscribeEvent methods outside classes
-        subscribe_pattern = r"@SubscribeEvent\s+(?:public|private|protected)?\s*\w*\s*void\s+(\w+)\s*\([^)]*\)"
-        
+        subscribe_pattern = (
+            r"@SubscribeEvent\s+(?:public|private|protected)?\s*\w*\s*void\s+(\w+)\s*\([^)]*\)"
+        )
+
         for match in re.finditer(subscribe_pattern, self.source):
             method_name = match.group(1)
             bedrock_event = self._map_java_to_bedrock_event(method_name)
-            
+
             handler = ParsedEventHandler(
                 java_event="@SubscribeEvent",
                 bedrock_event=bedrock_event,
@@ -239,18 +241,18 @@ class JavaParser:
                 is_annotation_based=True,
             )
             self.global_events.append(handler)
-    
+
     def _map_java_to_bedrock_event(self, method_name: str) -> str:
         """Map a Java method name to Bedrock event."""
         # Check direct mappings
         if method_name in JAVA_TO_BEDROCK_EVENTS:
             return JAVA_TO_BEDROCK_EVENTS[method_name]
-        
+
         # Try partial match
         for java_event, bedrock_event in JAVA_TO_BEDROCK_EVENTS.items():
             if java_event.lower() in method_name.lower():
                 return bedrock_event
-        
+
         # Default: camelCase to camelCase but with Bedrock naming
         # e.g., onPlayerInteract -> playerInteract
         cleaned = re.sub(r"^on", "", method_name)
@@ -261,40 +263,41 @@ class JavaParser:
 # Java → PivotIR Adapter
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 class JavaToPivotIRAdapter:
     """Adapt Java mod code to Pivot IR representation."""
-    
+
     def __init__(self):
         self.java_parser = None
-        
+
     def parse(self, java_source: str) -> PivotIR:
         """Parse Java source to Pivot IR.
-        
+
         Args:
             java_source: The Java mod source code
-            
+
         Returns:
             PivotIR representation
         """
         self.java_parser = JavaParser(java_source)
         entities, global_events = self.java_parser.parse()
-        
+
         # Build IR
         ir = PivotIR(raw_java=java_source)
-        
+
         # Process entities
         for entity in entities:
             self._process_entity(entity, ir)
-        
+
         # Process global events
         for event in global_events:
             self._convert_event_handler(event, ir)
-        
+
         # Update coverage stats
         self._compute_coverage_stats(ir)
-        
+
         return ir
-    
+
     def _process_entity(self, entity: ParsedJavaEntity, ir: PivotIR) -> None:
         """Process a parsed entity and add to IR."""
         if entity.entity_type == "block":
@@ -306,12 +309,12 @@ class JavaToPivotIRAdapter:
         elif entity.entity_type == "entity":
             entity_def = self._create_entity_def(entity)
             ir.entities[entity.name] = entity_def
-    
+
     def _create_block_def(self, entity: ParsedJavaEntity) -> BlockDef:
         """Create a BlockDef from parsed entity."""
         events = self._extract_events_from_body(entity.class_body, "block")
         apis = self._extract_api_calls(entity.class_body)
-        
+
         return BlockDef(
             name=entity.name,
             properties={"type": "block"},
@@ -320,12 +323,12 @@ class JavaToPivotIRAdapter:
             translated=True,
             partial=False,
         )
-    
+
     def _create_item_def(self, entity: ParsedJavaEntity) -> ItemDef:
         """Create an ItemDef from parsed entity."""
         events = self._extract_events_from_body(entity.class_body, "item")
         apis = self._extract_api_calls(entity.class_body)
-        
+
         return ItemDef(
             name=entity.name,
             properties={"type": "item"},
@@ -334,15 +337,15 @@ class JavaToPivotIRAdapter:
             translated=True,
             partial=False,
         )
-    
+
     def _create_entity_def(self, entity: ParsedJavaEntity) -> EntityDef:
         """Create an EntityDef from parsed entity."""
         events = self._extract_events_from_body(entity.class_body, "entity")
         apis = self._extract_api_calls(entity.class_body)
-        
+
         # Try to extract entity type from class name
         entity_type = f"minecraft:{entity.name.lower()}"
-        
+
         return EntityDef(
             name=entity.name,
             entity_type=entity_type,
@@ -352,61 +355,67 @@ class JavaToPivotIRAdapter:
             translated=True,
             partial=False,
         )
-    
-    def _extract_events_from_body(
-        self, class_body: str, entity_type: str
-    ) -> list[EventHandler]:
+
+    def _extract_events_from_body(self, class_body: str, entity_type: str) -> list[EventHandler]:
         """Extract event handlers from class body."""
         events = []
-        
+
         # Pattern 1: @SubscribeEvent methods
-        subscribe_pattern = r"@SubscribeEvent\s+(?:public|private|protected)?\s*\w*\s*void\s+(\w+)\s*\(([^)]*)\)"
-        
+        subscribe_pattern = (
+            r"@SubscribeEvent\s+(?:public|private|protected)?\s*\w*\s*void\s+(\w+)\s*\(([^)]*)\)"
+        )
+
         for match in re.finditer(subscribe_pattern, class_body):
             method_name = match.group(1)
             params_str = match.group(2)
             params = [p.strip().split()[-1] for p in params_str.split(",")]
-            
+
             bedrock_event = self._map_java_to_bedrock(method_name)
-            
-            events.append(EventHandler(
-                java_event=f"@SubscribeEvent {method_name}",
-                bedrock_event=bedrock_event,
-                callback_params=params,
-                body_statements=[],
-                translated=True,
-                partial=False,
-            ))
-        
+
+            events.append(
+                EventHandler(
+                    java_event=f"@SubscribeEvent {method_name}",
+                    bedrock_event=bedrock_event,
+                    callback_params=params,
+                    body_statements=[],
+                    translated=True,
+                    partial=False,
+                )
+            )
+
         # Pattern 2: Conventional naming (onXxx, handleXxx)
-        conventional_pattern = r"(?:public|private|protected)?\s*void\s+(on\w+|handle\w+)\s*\(([^)]*)\)"
-        
+        conventional_pattern = (
+            r"(?:public|private|protected)?\s*void\s+(on\w+|handle\w+)\s*\(([^)]*)\)"
+        )
+
         for match in re.finditer(conventional_pattern, class_body):
             method_name = match.group(1)
             params_str = match.group(2)
             params = [p.strip().split()[-1] for p in params_str.split(",")]
-            
+
             # Skip if already captured by @SubscribeEvent
             if any(e.method_name == method_name for e in events):
                 continue
-            
+
             bedrock_event = self._map_java_to_bedrock(method_name)
-            
-            events.append(EventHandler(
-                java_event=method_name,
-                bedrock_event=bedrock_event,
-                callback_params=params,
-                body_statements=[],
-                translated=True,
-                partial=False,
-            ))
-        
+
+            events.append(
+                EventHandler(
+                    java_event=method_name,
+                    bedrock_event=bedrock_event,
+                    callback_params=params,
+                    body_statements=[],
+                    translated=True,
+                    partial=False,
+                )
+            )
+
         return events
-    
+
     def _extract_api_calls(self, class_body: str) -> list[APICall]:
         """Extract API calls from class body."""
         apis = []
-        
+
         # Pattern for method calls on known objects
         api_patterns = [
             (r"player\.(\w+)", "player"),
@@ -415,26 +424,28 @@ class JavaToPivotIRAdapter:
             (r"entity\.(\w+)", "entity"),
             (r"itemStack\.(\w+)", "itemStack"),
         ]
-        
+
         for pattern, root in api_patterns:
             for match in re.finditer(pattern, class_body):
                 method = match.group(1)
                 chain = f"{root}.{method}"
                 depth = chain.count(".") + 1
-                
+
                 # Map to Bedrock API if known
                 bedrock_chain = JAVA_TO_BEDROCK_API.get(chain, chain)
-                
-                apis.append(APICall(
-                    chain=bedrock_chain,
-                    depth=depth,
-                    source_java=chain,
-                    translated=True,
-                    partial=False,
-                ))
-        
+
+                apis.append(
+                    APICall(
+                        chain=bedrock_chain,
+                        depth=depth,
+                        source_java=chain,
+                        translated=True,
+                        partial=False,
+                    )
+                )
+
         return apis
-    
+
     def _convert_event_handler(self, event: ParsedEventHandler, ir: PivotIR) -> None:
         """Convert a parsed event handler and add to IR."""
         handler = EventHandler(
@@ -446,63 +457,63 @@ class JavaToPivotIRAdapter:
             partial=False,
         )
         ir.global_events.append(handler)
-    
+
     def _map_java_to_bedrock(self, method_name: str) -> str:
         """Map Java method name to Bedrock event."""
         if method_name in JAVA_TO_BEDROCK_EVENTS:
             return JAVA_TO_BEDROCK_EVENTS[method_name]
-        
+
         # Try partial match
         for java_event, bedrock_event in JAVA_TO_BEDROCK_EVENTS.items():
             if java_event.lower() in method_name.lower():
                 return bedrock_event
-        
+
         # Default: remove on/handle prefix and lowercase first letter
         cleaned = re.sub(r"^(on|handle)", "", method_name)
         return cleaned[0].lower() + cleaned[1:] if cleaned else method_name
-    
+
     def _compute_coverage_stats(self, ir: PivotIR) -> None:
         """Compute coverage statistics for the IR."""
         ir.total_entities = len(ir.blocks) + len(ir.items) + len(ir.entities)
-        ir.translated_entities = sum(
-            1 for b in ir.blocks.values() if b.translated
-        ) + sum(1 for i in ir.items.values() if i.translated) + sum(
-            1 for e in ir.entities.values() if e.translated
+        ir.translated_entities = (
+            sum(1 for b in ir.blocks.values() if b.translated)
+            + sum(1 for i in ir.items.values() if i.translated)
+            + sum(1 for e in ir.entities.values() if e.translated)
         )
-        
+
         ir.total_events = (
-            sum(len(b.event_handlers) for b in ir.blocks.values()) +
-            sum(len(i.event_handlers) for i in ir.items.values()) +
-            sum(len(e.event_handlers) for e in ir.entities.values()) +
-            len(ir.global_events)
+            sum(len(b.event_handlers) for b in ir.blocks.values())
+            + sum(len(i.event_handlers) for i in ir.items.values())
+            + sum(len(e.event_handlers) for e in ir.entities.values())
+            + len(ir.global_events)
         )
         ir.translated_events = (
-            sum(sum(1 for h in b.event_handlers if h.translated) for b in ir.blocks.values()) +
-            sum(sum(1 for h in i.event_handlers if h.translated) for i in ir.items.values()) +
-            sum(sum(1 for h in e.event_handlers if h.translated) for e in ir.entities.values()) +
-            sum(1 for h in ir.global_events if h.translated)
+            sum(sum(1 for h in b.event_handlers if h.translated) for b in ir.blocks.values())
+            + sum(sum(1 for h in i.event_handlers if h.translated) for i in ir.items.values())
+            + sum(sum(1 for h in e.event_handlers if h.translated) for e in ir.entities.values())
+            + sum(1 for h in ir.global_events if h.translated)
         )
-        
+
         ir.total_api_calls = (
-            sum(len(b.api_calls) for b in ir.blocks.values()) +
-            sum(len(i.api_calls) for i in ir.items.values()) +
-            sum(len(e.api_calls) for e in ir.entities.values()) +
-            len(ir.global_apis)
+            sum(len(b.api_calls) for b in ir.blocks.values())
+            + sum(len(i.api_calls) for i in ir.items.values())
+            + sum(len(e.api_calls) for e in ir.entities.values())
+            + len(ir.global_apis)
         )
         ir.translated_api_calls = (
-            sum(sum(1 for a in b.api_calls if a.translated) for b in ir.blocks.values()) +
-            sum(sum(1 for a in i.api_calls if a.translated) for i in ir.items.values()) +
-            sum(sum(1 for a in e.api_calls if a.translated) for e in ir.entities.values()) +
-            sum(1 for a in ir.global_apis if a.translated)
+            sum(sum(1 for a in b.api_calls if a.translated) for b in ir.blocks.values())
+            + sum(sum(1 for a in i.api_calls if a.translated) for i in ir.items.values())
+            + sum(sum(1 for a in e.api_calls if a.translated) for e in ir.entities.values())
+            + sum(1 for a in ir.global_apis if a.translated)
         )
 
 
 def parse_java_to_pivot_ir(java_source: str) -> PivotIR:
     """Convenience function to parse Java to Pivot IR.
-    
+
     Args:
         java_source: The Java mod source code
-        
+
     Returns:
         PivotIR representation
     """
@@ -596,16 +607,16 @@ if __name__ == "__main__":
     # Test the adapter
     print("Testing Java → PivotIR Adapter")
     print("=" * 60)
-    
+
     print("\n1. Parsing Block:")
     ir1 = parse_java_to_pivot_ir(SAMPLE_JAVA_BLOCK)
     print(f"   Blocks: {list(ir1.blocks.keys())}")
     print(f"   Events: {len(ir1.global_events)}")
-    
+
     print("\n2. Parsing Item:")
     ir2 = parse_java_to_pivot_ir(SAMPLE_JAVA_ITEM)
     print(f"   Items: {list(ir2.items.keys())}")
-    
+
     print("\n3. Parsing Entity:")
     ir3 = parse_java_to_pivot_ir(SAMPLE_JAVA_ENTITY)
     print(f"   Entities: {list(ir3.entities.keys())}")

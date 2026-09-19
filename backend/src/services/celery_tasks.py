@@ -1,1004 +1,130 @@
 """
-Celery tasks for distributed task processing.
+Backward-compatibility shim for the Celery tasks package.
 
-Replaces the custom AsyncTaskQueue implementation from task_queue_enhanced.py
-with Celery-backed workers for retry logic, dead-letter queues, and monitoring.
+This module was previously a 33K monolith bundling every Celery task across
+multiple business domains. It has been split into focused domain modules under
+``services/tasks/``:
 
-Issue: #1098 - Consolidate task queues: remove task_queue.py duplicate, migrate to Celery
+- ``services/tasks/base.py``            - types, constants, CeleryTaskBase, helpers
+- ``services/tasks/conversion_tasks.py`` - conversion handlers & enqueue_task
+- ``services/tasks/queue_tasks.py``      - process_task dispatcher & queue mgmt
+- ``services/tasks/cleanup_tasks.py``    - file retention / purge tasks
+- ``services/tasks/inference_tasks.py``  - LLM inference & heavy task
+
+All Celery task names are preserved as ``services.celery_tasks.*`` so existing
+routing (celery_config.task_routes / beat_schedule) and in-flight Redis tasks
+keep working unchanged. This file now only re-exports the public API.
+
+``redis`` is imported (and re-exported) so legacy patch targets such as
+``src.services.celery_tasks.redis.from_url`` continue to resolve to the shared
+``redis`` module object.
+
+Issue: #1743 - Split celery_tasks.py into task domain modules
 """
 
-import json
-import asyncio
-import uuid
-import time
-from datetime import datetime, timedelta, timezone
-from enum import Enum, IntEnum
-from typing import Dict, Any, Optional, List
-from dataclasses import dataclass, field, asdict
+import redis  # noqa: F401  (re-exported; preserves patch targets like redis.from_url)
 
-from celery import Celery, Task, shared_task
-from celery.exceptions import SoftTimeLimitExceeded
-
-import redis.asyncio as aioredis
-
-from services.celery_config import celery_app, REDIS_URL
-from services.audit_logger import get_audit_logger
-from services.sentry_config import init_celery_sentry, capture_conversion_error, capture_llm_error
-import sentry_sdk
-
-import logging
-
-logger = logging.getLogger(__name__)
-
-# Initialize Sentry for Celery workers
-init_celery_sentry()
-
-
-class TaskStatus(Enum):
-    """Task status enum with lifecycle states."""
-
-    QUEUED = "queued"
-    PROCESSING = "processing"
-    COMPLETED = "completed"
-    FAILED = "failed"
-    CANCELLED = "cancelled"
-    DEAD_LETTER = "dead_letter"
-    RETRYING = "retrying"
-    TIMEOUT = "timeout"  # Issue #1151: Timeout status for clean timeout response
-
-
-@dataclass
-class TimeoutResult:
-    """Structured timeout response (not a 500) - Issue #1151"""
-
-    status: str = "timeout"
-    message: str = ""
-    timeout_seconds: int = 0
-    tier: str = "free"
-    can_retry: bool = True
-
-    def to_dict(self) -> Dict[str, Any]:
-        return {
-            "status": "timeout",
-            "error_code": "CONVERSION_TIMEOUT",
-            "message": self.message,
-            "timeout_seconds": self.timeout_seconds,
-            "tier": self.tier,
-            "can_retry": self.can_retry,
-            "retry_after_seconds": min(self.timeout_seconds * 2, 3600),
-        }
-
-
-class TaskPriority(IntEnum):
-    """Task priority enum."""
-
-    LOW = 0
-    NORMAL = 1
-    HIGH = 2
-    CRITICAL = 3
-
-
-@dataclass
-class RetryPolicy:
-    """Configurable retry policy for tasks."""
-
-    max_retries: int = 3
-    initial_delay_seconds: float = 1.0
-    max_delay_seconds: float = 300.0
-    backoff_multiplier: float = 2.0
-    retryable_errors: List[str] = field(default_factory=list)  # Added for backward compat
-
-    def calculate_delay(self, retry_count: int) -> float:
-        """Calculate delay for exponential backoff."""
-        delay = self.initial_delay_seconds * (self.backoff_multiplier**retry_count)
-        return min(delay, self.max_delay_seconds)
-
-    def should_retry(self, error_type: str, retry_count: int) -> bool:
-        """Determine if a task should be retried based on error and retry count."""
-        if retry_count >= self.max_retries:
-            return False
-        return not (self.retryable_errors and error_type not in self.retryable_errors)
-
-
-DEFAULT_RETRY_POLICY = RetryPolicy()
-CONVERSION_RETRY_POLICY = RetryPolicy(
-    max_retries=5,
-    initial_delay_seconds=2.0,
-    max_delay_seconds=600.0,
+from services.tasks import (  # noqa: F401
+    CeleryTaskBase,
+    CONVERSION_RETRY_POLICY,
+    DEAD_LETTER_QUEUE,
+    DEFAULT_RETRY_POLICY,
+    METRICS_KEY,
+    PROCESSING_SET,
+    QUEUE_NAMES,
+    RETRY_QUEUE,
+    RetryPolicy,
+    TASK_KEY_PREFIX,
+    TaskData,
+    TaskPriority,
+    TaskStatus,
+    TimeoutResult,
+    _enqueue_task_sync,
+    _fail_task,
+    _get_redis_sync,
+    _get_task_handler,
+    _run_async,
+    _timeout_task,
+    asset_conversion_task,
+    cancel_task,
+    celery_enqueue,
+    cleanup_old_tasks,
+    conversion_task,
+    delete_input_file,
+    enqueue_task,
+    get_dead_letter_tasks,
+    get_queue_stats,
+    get_task_status,
+    handle_asset_conversion_task,
+    handle_conversion_task,
+    handle_java_analysis_task,
+    handle_model_conversion_task,
+    handle_texture_extraction_task,
+    health_check,
+    heavy_task,
+    init_celery_sentry,
+    java_analysis_task,
+    llm_inference_task,
+    model_conversion_task,
+    process_retry_queue,
+    process_task,
+    purge_orphaned_files,
+    reprocess_dead_letter_task,
+    texture_extraction_task,
 )
 
-
-@dataclass
-class TaskData:
-    """Task data structure stored in Redis."""
-
-    id: str
-    name: str
-    payload: Dict[str, Any]
-    status: TaskStatus = TaskStatus.QUEUED
-    priority: TaskPriority = TaskPriority.NORMAL
-    created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
-    started_at: Optional[datetime] = None
-    completed_at: Optional[datetime] = None
-    result: Optional[Dict[str, Any]] = None
-    error: Optional[str] = None
-    retry_count: int = 0
-    max_retries: int = 3
-    next_retry_at: Optional[datetime] = None
-    timeout_seconds: int = 300
-
-    def to_dict(self) -> Dict[str, Any]:
-        return {
-            "id": self.id,
-            "name": self.name,
-            "payload": self.payload,
-            "status": self.status.value,
-            "priority": self.priority.value,
-            "created_at": self.created_at.isoformat(),
-            "started_at": self.started_at.isoformat() if self.started_at else None,
-            "completed_at": (self.completed_at.isoformat() if self.completed_at else None),
-            "result": self.result,
-            "error": self.error,
-            "retry_count": self.retry_count,
-            "max_retries": self.max_retries,
-            "next_retry_at": (self.next_retry_at.isoformat() if self.next_retry_at else None),
-            "timeout_seconds": self.timeout_seconds,
-        }
-
-    @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "TaskData":
-        return cls(
-            id=data["id"],
-            name=data["name"],
-            payload=data["payload"],
-            status=TaskStatus(data["status"]),
-            priority=TaskPriority(data["priority"]),
-            created_at=datetime.fromisoformat(data["created_at"]),
-            started_at=(
-                datetime.fromisoformat(data["started_at"]) if data.get("started_at") else None
-            ),
-            completed_at=(
-                datetime.fromisoformat(data["completed_at"]) if data.get("completed_at") else None
-            ),
-            result=data.get("result"),
-            error=data.get("error"),
-            retry_count=data.get("retry_count", 0),
-            max_retries=data.get("max_retries", 3),
-            next_retry_at=(
-                datetime.fromisoformat(data["next_retry_at"]) if data.get("next_retry_at") else None
-            ),
-            timeout_seconds=data.get("timeout_seconds", 300),
-        )
-
-
-QUEUE_NAMES = {
-    TaskPriority.LOW: "portkit:queue:low",
-    TaskPriority.NORMAL: "portkit:queue:normal",
-    TaskPriority.HIGH: "portkit:queue:high",
-    TaskPriority.CRITICAL: "portkit:queue:critical",
-}
-DEAD_LETTER_QUEUE = "portkit:dead_letter"
-PROCESSING_SET = "portkit:processing"
-METRICS_KEY = "portkit:metrics"
-RETRY_QUEUE = "portkit:retry"
-TASK_KEY_PREFIX = "portkit:task:"
-
-
-def _get_redis_sync():
-    """Get synchronous Redis client for Celery tasks."""
-    return redis.from_url(REDIS_URL, decode_responses=True)
-
-
-import redis
-
-
-def _run_async(coro):
-    """Run an async coroutine from synchronous context.
-
-    This is used by Celery task handlers (which run synchronously) to call
-    async service functions.
-
-    When no event loop exists, creates a new one and runs the coroutine.
-    When called from an already-running async context, runs in a separate
-    thread with its own event loop to avoid blocking.
-    """
-    try:
-        loop = asyncio.get_running_loop()
-    except RuntimeError:
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-        return loop.run_until_complete(coro)
-
-    import concurrent.futures
-
-    with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
-        future = executor.submit(asyncio.run, coro)
-        return future.result(timeout=300)
-
-
-class CeleryTaskBase(Task):
-    """Base class for Celery tasks with retry logic."""
-
-    def on_failure(self, exc, task_id, args, kwargs, einfo):
-        """Handle task failure."""
-        logger.error(f"Task {task_id} failed: {exc}")
-        sentry_sdk.capture_exception(
-            exc,
-            scope={
-                "task_id": task_id,
-                "task_name": self.name,
-                "args": args,
-                "kwargs": kwargs,
-            },
-        )
-
-    def on_retry(self, exc, task_id, args, kwargs, einfo):
-        """Handle task retry."""
-        logger.info(f"Task {task_id} retrying: {exc}")
-        sentry_sdk.capture_message(
-            f"Task retry: {task_id}",
-            level="warning",
-            scope={
-                "task_id": task_id,
-                "task_name": self.name,
-                "retry_count": self.request.retries,
-            },
-        )
-
-
-@celery_app.task(bind=True, base=CeleryTaskBase, name="services.celery_tasks.process_task")
-def process_task(self, task_id: str) -> Dict[str, Any]:
-    """
-    Process a task by ID - called by Celery workers.
-
-    This is the main entry point for all task processing.
-    """
-    r = _get_redis_sync()
-
-    try:
-        task_data = r.get(f"portkit:task:{task_id}")
-        if not task_data:
-            logger.error(f"Task {task_id} not found in Redis")
-            return {"status": "error", "message": "Task not found"}
-
-        task = TaskData.from_dict(json.loads(task_data))
-
-        task.status = TaskStatus.PROCESSING
-        task.started_at = datetime.now(timezone.utc)
-        r.set(f"portkit:task:{task_id}", json.dumps(task.to_dict()), ex=86400)
-        r.sadd(PROCESSING_SET, task_id)
-        r.hincrby(METRICS_KEY, "tasks_dequeued", 1)
-
-        logger.info(f"Processing task {task_id} ({task.name})")
-
-        handler = _get_task_handler(task.name)
-        if handler is None:
-            raise ValueError(f"No handler for task type: {task.name}")
-
-        result = handler(task.payload)
-
-        task.status = TaskStatus.COMPLETED
-        task.completed_at = datetime.now(timezone.utc)
-        task.result = result
-        r.set(f"portkit:task:{task_id}", json.dumps(task.to_dict()), ex=86400)
-        r.srem(PROCESSING_SET, task_id)
-        r.hincrby(METRICS_KEY, "tasks_completed", 1)
-
-        logger.info(f"Task {task_id} completed")
-        return {"status": "success", "result": result}
-
-    except SoftTimeLimitExceeded:
-        logger.error(f"Task {task_id} soft time limit exceeded")
-        _timeout_task(r, task_id)
-        return {
-            "status": "timeout",
-            "error_code": "CONVERSION_TIMEOUT",
-            "message": f"Conversion job exceeded time limit",
-            "timeout_seconds": task.timeout_seconds,
-            "tier": task.payload.get("subscription_tier", "free"),
-            "can_retry": True,
-            "retry_after_seconds": min(task.timeout_seconds * 2, 3600),
-        }
-    except Exception as exc:
-        logger.error(f"Task {task_id} failed: {exc}")
-        retry = _fail_task(r, task_id, str(exc), retry=True)
-        if retry:
-            raise self.retry(exc=exc, countdown=5)
-        return {"status": "error", "message": str(exc)}
-
-
-def _get_task_handler(task_name: str):
-    """Get the handler function for a task name."""
-    handlers = {
-        "conversion": handle_conversion_task,
-        "asset_conversion": handle_asset_conversion_task,
-        "java_analysis": handle_java_analysis_task,
-        "texture_extraction": handle_texture_extraction_task,
-        "model_conversion": handle_model_conversion_task,
-    }
-    return handlers.get(task_name)
-
-
-def _fail_task(r, task_id: str, error: str, retry: bool = True) -> bool:
-    """Mark task as failed and potentially schedule retry."""
-    task_data = r.get(f"portkit:task:{task_id}")
-    if not task_data:
-        return False
-
-    task = TaskData.from_dict(json.loads(task_data))
-    task.error = error
-
-    retry_count = task.retry_count
-    max_retries = task.max_retries
-
-    if retry and retry_count < max_retries:
-        delay = DEFAULT_RETRY_POLICY.calculate_delay(retry_count)
-        next_retry = datetime.now(timezone.utc) + timedelta(seconds=delay)
-
-        task.retry_count = retry_count + 1
-        task.status = TaskStatus.RETRYING
-        task.started_at = None
-        task.next_retry_at = next_retry
-
-        r.zadd(RETRY_QUEUE, {task_id: next_retry.timestamp()})
-        r.set(f"portkit:task:{task_id}", json.dumps(task.to_dict()), ex=86400)
-        r.srem(PROCESSING_SET, task_id)
-        r.hincrby(METRICS_KEY, "tasks_retried", 1)
-
-        logger.info(f"Task {task_id} scheduled for retry ({retry_count + 1}/{max_retries})")
-        return True
-    else:
-        if True:
-            task.status = TaskStatus.DEAD_LETTER
-            task.completed_at = datetime.now(timezone.utc)
-            r.zadd(DEAD_LETTER_QUEUE, {task_id: time.time()})
-            r.hincrby(METRICS_KEY, "tasks_dead_lettered", 1)
-            logger.warning(f"Task {task_id} moved to dead letter queue: {error}")
-        else:
-            task.status = TaskStatus.FAILED
-            task.completed_at = datetime.now(timezone.utc)
-            r.hincrby(METRICS_KEY, "tasks_failed", 1)
-            logger.error(f"Task {task_id} failed: {error}")
-
-        r.set(f"portkit:task:{task_id}", json.dumps(task.to_dict()), ex=86400)
-        r.srem(PROCESSING_SET, task_id)
-        return False
-
-
-def _timeout_task(r, task_id: str) -> None:
-    """Mark task as timed out with structured response - Issue #1151"""
-    task_data = r.get(f"portkit:task:{task_id}")
-    if not task_data:
-        return
-
-    task = TaskData.from_dict(json.loads(task_data))
-    task.status = TaskStatus.TIMEOUT
-    task.completed_at = datetime.now(timezone.utc)
-    task.error = "Conversion job timed out"
-
-    r.set(f"portkit:task:{task_id}", json.dumps(task.to_dict()), ex=86400)
-    r.srem(PROCESSING_SET, task_id)
-    r.hincrby(METRICS_KEY, "tasks_timed_out", 1)
-    logger.warning(f"Task {task_id} timed out")
-
-
-@celery_app.task(name="services.celery_tasks.cleanup_old_tasks")
-def cleanup_old_tasks(max_age_hours: int = 24) -> Dict[str, Any]:
-    """Clean up old completed/failed tasks."""
-    r = _get_redis_sync()
-    cutoff = datetime.now(timezone.utc) - timedelta(hours=max_age_hours)
-    cleaned = 0
-
-    for key in r.scan_iter("portkit:task:*"):
-        if key == METRICS_KEY:
-            continue
-        task_data = r.get(key)
-        if task_data:
-            task_dict = json.loads(task_data)
-            status = task_dict.get("status")
-            if status in ("completed", "failed", "cancelled", "dead_letter"):
-                completed_at = task_dict.get("completed_at")
-                if completed_at:
-                    completed_time = datetime.fromisoformat(completed_at)
-                    if completed_time < cutoff:
-                        r.delete(key)
-                        cleaned += 1
-
-    logger.info(f"Cleaned up {cleaned} old tasks")
-    return {"cleaned": cleaned}
-
-
-@celery_app.task(name="services.celery_tasks.process_retry_queue")
-def process_retry_queue() -> Dict[str, Any]:
-    """Process tasks in the retry queue that are ready."""
-    r = _get_redis_sync()
-    now = time.time()
-    task_ids = r.zrangebyscore(RETRY_QUEUE, min=0, max=now)
-    requeued = 0
-
-    for task_id in task_ids:
-        r.zrem(RETRY_QUEUE, task_id)
-        task_data = r.get(f"portkit:task:{task_id}")
-        if task_data:
-            task = TaskData.from_dict(json.loads(task_data))
-            task.status = TaskStatus.QUEUED
-            task.next_retry_at = None
-
-            queue_name = QUEUE_NAMES[task.priority]
-            r.zadd(queue_name, {task_id: time.time()})
-            r.set(f"portkit:task:{task_id}", json.dumps(task.to_dict()), ex=86400)
-            requeued += 1
-
-    if requeued > 0:
-        logger.info(f"Re-queued {requeued} tasks from retry queue")
-
-    return {"requeued": requeued}
-
-
-@celery_app.task(name="services.celery_tasks._enqueue_task_sync")
-def _enqueue_task_sync(
-    name: str,
-    payload: Dict[str, Any],
-    priority: int = 1,
-    max_retries: int = 3,
-    timeout_seconds: int = 300,
-) -> Dict[str, Any]:
-    """Internal: Enqueue a new task via Celery (synchronous)."""
-
-    async def _enqueue():
-        r = redis.from_url(REDIS_URL, decode_responses=True)
-
-        task = TaskData(
-            id=str(uuid.uuid4()),
-            name=name,
-            payload=payload,
-            priority=TaskPriority(priority),
-            max_retries=max_retries,
-            timeout_seconds=timeout_seconds,
-        )
-
-        r.set(f"portkit:task:{task.id}", json.dumps(task.to_dict()), ex=86400)
-
-        queue_name = QUEUE_NAMES[task.priority]
-        r.zadd(queue_name, {task.id: time.time()})
-        r.hincrby(METRICS_KEY, "tasks_enqueued", 1)
-
-        celery_app.send_task(
-            "services.celery_tasks.process_task",
-            args=[task.id],
-            queue=queue_name,
-            timeout=timeout_seconds,
-        )
-
-        logger.info(f"Task {task.id} ({name}) enqueued with priority {task.priority.name}")
-        return {"task_id": task.id, "status": "queued"}
-
-    return _run_async(_enqueue())
-
-
-@celery_app.task(name="services.celery_tasks.get_task_status")
-def get_task_status(task_id: str) -> Optional[Dict[str, Any]]:
-    """Get task status by ID."""
-    r = _get_redis_sync()
-    task_data = r.get(f"portkit:task:{task_id}")
-    if task_data:
-        return json.loads(task_data)
-    return None
-
-
-@celery_app.task(name="services.celery_tasks.cancel_task")
-def cancel_task(task_id: str) -> bool:
-    """Cancel a queued task."""
-    r = _get_redis_sync()
-    task_data = r.get(f"portkit:task:{task_id}")
-    if task_data:
-        task_dict = json.loads(task_data)
-        if task_dict["status"] == TaskStatus.QUEUED.value:
-            task_dict["status"] = TaskStatus.CANCELLED.value
-            task_dict["completed_at"] = datetime.now(timezone.utc).isoformat()
-            r.set(f"portkit:task:{task_id}", json.dumps(task_dict), ex=86400)
-
-            for queue_name in QUEUE_NAMES.values():
-                r.zrem(queue_name, task_id)
-            r.zrem(RETRY_QUEUE, task_id)
-
-            r.hincrby(METRICS_KEY, "tasks_cancelled", 1)
-            logger.info(f"Task {task_id} cancelled")
-            return True
-    return False
-
-
-@celery_app.task(name="services.celery_tasks.get_queue_stats")
-def get_queue_stats() -> Dict[str, Any]:
-    """Get queue statistics."""
-    r = _get_redis_sync()
-
-    stats = {
-        "queues": {},
-        "total_queued": 0,
-        "total_processing": r.scard(PROCESSING_SET),
-        "total_dead_letter": r.zcard(DEAD_LETTER_QUEUE),
-    }
-
-    for priority, queue_name in QUEUE_NAMES.items():
-        count = r.zcard(queue_name)
-        stats["queues"][priority.name.lower()] = count
-        stats["total_queued"] += count
-
-    return stats
-
-
-@celery_app.task(name="services.celery_tasks.get_dead_letter_tasks")
-def get_dead_letter_tasks(limit: int = 100, offset: int = 0) -> List[Dict[str, Any]]:
-    """Get tasks from the dead letter queue."""
-    r = _get_redis_sync()
-    task_ids = r.zrange(DEAD_LETTER_QUEUE, start=offset, end=offset + limit - 1)
-
-    tasks = []
-    for task_id in task_ids:
-        task_data = r.get(f"portkit:task:{task_id}")
-        if task_data:
-            tasks.append(json.loads(task_data))
-
-    return tasks
-
-
-@celery_app.task(name="services.celery_tasks.reprocess_dead_letter_task")
-def reprocess_dead_letter_task(task_id: str) -> bool:
-    """Move a task from dead letter queue back to main queue."""
-    r = _get_redis_sync()
-    task_data = r.get(f"portkit:task:{task_id}")
-    if not task_data:
-        return False
-
-    task = TaskData.from_dict(json.loads(task_data))
-
-    r.zrem(DEAD_LETTER_QUEUE, task_id)
-
-    task.status = TaskStatus.QUEUED
-    task.retry_count = 0
-    task.error = None
-    task.started_at = None
-    task.completed_at = None
-
-    queue_name = QUEUE_NAMES[task.priority]
-    r.zadd(queue_name, {task_id: time.time()})
-    r.set(f"portkit:task:{task_id}", json.dumps(task.to_dict()), ex=86400)
-
-    r.hincrby(METRICS_KEY, "tasks_reprocessed", 1)
-    logger.info(f"Task {task_id} reprocessed from dead letter queue")
-
-    return True
-
-
-@celery_app.task(name="services.celery_tasks.health_check")
-def health_check() -> Dict[str, Any]:
-    """Check queue health."""
-    stats = get_queue_stats()
-    issues = []
-
-    if stats["total_queued"] > 1000:
-        issues.append(f"Queue backlog is high: {stats['total_queued']} tasks")
-
-    if stats["total_dead_letter"] > 50:
-        issues.append(f"Dead letter queue has {stats['total_dead_letter']} tasks")
-
-    return {
-        "healthy": len(issues) == 0,
-        "issues": issues,
-        "stats": stats,
-        "checked_at": datetime.now(timezone.utc).isoformat(),
-    }
-
-
-def handle_conversion_task(payload: Dict[str, Any]) -> Dict[str, Any]:
-    """Handle conversion task - runs in worker process."""
-    from services.conversion_service import process_conversion_task as _process
-
-    job_id = payload.get("job_id")
-    file_id = payload.get("file_id")
-    logger.info(f"Processing conversion job: {job_id}")
-    try:
-        return _run_async(_process(payload))
-    except Exception as e:
-        logger.error(f"Conversion job {job_id} failed: {e}")
-        raise
-
-
-def handle_asset_conversion_task(payload: Dict[str, Any]) -> Dict[str, Any]:
-    """Handle asset conversion task."""
-    from services.asset_conversion_service import asset_conversion_service as _svc
-
-    asset_id = payload.get("asset_id")
-    logger.info(f"Processing asset conversion: {asset_id}")
-    try:
-        return _run_async(_svc.convert_asset(asset_id))
-    except Exception as e:
-        logger.error(f"Asset conversion {asset_id} failed: {e}")
-        raise
-
-
-def handle_java_analysis_task(payload: Dict[str, Any]) -> Dict[str, Any]:
-    """Handle Java analysis task."""
-    from services.java_parser import analyze_java_file
-    from db import crud
-    from db.base import AsyncSessionLocal
-
-    mod_id = payload.get("mod_id")
-    logger.info(f"Processing Java analysis: {mod_id}")
-    try:
-
-        async def _analyze():
-            async with AsyncSessionLocal() as session:
-                mod = await crud.get_mod(session, mod_id)
-                if not mod:
-                    raise ValueError(f"Mod {mod_id} not found")
-                source_code = mod.source_code or ""
-                return analyze_java_file(source_code, f"mod_{mod_id}.java")
-
-        result = _run_async(_analyze())
-        return {"mod_id": mod_id, "status": "analyzed", "result": result}
-    except Exception as e:
-        logger.error(f"Java analysis {mod_id} failed: {e}")
-        raise
-
-
-def handle_texture_extraction_task(payload: Dict[str, Any]) -> Dict[str, Any]:
-    """Handle texture extraction task."""
-    from utils.texture_metadata_extractor import TextureMetadataExtractor
-
-    jar_path = payload.get("jar_path")
-    logger.info(f"Processing texture extraction: {jar_path}")
-    try:
-        extractor = TextureMetadataExtractor()
-        result = _run_async(extractor.extract_from_jar(jar_path))
-        return {"jar_path": jar_path, "status": "extracted", "result": result}
-    except Exception as e:
-        logger.error(f"Texture extraction {jar_path} failed: {e}")
-        raise
-
-
-def handle_model_conversion_task(payload: Dict[str, Any]) -> Dict[str, Any]:
-    """Handle model conversion task."""
-    from services.asset_conversion_service import asset_conversion_service as _svc
-
-    model_id = payload.get("model_id")
-    logger.info(f"Processing model conversion: {model_id}")
-    try:
-        return _run_async(_svc.convert_asset(model_id))
-    except Exception as e:
-        logger.error(f"Model conversion {model_id} failed: {e}")
-        raise
-
-
-# Legacy compatibility - expose same interface as old task_queue_enhanced
-async def enqueue_task(
-    name: str,
-    payload: Dict[str, Any],
-    priority: TaskPriority = TaskPriority.NORMAL,
-    max_retries: int = 3,
-    timeout_seconds: int = 300,
-    subscription_tier: str = "free",
-) -> TaskData:
-    """Async wrapper for enqueueing tasks - maintains compatibility with old code.
-
-    Args:
-        name: Task name (conversion, asset_conversion, etc.)
-        payload: Task payload data
-        priority: Task priority (LOW, NORMAL, HIGH, CRITICAL)
-        max_retries: Maximum retry attempts
-        timeout_seconds: Task timeout in seconds (overrides tier-based default if > 0)
-        subscription_tier: User's subscription tier for timeout calculation (Issue #1151)
-    """
-    # Issue #1151: Use tier-based timeout if not explicitly overridden
-    if timeout_seconds == 300:
-        from services.celery_config import get_conversion_timeout
-
-        tier_timeout = get_conversion_timeout(subscription_tier)
-        timeout_seconds = tier_timeout
-
-    task = TaskData(
-        id=str(uuid.uuid4()),
-        name=name,
-        payload=payload,
-        priority=priority,
-        max_retries=max_retries,
-        timeout_seconds=timeout_seconds,
-    )
-
-    r = _get_redis_sync()
-    r.set(f"portkit:task:{task.id}", json.dumps(task.to_dict()), ex=86400)
-
-    queue_name = QUEUE_NAMES[priority]
-    r.zadd(queue_name, {task.id: time.time()})
-    r.hincrby(METRICS_KEY, "tasks_enqueued", 1)
-
-    celery_app.send_task(
-        "services.celery_tasks.process_task",
-        args=[task.id],
-        queue=queue_name,
-        timeout=timeout_seconds,
-        soft_timeout=timeout_seconds - 30,  # Soft timeout 30s before hard timeout
-    )
-
-    return task
-
-
-# Backwards compatibility alias
-celery_enqueue = enqueue_task
-
-
-# Conversion task shortcuts
-@shared_task(name="services.celery_tasks.conversion_task")
-def conversion_task(job_id: str, file_id: str) -> Dict[str, Any]:
-    """Convenience task for conversion jobs."""
-    return handle_conversion_task({"job_id": job_id, "file_id": file_id})
-
-
-@shared_task(name="services.celery_tasks.asset_conversion_task")
-def asset_conversion_task(asset_id: str) -> Dict[str, Any]:
-    """Convenience task for asset conversion."""
-    return handle_asset_conversion_task({"asset_id": asset_id})
-
-
-@shared_task(name="services.celery_tasks.java_analysis_task")
-def java_analysis_task(mod_id: str) -> Dict[str, Any]:
-    """Convenience task for Java analysis."""
-    return handle_java_analysis_task({"mod_id": mod_id})
-
-
-@shared_task(name="services.celery_tasks.texture_extraction_task")
-def texture_extraction_task(jar_path: str) -> Dict[str, Any]:
-    """Convenience task for texture extraction."""
-    return handle_texture_extraction_task({"jar_path": jar_path})
-
-
-@shared_task(name="services.celery_tasks.model_conversion_task")
-def model_conversion_task(model_id: str) -> Dict[str, Any]:
-    """Convenience task for model conversion."""
-    return handle_model_conversion_task({"model_id": model_id})
-
-
-@shared_task(
-    name="services.celery_tasks.llm_inference_task",
-    bind=True,
-    max_retries=3,
-    default_retry_delay=5,
-)
-def llm_inference_task(
-    self,
-    messages: List[Dict[str, str]],
-    model: Optional[str] = None,
-    temperature: float = 0.1,
-    max_tokens: int = 4096,
-) -> Dict[str, Any]:
-    """
-    Self-hosted LLM inference via RunPod Flash or SGLang/vLLM.
-
-    Phase 2 (Issue #1203): Replaces hosted OpenRouter API calls with
-    self-hosted inference after #997 produces fine-tuned model weights.
-
-    Architecture:
-    - Celery worker picks up task from Redis queue
-    - Calls RunPod Flash endpoint (vLLM + fine-tuned model)
-    - Or calls SGLang/vLLM via OpenAI-compatible API
-    - Result stored in Redis, returned to client
-
-    Args:
-        self: Celery task instance (provided by bind=True)
-        messages: Chat messages list [{"role": "user", "content": "..."}]
-        model: Model name (uses SELF_HOSTED_MODEL env var if None)
-        temperature: Sampling temperature (default 0.1)
-        max_tokens: Max output tokens (default 4096)
-
-    Returns:
-        Dict with success, content, model, provider, duration, cost, error
-    """
-    from utils.self_hosted_inference import (
-        SelfHostedInferenceClient,
-        InferenceConfig,
-        InferenceProvider,
-        InferenceMode,
-    )
-    import os
-
-    provider_str = os.getenv("INFERENCE_PROVIDER", "openrouter").lower()
-    provider = InferenceProvider.OPENROUTER
-    if provider_str == "runpod_flash":
-        provider = InferenceProvider.RUNPOD_FLASH
-    elif provider_str == "sglang":
-        provider = InferenceProvider.SGLANG
-    elif provider_str == "vllm":
-        provider = InferenceProvider.VLLM
-
-    config = InferenceConfig(
-        provider=provider,
-        mode=InferenceMode.SELF_HOSTED,
-        model_name=model or os.getenv("SELF_HOSTED_MODEL", "Qwen3-Coder-7B"),
-        endpoint_url=os.getenv("SELF_HOSTED_ENDPOINT") or os.getenv("RUNPOD_ENDPOINT"),
-        api_key=os.getenv("SELF_HOSTED_API_KEY") or os.getenv("RUNPOD_API_KEY"),
-        runpod_endpoint_id=os.getenv("RUNPOD_ENDPOINT_ID"),
-        runpod_api_key=os.getenv("RUNPOD_API_KEY"),
-        sglang_url=os.getenv("SGLANG_URL"),
-        vllm_url=os.getenv("VLLM_URL"),
-        max_tokens=max_tokens,
-        temperature=temperature,
-    )
-
-    try:
-        loop = asyncio.get_event_loop()
-    except RuntimeError:
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-
-    client = SelfHostedInferenceClient(config)
-
-    try:
-        result = loop.run_until_complete(
-            client.complete(
-                messages=messages,
-                model=config.model_name,
-                temperature=temperature,
-                max_tokens=max_tokens,
-            )
-        )
-
-        return {
-            "success": result.success,
-            "content": result.content,
-            "model": result.model,
-            "provider": result.provider,
-            "input_tokens": result.input_tokens,
-            "output_tokens": result.output_tokens,
-            "duration": result.duration,
-            "cost": result.cost,
-            "error": result.error,
-        }
-    except Exception as e:
-        logger.error(f"LLM inference task failed: {e}")
-        raise self.retry(exc=e)
-
-
-@celery_app.task(name="services.celery_tasks.purge_orphaned_files")
-def purge_orphaned_files(max_age_hours: int = 24) -> Dict[str, Any]:
-    """
-    Purge orphaned JAR files older than max_age_hours.
-
-    An orphaned file is one that has no associated active job
-    (not in conversion queue, not being processed).
-
-    Issue: #1156 - JAR data retention: 24hr auto-delete + Privacy Policy statement
-    """
-    from core.storage import storage_manager
-    import os
-
-    try:
-        audit = get_audit_logger()
-    except Exception:
-        audit = None
-
-    r = _get_redis_sync()
-    cutoff = datetime.now(timezone.utc) - timedelta(hours=max_age_hours)
-    max_age_days = 7  # For output files (.mcaddon)
-    output_cutoff = datetime.now(timezone.utc) - timedelta(days=max_age_days)
-
-    deleted_input = 0
-    deleted_output = 0
-    errors = 0
-
-    active_jobs = set()
-    for queue_name in QUEUE_NAMES.values():
-        for task_id in r.zrange(queue_name, 0, -1):
-            active_jobs.add(task_id)
-    for task_id in r.smembers(PROCESSING_SET):
-        active_jobs.add(task_id)
-    for task_id in r.zrange(RETRY_QUEUE, 0, -1):
-        active_jobs.add(task_id)
-
-    uploads_base = os.path.join(storage_manager.base_path, storage_manager.UPLOADS_DIR)
-    if os.path.exists(uploads_base):
-        for root, dirs, files in os.walk(uploads_base):
-            for filename in files:
-                if not filename.endswith(".jar"):
-                    continue
-                file_path = os.path.join(root, filename)
-                try:
-                    mtime = datetime.fromtimestamp(os.path.getmtime(file_path))
-                    if mtime < cutoff:
-                        rel_path = os.path.relpath(file_path, uploads_base)
-                        path_parts = rel_path.split(os.sep)
-                        if len(path_parts) >= 2:
-                            job_id = path_parts[1]
-                            if job_id not in active_jobs:
-                                os.remove(file_path)
-                                if audit:
-                                    audit.log_file_deleted(
-                                        job_id=job_id,
-                                        filename=filename,
-                                        deleted_by="system",
-                                        reason="orphaned_file_24h",
-                                    )
-                                deleted_input += 1
-                except OSError as e:
-                    logger.error(f"Error purging {file_path}: {e}")
-                    errors += 1
-
-    results_base = os.path.join(storage_manager.base_path, storage_manager.RESULTS_DIR)
-    if os.path.exists(results_base):
-        for root, dirs, files in os.walk(results_base):
-            for filename in files:
-                if not filename.endswith((".mcaddon", ".zip")):
-                    continue
-                file_path = os.path.join(root, filename)
-                try:
-                    mtime = datetime.fromtimestamp(os.path.getmtime(file_path))
-                    if mtime < output_cutoff:
-                        rel_path = os.path.relpath(file_path, results_base)
-                        path_parts = rel_path.split(os.sep)
-                        if len(path_parts) >= 2:
-                            job_id = path_parts[1]
-                            if job_id not in active_jobs:
-                                os.remove(file_path)
-                                if audit:
-                                    audit.log_file_deleted(
-                                        job_id=job_id,
-                                        filename=filename,
-                                        deleted_by="system",
-                                        reason="orphaned_output_7d",
-                                    )
-                                deleted_output += 1
-                except OSError as e:
-                    logger.error(f"Error purging {file_path}: {e}")
-                    errors += 1
-
-    logger.info(
-        f"Purged {deleted_input} orphaned input files, {deleted_output} orphaned output files, {errors} errors"
-    )
-    return {
-        "deleted_input": deleted_input,
-        "deleted_output": deleted_output,
-        "errors": errors,
-    }
-
-
-@shared_task(name="services.celery_tasks.delete_input_file")
-def delete_input_file(job_id: str, file_id: str) -> Dict[str, Any]:
-    """
-    Delete the original input JAR file after conversion completes.
-
-    Issue: #1156 - JAR data retention: 24hr auto-delete + Privacy Policy statement
-    """
-    import os
-
-    try:
-        audit = get_audit_logger()
-    except Exception:
-        audit = None
-
-    file_path = os.path.join(os.getenv("TEMP_UPLOADS_DIR", "temp_uploads"), f"{file_id}.jar")
-
-    try:
-        if os.path.exists(file_path):
-            os.remove(file_path)
-            if audit:
-                audit.log_file_deleted(
-                    job_id=job_id,
-                    filename=f"{file_id}.jar",
-                    deleted_by="system",
-                    reason="conversion_complete",
-                )
-            logger.info(f"Deleted input file: {file_path}")
-            return {"deleted": True, "file_path": file_path}
-        else:
-            logger.warning(f"Input file not found for deletion: {file_path}")
-            return {"deleted": False, "file_path": file_path, "reason": "file_not_found"}
-    except OSError as e:
-        logger.error(f"Error deleting input file {file_path}: {e}")
-        return {"deleted": False, "error": str(e)}
-
-
-@shared_task(name="services.celery_tasks.heavy_task")
-def heavy_task(payload: Dict[str, Any]) -> Dict[str, Any]:
-    """Heavy processing task for batch operations."""
-    logger.info(f"Processing heavy task")
-    return {"status": "completed"}
+__all__ = [
+    "redis",
+    # Base types & constants
+    "TaskStatus",
+    "TaskPriority",
+    "TaskData",
+    "TimeoutResult",
+    "RetryPolicy",
+    "DEFAULT_RETRY_POLICY",
+    "CONVERSION_RETRY_POLICY",
+    "QUEUE_NAMES",
+    "DEAD_LETTER_QUEUE",
+    "PROCESSING_SET",
+    "METRICS_KEY",
+    "RETRY_QUEUE",
+    "TASK_KEY_PREFIX",
+    "CeleryTaskBase",
+    # Conversion domain
+    "handle_conversion_task",
+    "handle_asset_conversion_task",
+    "handle_java_analysis_task",
+    "handle_texture_extraction_task",
+    "handle_model_conversion_task",
+    "conversion_task",
+    "asset_conversion_task",
+    "java_analysis_task",
+    "texture_extraction_task",
+    "model_conversion_task",
+    "enqueue_task",
+    "celery_enqueue",
+    # Queue domain
+    "process_task",
+    "process_retry_queue",
+    "_enqueue_task_sync",
+    "_fail_task",
+    "_timeout_task",
+    "_get_task_handler",
+    "get_task_status",
+    "cancel_task",
+    "get_queue_stats",
+    "get_dead_letter_tasks",
+    "reprocess_dead_letter_task",
+    "health_check",
+    # Cleanup domain
+    "cleanup_old_tasks",
+    "purge_orphaned_files",
+    "delete_input_file",
+    # Inference domain
+    "llm_inference_task",
+    "heavy_task",
+    # Helpers
+    "_get_redis_sync",
+    "_run_async",
+    "init_celery_sentry",
+]

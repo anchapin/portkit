@@ -19,7 +19,6 @@ import {
   ConversionStatusEnum,
 } from '../../types/api';
 import { useErrorNotification } from '../NotificationSystem';
-import ConversionProgress from '../ConversionProgress/ConversionProgress';
 import ConversionOptions from './ConversionOptions';
 import './ConversionUpload.css';
 
@@ -588,32 +587,6 @@ export const ConversionUploadEnhanced: React.FC<ConversionUploadProps> = ({
             onIncludeDependenciesChange={setIncludeDependencies}
             disabled={isProcessing || isCompleted}
           />
-        )}
-
-        {/* Progress Display */}
-        {isProcessing && currentStatus && (
-          <ConversionProgress
-            jobId={currentConversionId}
-            status={currentStatus.status}
-            progress={currentStatus.progress}
-            message={currentStatus.message}
-            stage={currentStatus.stage}
-          />
-        )}
-
-        {/* Connection Status Indicator */}
-        {isConverting && !isUploading && (
-          <div className="connection-status-badge">
-            <div className={`status-dot ${connectionStatus}`}></div>
-            <span>
-              {connectionStatus === 'connected' && 'Real-time updates active'}
-              {connectionStatus === 'connecting' && 'Connecting...'}
-              {connectionStatus === 'disconnected' &&
-                'Connection lost - using polling'}
-              {connectionStatus === 'error' &&
-                'Connection error - using polling'}
-            </span>
-          </div>
         )}
 
         {/* Action Buttons */}

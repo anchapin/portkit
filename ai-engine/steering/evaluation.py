@@ -30,6 +30,7 @@ logger = logging.getLogger(__name__)
 
 class IdiomCategory(Enum):
     """Categories of Java idioms to detect and measure."""
+
     FORGE_PATTERN = "forge_pattern"
     CLASS_PATTERN = "class_pattern"
     API_PATTERN = "api_pattern"
@@ -42,6 +43,7 @@ class IdiomCategory(Enum):
 @dataclass
 class IdiomPattern:
     """A specific Java idiom pattern to detect."""
+
     name: str
     category: IdiomCategory
     pattern: str
@@ -123,6 +125,7 @@ JAVA_IDIOM_PATTERNS = [
 @dataclass
 class IdiomMetrics:
     """Metrics for a single idiom category."""
+
     category: IdiomCategory
     detected_count: int = 0
     suppression_rate: float = 0.0
@@ -138,6 +141,7 @@ class IdiomMetrics:
 @dataclass
 class EvaluationResult:
     """Complete evaluation result for a generation."""
+
     # Overall score (0-100, higher is better)
     overall_score: float
 
@@ -225,14 +229,10 @@ class SteeringEvaluator:
         bedrock_idiom_count = len(bedrock_idioms)
 
         # Calculate suppression metrics
-        suppression_results = self._calculate_suppression(
-            java_idioms, bedrock_idioms
-        )
+        suppression_results = self._calculate_suppression(java_idioms, bedrock_idioms)
 
         # Calculate per-category metrics
-        category_metrics = self._calculate_category_metrics(
-            java_idioms, bedrock_idioms
-        )
+        category_metrics = self._calculate_category_metrics(java_idioms, bedrock_idioms)
 
         # Calculate overall score
         overall_score = self._calculate_overall_score(
@@ -359,11 +359,13 @@ class SteeringEvaluator:
             if java_count > 0:
                 suppression_rate = (java_count - bedrock_count) / java_count
 
-            metrics.append(IdiomMetrics(
-                category=cat,
-                detected_count=java_count,
-                suppression_rate=suppression_rate,
-            ))
+            metrics.append(
+                IdiomMetrics(
+                    category=cat,
+                    detected_count=java_count,
+                    suppression_rate=suppression_rate,
+                )
+            )
 
         return metrics
 
@@ -426,7 +428,7 @@ class SteeringEvaluator:
             if metric.detected_count > 2 and metric.suppression_rate < 0.5:
                 warnings.append(
                     f"Low suppression in {metric.category.value}: "
-                    f"{metric.suppression_rate*100:.0f}%"
+                    f"{metric.suppression_rate * 100:.0f}%"
                 )
 
         return warnings

@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import { ONBOARDING_CONFIG } from '../../config/onboarding';
 import './OnboardingFlow.css';
 
 interface OnboardingStep {
@@ -16,12 +17,16 @@ interface OnboardingFlowProps {
   isOpen: boolean;
 }
 
+const { branding, stats, freeTier, uploadChecklist } = ONBOARDING_CONFIG;
+
+// Build quota string dynamically from config
+const freeQuotaLabel = `${freeTier.conversionsPerMonth} free conversion${freeTier.conversionsPerMonth !== 1 ? 's' : ''} this month`;
+
 const onboardingSteps: OnboardingStep[] = [
   {
     id: 'welcome',
-    title: 'Welcome to ModPorter AI! 🎮',
-    description:
-      'Convert your Minecraft Java mods to Bedrock add-ons in minutes, not months. Let us show you around.',
+    title: `Welcome to ${branding.productName}! 🎮`,
+    description: branding.tagline,
     component: (
       <div className="onboarding-welcome">
         <div className="welcome-animation">
@@ -30,11 +35,11 @@ const onboardingSteps: OnboardingStep[] = [
           <div className="bedrock-block">B</div>
         </div>
         <p className="welcome-stats">
-          <strong>60-80%</strong> automation
+          <strong>{stats.automationRange}</strong> automation
           <br />
-          <strong>5-30 min</strong> per conversion
+          <strong>{stats.conversionTimeRange}</strong> per conversion
           <br />
-          <strong>1000+</strong> mods converted
+          <strong>{stats.modsConvertedCount}</strong> mods converted
         </p>
       </div>
     ),
@@ -67,18 +72,14 @@ const onboardingSteps: OnboardingStep[] = [
         </div>
       </div>
     ),
-    checklist: [
-      'Have your Java mod file ready (.jar or .zip)',
-      'Make sure it works in Java Edition first',
-      'Maximum file size: 100MB (Free), 500MB (Pro)',
-    ],
+    checklist: uploadChecklist,
     action: 'I have my mod ready',
   },
   {
     id: 'features',
     title: 'What Can You Convert? 🎯',
     description:
-      'ModPorter AI handles everything from simple items to complex entities and dimensions.',
+      'PortKit handles everything from simple items to complex entities and dimensions.',
     component: (
       <div className="onboarding-features">
         <div className="feature-grid">
@@ -185,30 +186,29 @@ const onboardingSteps: OnboardingStep[] = [
   {
     id: 'first-conversion',
     title: 'Ready for Your First Conversion? 🚀',
-    description:
-      "You have 5 free conversions this month. Let's convert your first mod together!",
+    description: freeQuotaLabel,
     component: (
       <div className="onboarding-checklist">
         <h4>Before You Start:</h4>
         <ul className="checklist-items">
           <li>
-            <input type="checkbox" id="check1" />
+            <input type="checkbox" id="check1" name="mod-file" />
             <label htmlFor="check1">
               I have a Java mod file (.jar or .zip)
             </label>
           </li>
           <li>
-            <input type="checkbox" id="check2" />
+            <input type="checkbox" id="check2" name="java-edition" />
             <label htmlFor="check2">The mod works in Java Edition</label>
           </li>
           <li>
-            <input type="checkbox" id="check3" />
+            <input type="checkbox" id="check3" name="bedrock-edition" />
             <label htmlFor="check3">
               I have Minecraft Bedrock Edition installed
             </label>
           </li>
           <li>
-            <input type="checkbox" id="check4" />
+            <input type="checkbox" id="check4" name="conversion-time" />
             <label htmlFor="check4">
               I have 5-30 minutes for the conversion
             </label>
@@ -230,14 +230,86 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
   onClose,
 }) => {
   const [currentStep, setCurrentStep] = useState(0);
+  const modalRef = useRef<HTMLDivElement>(null);
+  const previousActiveElement = useRef<HTMLElement | null>(null);
+  const onCloseRef = useRef(onClose);
+
+  // Keep ref updated so event handler always calls latest
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  }, [onClose]);
 
   // Load saved onboarding state
   useEffect(() => {
     const saved = localStorage.getItem('onboarding_completed');
     if (saved === 'true' && !isOpen) {
-      // Onboarding already completed
       return;
     }
+  }, [isOpen]);
+
+  // Focus trap: keep focus within modal when open
+  useEffect(() => {
+    if (!isOpen) return;
+
+    // Store current active element to restore later
+    previousActiveElement.current = document.activeElement as HTMLElement;
+
+    const modal = modalRef.current;
+    if (!modal) return;
+
+    // Get all focusable elements
+    const getFocusableElements = (): HTMLElement[] => {
+      return Array.from(
+        modal.querySelectorAll<HTMLElement>(
+          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+        )
+      ).filter((el) => !el.hasAttribute('disabled'));
+    };
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Escape to close
+      if (e.key === 'Escape') {
+        localStorage.setItem('onboarding_completed', 'true');
+        onCloseRef.current?.();
+        return;
+      }
+
+      // Focus trap
+      if (e.key === 'Tab') {
+        const focusable = getFocusableElements();
+        if (focusable.length === 0) return;
+
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+
+        if (e.shiftKey) {
+          // Shift+Tab: if on first, go to last
+          if (document.activeElement === first) {
+            e.preventDefault();
+            last.focus();
+          }
+        } else {
+          // Tab: if on last, go to first
+          if (document.activeElement === last) {
+            e.preventDefault();
+            first.focus();
+          }
+        }
+      }
+    };
+
+    // Focus first focusable element in modal
+    const focusable = getFocusableElements();
+    if (focusable.length > 0) {
+      focusable[0].focus();
+    }
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+      // Restore focus when modal closes
+      previousActiveElement.current?.focus();
+    };
   }, [isOpen]);
 
   const handleNext = () => {
@@ -269,9 +341,26 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
 
   if (!isOpen) return null;
 
+  const titleId = 'onboarding-title';
+
   return (
-    <div className="onboarding-overlay">
-      <div className="onboarding-modal">
+    <div
+      className="onboarding-overlay"
+      role="presentation"
+      onClick={(e) => {
+        // Close on overlay click (outside modal)
+        if (e.target === e.currentTarget) {
+          handleSkip();
+        }
+      }}
+    >
+      <div
+        ref={modalRef}
+        className="onboarding-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
+      >
         {/* Close button */}
         <button
           className="onboarding-close"
@@ -293,7 +382,9 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
 
         {/* Content */}
         <div className="onboarding-content">
-          <h2 className="onboarding-title">{step.title}</h2>
+          <h2 id={titleId} className="onboarding-title">
+            {step.title}
+          </h2>
           <p className="onboarding-description">{step.description}</p>
 
           {step.component && (

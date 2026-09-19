@@ -97,7 +97,7 @@ def test_get_service_version_env():
 
 def test_get_tracing_exporter_default():
     with patch.dict(os.environ, {}, clear=True):
-        assert tracing.get_tracing_exporter() == "jaeger"
+        assert tracing.get_tracing_exporter() == "otlp"
 
 
 def test_get_tracing_exporter_otlp():
@@ -105,24 +105,10 @@ def test_get_tracing_exporter_otlp():
         assert tracing.get_tracing_exporter() == "otlp"
 
 
-def test_get_jaeger_host_default():
-    with patch.dict(os.environ, {}, clear=True):
-        assert tracing.get_jaeger_host() == "jaeger"
-
-
-def test_get_jaeger_host_env():
-    with patch.dict(os.environ, {"JAEGER_HOST": "custom-jaeger"}):
-        assert tracing.get_jaeger_host() == "custom-jaeger"
-
-
-def test_get_jaeger_port_default():
-    with patch.dict(os.environ, {}, clear=True):
-        assert tracing.get_jaeger_port() == 14268
-
-
-def test_get_jaeger_port_env():
-    with patch.dict(os.environ, {"JAEGER_PORT": "6831"}):
-        assert tracing.get_jaeger_port() == 6831
+def test_get_tracing_exporter_jaeger_alias():
+    # "jaeger" is accepted as a backwards-compatible alias for "otlp"
+    with patch.dict(os.environ, {"TRACING_EXPORTER": "jaeger"}):
+        assert tracing.get_tracing_exporter() == "otlp"
 
 
 def test_get_otlp_endpoint_default():
@@ -291,11 +277,7 @@ def test_init_tracing_all_exporters(
 ):
     tracing._initialized = False
 
-    with (
-        patch("services.tracing._setup_jaeger_exporter") as mock_jaeger,
-        patch("services.tracing._setup_otlp_exporter") as mock_otlp,
-    ):
-        mock_jaeger.return_value = MagicMock()
+    with patch("services.tracing._setup_otlp_exporter") as mock_otlp:
         mock_otlp.return_value = MagicMock()
         tracing.init_tracing()
 
@@ -314,8 +296,7 @@ def test_init_tracing_console_exporter(
 ):
     tracing._initialized = False
 
-    with patch("services.tracing._setup_jaeger_exporter", return_value=None):
-        tracing.init_tracing()
+    tracing.init_tracing()
 
     assert tracing._initialized is True
     tracing._initialized = False
@@ -344,23 +325,6 @@ def test_init_tracing_exception(mock_provider):
     tracing.init_tracing()
 
     assert tracing._initialized is False
-
-
-def test_setup_jaeger_exporter_not_available():
-    tracing.JaegerExporter = None
-    result = tracing._setup_jaeger_exporter()
-    assert result is None
-
-
-def test_setup_jaeger_exporter_exception():
-    original = tracing.JaegerExporter
-    mock_cls = MagicMock(side_effect=Exception("jaeger failed"))
-    tracing.JaegerExporter = mock_cls
-
-    result = tracing._setup_jaeger_exporter()
-    assert result is None
-
-    tracing.JaegerExporter = original
 
 
 def test_setup_otlp_exporter_exception():
@@ -433,19 +397,6 @@ def test_create_resource_ecs_exception():
         mock_ecs.return_value.detect.side_effect = Exception("ECS detect failed")
         resource = tracing._create_resource()
         assert resource is not None
-
-
-def test_setup_jaeger_exporter_success():
-    original = tracing.JaegerExporter
-    mock_exporter = MagicMock()
-    tracing.JaegerExporter = MagicMock(return_value=mock_exporter)
-
-    with patch("services.tracing.BatchSpanProcessor") as mock_bsp:
-        mock_bsp.return_value = MagicMock()
-        result = tracing._setup_jaeger_exporter()
-        assert result is not None
-
-    tracing.JaegerExporter = original
 
 
 def test_setup_otlp_exporter_success():

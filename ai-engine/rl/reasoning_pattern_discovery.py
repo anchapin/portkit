@@ -293,7 +293,9 @@ class ReasoningPatternGrammar:
                 "handle_edge_cases",
             ],
         }
-        return category_strategies.get(category, ["understand_structure", "identify_semantic_equivalents"])
+        return category_strategies.get(
+            category, ["understand_structure", "identify_semantic_equivalents"]
+        )
 
 
 class ReasoningPatternDiscovery:
@@ -559,7 +561,13 @@ class ReasoningPatternDiscovery:
                         last_updated = ?
                     WHERE pattern_id = ?
                 """,
-                    (sample_size, avg_quality, success_rate, datetime.now().isoformat(), pattern_id),
+                    (
+                        sample_size,
+                        avg_quality,
+                        success_rate,
+                        datetime.now().isoformat(),
+                        pattern_id,
+                    ),
                 )
 
     def get_best_pattern_for_category(
@@ -742,9 +750,7 @@ class ReasoningPatternSelector:
         self.discovery = discovery
         self.epsilon = 0.1  # Exploration rate
 
-    def select_pattern(
-        self, context: ConversionContext
-    ) -> Tuple[ReasoningPattern, bool]:
+    def select_pattern(self, context: ConversionContext) -> Tuple[ReasoningPattern, bool]:
         """
         Select a pattern for the given conversion context.
 

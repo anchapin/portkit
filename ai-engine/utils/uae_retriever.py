@@ -39,7 +39,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class UAEConfig:
     """Configuration for UAE retriever."""
-    
+
     base_model: str = "all-MiniLM-L6-v2"
     dimensions: int = 384
     temperature: float = 0.1
@@ -78,7 +78,7 @@ class UAERetriever:
         self._benchmarker = RetrievalBenchmarker(k=5)
         self._is_fine_tuned = False
         self._training_history: List[Dict[str, float]] = []
-        
+
         self._init_model()
 
     def _init_model(self) -> None:
@@ -88,10 +88,10 @@ class UAERetriever:
                 model=self.config.base_model,
                 dimensions=self.config.dimensions,
             )
-        
+
         if isinstance(self._embedding_generator, LocalEmbeddingGenerator):
             self._model = self._embedding_generator._model
-    
+
     def generate_embedding(self, text: str) -> Optional[EmbeddingResult]:
         """Generate embedding for text using the current model."""
         if self._embedding_generator:
@@ -151,29 +151,30 @@ class UAERetriever:
             conversion_outputs: Dict mapping query to (output, successful) tuple
         """
         pairs = []
-        
+
         for query in queries:
             docs = retrieved_docs.get(query, [])
             output, successful = conversion_outputs.get(query, ("", False))
-            
+
             labels = self.label_from_conversion(
                 query=query,
                 retrieved_doc_ids=docs,
                 conversion_output=output,
                 conversion_successful=successful,
             )
-            
+
             normalized_labels = normalize_utility_scores(labels)
-            
+
             positive_docs = [
-                doc_id for doc_id, label in zip(docs, normalized_labels)
-                if label.is_positive()
+                doc_id for doc_id, label in zip(docs, normalized_labels) if label.is_positive()
             ]
             negative_docs = [
-                doc_id for doc_id, label in zip(docs, normalized_labels)
-                if not label.is_positive() and label.utility_score < self.config.min_utility_threshold
+                doc_id
+                for doc_id, label in zip(docs, normalized_labels)
+                if not label.is_positive()
+                and label.utility_score < self.config.min_utility_threshold
             ]
-            
+
             if positive_docs:
                 pairs.append(
                     UAETrainingPair(
@@ -183,7 +184,7 @@ class UAERetriever:
                         utility_labels=normalized_labels,
                     )
                 )
-        
+
         return pairs
 
     def benchmark_retrieval(
@@ -225,16 +226,16 @@ class UAERetriever:
         if not self._model:
             logger.warning("No model loaded, skipping fine-tuning")
             return {"status": "no_model"}
-        
+
         if len(training_pairs) < 2:
             logger.warning("Insufficient training pairs, skipping fine-tuning")
             return {"status": "insufficient_data"}
-        
+
         logger.info(f"Starting UAE fine-tuning with {len(training_pairs)} training pairs")
-        
+
         optimizer = self._create_optimizer()
         scheduler = self._create_scheduler(optimizer)
-        
+
         best_loss = float("inf")
         metrics = {
             "epochs": [],
@@ -242,39 +243,39 @@ class UAERetriever:
             "val_losses": [],
             "best_epoch": 0,
         }
-        
+
         for epoch in range(self.config.epochs):
             epoch_loss = self._train_epoch(
                 training_pairs=training_pairs,
                 document_contents=document_contents,
                 optimizer=optimizer,
             )
-            
+
             metrics["epochs"].append(epoch)
             metrics["train_losses"].append(epoch_loss)
-            
+
             if validation_pairs:
                 val_loss = self._compute_validation_loss(validation_pairs, document_contents)
                 metrics["val_losses"].append(val_loss)
-                
+
                 if val_loss < best_loss:
                     best_loss = val_loss
                     metrics["best_epoch"] = epoch
                     self._save_checkpoint(epoch)
-            
+
             scheduler.step()
-            
+
             if progress_callback:
                 progress_callback(epoch, epoch_loss)
-            
+
             logger.info(f"Epoch {epoch + 1}/{self.config.epochs}: loss={epoch_loss:.4f}")
-        
+
         self._is_fine_tuned = True
         metrics["status"] = "completed"
         metrics["final_loss"] = metrics["train_losses"][-1]
-        
+
         self._training_history.append(metrics)
-        
+
         return metrics
 
     def _create_optimizer(self):
@@ -282,19 +283,19 @@ class UAERetriever:
         try:
             from torch.optim import AdamW
             from sentence_transformers import SentenceTransformer
-            
+
             if isinstance(self._model, SentenceTransformer):
                 return AdamW(self._model.parameters(), lr=self.config.learning_rate)
         except ImportError:
             logger.warning("PyTorch not available, using numpy-based training")
-        
+
         return None
 
     def _create_scheduler(self, optimizer):
         """Create learning rate scheduler."""
         try:
             from torch.optim.lr_scheduler import LinearLR
-            
+
             return LinearLR(optimizer, start_factor=1.0, end_factor=0.1)
         except ImportError:
             return None
@@ -308,52 +309,52 @@ class UAERetriever:
         """Train for one epoch."""
         total_loss = 0.0
         pair_count = 0
-        
+
         for pair in training_pairs:
             anchor_emb = self.generate_embedding(pair.query)
             if not anchor_emb:
                 continue
-            
+
             anchor = anchor_emb.embedding
-            
+
             positive_embs = []
             negative_embs = []
             utility_weights = []
-            
+
             for pos_doc_id in pair.positive_docs:
                 pos_content = document_contents.get(pos_doc_id, "")
                 if pos_content:
                     result = self.generate_embedding(pos_content)
                     if result:
                         positive_embs.append(result.embedding)
-            
+
             for neg_doc_id in pair.negative_docs:
                 neg_content = document_contents.get(neg_doc_id, "")
                 if neg_content:
                     result = self.generate_embedding(neg_content)
                     if result:
                         negative_embs.append(result.embedding)
-            
+
             for label in pair.utility_labels:
                 if label.is_positive():
                     utility_weights.append(label.utility_score)
-            
+
             if not positive_embs or not negative_embs:
                 continue
-            
+
             loss = self._contrastive_loss.compute(
                 anchor_embedding=anchor,
                 positive_embeddings=positive_embs,
                 negative_embeddings=negative_embs,
                 utility_weights=utility_weights or [1.0] * len(positive_embs),
             )
-            
+
             if optimizer and loss > 0:
                 self._update_with_gradients(optimizer, anchor, positive_embs, negative_embs)
-            
+
             total_loss += loss
             pair_count += 1
-        
+
         return total_loss / pair_count if pair_count > 0 else 0.0
 
     def _update_with_gradients(self, optimizer, anchor, positives, negatives):
@@ -362,29 +363,28 @@ class UAERetriever:
             import torch
         except ImportError:
             return
-        
+
         try:
             anchor_t = torch.tensor(anchor, dtype=torch.float32, requires_grad=True)
-            pos_tensors = [
-                torch.tensor(p, dtype=torch.float32) for p in positives
-            ]
-            neg_tensors = [
-                torch.tensor(n, dtype=torch.float32) for n in negatives
-            ]
-            
+            pos_tensors = [torch.tensor(p, dtype=torch.float32) for p in positives]
+            neg_tensors = [torch.tensor(n, dtype=torch.float32) for n in negatives]
+
             pos_sum = sum(pos_tensors) / len(pos_tensors)
             neg_sum = sum(neg_tensors) / len(neg_tensors)
-            
-            loss = -torch.nn.functional.cosine_similarity(
-                anchor_t.unsqueeze(0), pos_sum.unsqueeze(0)
-            ).mean() + torch.nn.functional.cosine_similarity(
-                anchor_t.unsqueeze(0), neg_sum.unsqueeze(0)
-            ).mean()
-            
+
+            loss = (
+                -torch.nn.functional.cosine_similarity(
+                    anchor_t.unsqueeze(0), pos_sum.unsqueeze(0)
+                ).mean()
+                + torch.nn.functional.cosine_similarity(
+                    anchor_t.unsqueeze(0), neg_sum.unsqueeze(0)
+                ).mean()
+            )
+
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
-            
+
         except Exception as e:
             logger.debug(f"Gradient update failed: {e}")
 
@@ -396,56 +396,56 @@ class UAERetriever:
         """Compute validation loss."""
         total_loss = 0.0
         pair_count = 0
-        
+
         for pair in validation_pairs:
             anchor_emb = self.generate_embedding(pair.query)
             if not anchor_emb:
                 continue
-            
+
             anchor = anchor_emb.embedding
-            
+
             positive_embs = []
             negative_embs = []
             utility_weights = []
-            
+
             for pos_doc_id in pair.positive_docs:
                 pos_content = document_contents.get(pos_doc_id, "")
                 if pos_content:
                     result = self.generate_embedding(pos_content)
                     if result:
                         positive_embs.append(result.embedding)
-            
+
             for neg_doc_id in pair.negative_docs:
                 neg_content = document_contents.get(neg_doc_id, "")
                 if neg_content:
                     result = self.generate_embedding(neg_content)
                     if result:
                         negative_embs.append(result.embedding)
-            
+
             for label in pair.utility_labels:
                 if label.is_positive():
                     utility_weights.append(label.utility_score)
-            
+
             if not positive_embs or not negative_embs:
                 continue
-            
+
             loss = self._contrastive_loss.compute(
                 anchor_embedding=anchor,
                 positive_embeddings=positive_embs,
                 negative_embeddings=negative_embs,
                 utility_weights=utility_weights or [1.0] * len(positive_embs),
             )
-            
+
             total_loss += loss
             pair_count += 1
-        
+
         return total_loss / pair_count if pair_count > 0 else 0.0
 
     def _save_checkpoint(self, epoch: int) -> None:
         """Save model checkpoint."""
         checkpoint_dir = Path(self.config.checkpoint_dir)
         checkpoint_dir.mkdir(parents=True, exist_ok=True)
-        
+
         if self._model:
             checkpoint_path = checkpoint_dir / f"uae_checkpoint_epoch_{epoch}.pt"
             try:
@@ -458,7 +458,7 @@ class UAERetriever:
         """Load a checkpoint."""
         if not self._model:
             return False
-        
+
         try:
             self._model = self._model.from_pretrained(checkpoint_path)
             self._is_fine_tuned = True

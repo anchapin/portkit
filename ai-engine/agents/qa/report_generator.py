@@ -116,9 +116,7 @@ def generate_recommendations(result: Dict[str, Any]) -> List[str]:
             )
 
         if validation["warnings"]:
-            recommendations.append(
-                f"Review {len(validation['warnings'])} warning(s) in {category}"
-            )
+            recommendations.append(f"Review {len(validation['warnings'])} warning(s) in {category}")
 
     score = result["overall_score"]
     if score < 70:
