@@ -60,7 +60,7 @@ import re
 import sys
 from datetime import datetime
 from pathlib import Path
-from typing import Optional, Tuple, List
+from typing import Tuple, List
 
 SCRIPT_DIR = Path(__file__).parent.resolve()
 PROJECT_ROOT = SCRIPT_DIR.parent.parent.parent
@@ -125,6 +125,7 @@ def load_prompts_and_references(train_data_path, max_samples=None):
 # GRPO9 REWARD FUNCTIONS — ALL P0 FIXES INCORPORATED
 # ─────────────────────────────────────────────────────────────
 
+
 def extract_code_blocks(text: str) -> dict:
     """Extract code blocks by language."""
     blocks = {"json": [], "javascript": [], "js": [], "other": []}
@@ -146,6 +147,7 @@ def extract_code_blocks(text: str) -> dict:
 # ─────────────────────────────────────────────────────────────
 # Issue #1582: Anti-Hallucination Reward Functions
 # ─────────────────────────────────────────────────────────────
+
 
 def count_hallucinated_apis(completion: str) -> float:
     """Count and penalize hallucinated Bedrock APIs.
@@ -215,45 +217,85 @@ def count_hallucinated_apis(completion: str) -> float:
     # TIER 2: Grammatically-correct but semantically invalid (Issue #1647)
     # Check if @minecraft/server is imported but refers to non-existent classes/methods
     # ─────────────────────────────────────────────────────────────
-    has_minecraft_import = bool(re.search(
-        r"from\s+['\"]@minecraft/server['\"]", js_code
-    ))
+    has_minecraft_import = bool(re.search(r"from\s+['\"]@minecraft/server['\"]", js_code))
 
     # Known VALID @minecraft/server classes for semantic validation
     valid_minecraft_classes = {
         # Core classes
-        "world", "system", "player", "players", "dimension",
-        "Block", "BlockPermutation", "BlockState", "ItemStack",
-        "Entity", "EntityInventoryComponent", "Player", "Container",
-        "ItemEnchants", "Enchantment", "EnchantmentType",
-        "Vector3", "BoundingBox", "Location",
-        "WorldAfterEvents", "WorldBeforeEvents", "WorldInitializeEvent",
-        "PlayerAfterEvents", "PlayerBeforeEvents",
-        "EntityAfterEvents", "EntityBeforeEvents",
-        "SystemEvents", "TickEvent", "LoadEvent",
-        "PropertyRegistry", "BoolSignProperty", "IntSignProperty",
-        "MessageChannel", "RawMessage", "RawMessageWithArgs",
-        "Scoreboard", "Objective", "ScoreboardIdentity",
-        "BossBar", "BossBarDisplay", "ActionEventData",
-        "IBlock", "IInventory", "IEntity", "IPlayer",
+        "world",
+        "system",
+        "player",
+        "players",
+        "dimension",
+        "Block",
+        "BlockPermutation",
+        "BlockState",
+        "ItemStack",
+        "Entity",
+        "EntityInventoryComponent",
+        "Player",
+        "Container",
+        "ItemEnchants",
+        "Enchantment",
+        "EnchantmentType",
+        "Vector3",
+        "BoundingBox",
+        "Location",
+        "WorldAfterEvents",
+        "WorldBeforeEvents",
+        "WorldInitializeEvent",
+        "PlayerAfterEvents",
+        "PlayerBeforeEvents",
+        "EntityAfterEvents",
+        "EntityBeforeEvents",
+        "SystemEvents",
+        "TickEvent",
+        "LoadEvent",
+        "PropertyRegistry",
+        "BoolSignProperty",
+        "IntSignProperty",
+        "MessageChannel",
+        "RawMessage",
+        "RawMessageWithArgs",
+        "Scoreboard",
+        "Objective",
+        "ScoreboardIdentity",
+        "BossBar",
+        "BossBarDisplay",
+        "ActionEventData",
+        "IBlock",
+        "IInventory",
+        "IEntity",
+        "IPlayer",
         # Event classes
-        "BlockEvent", "BlockHitEvent", "BlockPlaceEvent", "BlockDestroyEvent",
-        "EntityEvent", "PlayerEvent", "PlayerSpawnEvent",
-        "ItemUseEvent", "ItemUseOnEvent",
-        "ProjectileHitEvent", "ExplosionEvent",
-        "EntityDieEvent", "EntityHealthChangedEvent",
-        "PlayerDimensionChangeEvent", "PlayerSpawnEvent",
+        "BlockEvent",
+        "BlockHitEvent",
+        "BlockPlaceEvent",
+        "BlockDestroyEvent",
+        "EntityEvent",
+        "PlayerEvent",
+        "PlayerSpawnEvent",
+        "ItemUseEvent",
+        "ItemUseOnEvent",
+        "ProjectileHitEvent",
+        "ExplosionEvent",
+        "EntityDieEvent",
+        "EntityHealthChangedEvent",
+        "PlayerDimensionChangeEvent",
+        "PlayerSpawnEvent",
         # Component classes
-        "MinecraftEntityTypes", "MinecraftBlockTypes", "MinecraftItemTypes",
+        "MinecraftEntityTypes",
+        "MinecraftBlockTypes",
+        "MinecraftItemTypes",
         # Nether
-        "DynamicPropertiesDefinition", "PropertyDefinition",
+        "DynamicPropertiesDefinition",
+        "PropertyDefinition",
     }
 
     if has_minecraft_import:
         # Extract individual import names from import statements
         import_matches = re.findall(
-            r"import\s+\{([^}]+)\}\s+from\s+['\"]@minecraft/server['\"]",
-            js_code
+            r"import\s+\{([^}]+)\}\s+from\s+['\"]@minecraft/server['\"]", js_code
         )
         for import_str in import_matches:
             imported_names = [name.strip() for name in import_str.split(",")]
@@ -285,6 +327,7 @@ def count_hallucinated_apis(completion: str) -> float:
 # ─────────────────────────────────────────────────────────────
 # Issue #1583: Real API Usage Scoring
 # ─────────────────────────────────────────────────────────────
+
 
 def score_real_api_usage(completion: str, reference: str) -> float:
     """Score usage of REAL @minecraft/server APIs.
@@ -339,31 +382,31 @@ def score_real_api_usage(completion: str, reference: str) -> float:
     # TIER 2: Check for 2+ real API usages (0.25)
     # =========================================================================
     api_chain_matches = (
-        re.findall(r"\bworld\.\w+(?:\.\w+)*", js_code) +
-        re.findall(r"\bplayer\.\w+(?:\.\w+)*", js_code) +
-        re.findall(r"\bsystem\.\w+(?:\.\w+)*", js_code) +
-        re.findall(r"\bdimension\.\w+(?:\.\w+)*", js_code) +
-        re.findall(r"\bItemStack\b", js_code)
+        re.findall(r"\bworld\.\w+(?:\.\w+)*", js_code)
+        + re.findall(r"\bplayer\.\w+(?:\.\w+)*", js_code)
+        + re.findall(r"\bsystem\.\w+(?:\.\w+)*", js_code)
+        + re.findall(r"\bdimension\.\w+(?:\.\w+)*", js_code)
+        + re.findall(r"\bItemStack\b", js_code)
     )
 
     # Extract unique chain roots
     unique_chain_roots = set()
     for match in api_chain_matches:
-        parts = match.split('.')
+        parts = match.split(".")
         if len(parts) >= 2:
-            unique_chain_roots.add('.'.join(parts[:2]))
-        elif 'ItemStack' in match:
-            unique_chain_roots.add('ItemStack')
+            unique_chain_roots.add(".".join(parts[:2]))
+        elif "ItemStack" in match:
+            unique_chain_roots.add("ItemStack")
 
     # Also check for standalone property accesses
     if re.search(r"\bworld\b", js_code):
-        unique_chain_roots.add('world')
+        unique_chain_roots.add("world")
     if re.search(r"\bplayer\b", js_code):
-        unique_chain_roots.add('player')
+        unique_chain_roots.add("player")
     if re.search(r"\bsystem\b", js_code):
-        unique_chain_roots.add('system')
+        unique_chain_roots.add("system")
     if re.search(r"\bdimension\b", js_code):
-        unique_chain_roots.add('dimension')
+        unique_chain_roots.add("dimension")
 
     unique_api_usages = len(unique_chain_roots)
 
@@ -375,18 +418,22 @@ def score_real_api_usage(completion: str, reference: str) -> float:
     # TIER 3: Event subscription with proper pattern (0.25)
     # =========================================================================
     # Modern Bedrock API: world.afterEvents.X.subscribe or world.beforeEvents.X.subscribe
-    has_modern_event_sub = bool(re.search(
-        r"world\.afterEvents\.\w+\.subscribe\s*\(|"
-        r"world\.beforeEvents\.\w+\.subscribe\s*\(",
-        js_code
-    ))
+    has_modern_event_sub = bool(
+        re.search(
+            r"world\.afterEvents\.\w+\.subscribe\s*\(|"
+            r"world\.beforeEvents\.\w+\.subscribe\s*\(",
+            js_code,
+        )
+    )
 
     # Old-style events: events.X.subscribe (deprecated but accepted)
-    has_old_events = bool(re.search(
-        r"events\.\w+\.subscribe\s*\(|"
-        r"events\.\w+\s*=",
-        js_code
-    ))
+    has_old_events = bool(
+        re.search(
+            r"events\.\w+\.subscribe\s*\(|"
+            r"events\.\w+\s*=",
+            js_code,
+        )
+    )
 
     has_event_subscription = has_modern_event_sub or has_old_events
 
@@ -399,11 +446,13 @@ def score_real_api_usage(completion: str, reference: str) -> float:
     # =========================================================================
     # Modern Bedrock event subscription pattern: world.afterEvents.<EventName>.subscribe
     # This requires 4 segments: world . afterEvents . EVENT . subscribe
-    has_deep_chain = bool(re.search(
-        r"world\.afterEvents\.\w+\.subscribe\s*\(|"
-        r"world\.beforeEvents\.\w+\.subscribe\s*\(",
-        js_code
-    ))
+    has_deep_chain = bool(
+        re.search(
+            r"world\.afterEvents\.\w+\.subscribe\s*\(|"
+            r"world\.beforeEvents\.\w+\.subscribe\s*\(",
+            js_code,
+        )
+    )
 
     has_event_subscription = has_modern_event_sub or has_old_events
 
@@ -438,6 +487,7 @@ def score_real_api_usage(completion: str, reference: str) -> float:
 # Issue #1586: Manifest Validation (UUID v4, Version Array, Module Type)
 # ─────────────────────────────────────────────────────────────
 
+
 def score_manifest_strict(completion: str, reference: str) -> float:
     """Strict manifest validation with anti-hallucination checks.
 
@@ -447,7 +497,7 @@ def score_manifest_strict(completion: str, reference: str) -> float:
     - Valid Bedrock module types (client, server, resource, data, etc.)
     """
     # Find JSON objects
-    json_pattern = r'\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}'
+    json_pattern = r"\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}"
     jsons = re.findall(json_pattern, completion)
 
     # Look for manifest indicators
@@ -470,15 +520,14 @@ def score_manifest_strict(completion: str, reference: str) -> float:
         # xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx
         uuid_match = re.search(
             r'"uuid"\s*:\s*"([a-fA-F0-9]{8}-[a-fA-F0-9]{4}-4[a-fA-F0-9]{3}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12})"',
-            header_content
+            header_content,
         )
         if uuid_match:
             uuid_valid = True
 
         # Issue #1586: Validate version array format [major, minor, patch]
         version_match = re.search(
-            r'"version"\s*:\s*\[(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\]',
-            header_content
+            r'"version"\s*:\s*\[(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\]', header_content
         )
         if version_match:
             version_valid = True
@@ -487,8 +536,14 @@ def score_manifest_strict(completion: str, reference: str) -> float:
     module_types_valid = True
     modules_match = re.findall(r'"type"\s*:\s*"(\w+)"', completion)
     valid_bedrock_types = {
-        "client", "server", "resource", "data", "behavior",
-        "skin_pack", "world_template", "plugin"
+        "client",
+        "server",
+        "resource",
+        "data",
+        "behavior",
+        "skin_pack",
+        "world_template",
+        "plugin",
     }
     for mod_type in modules_match:
         if mod_type not in valid_bedrock_types:
@@ -496,13 +551,13 @@ def score_manifest_strict(completion: str, reference: str) -> float:
             break
 
     score = (
-        0.10 * bool(has_format) +
-        0.25 * bool(has_header) +
-        0.25 * header_complete +
-        0.10 * bool(has_modules) +
-        0.10 * bool(uuid_valid) +
-        0.10 * bool(version_valid) +
-        0.10 * bool(module_types_valid)
+        0.10 * bool(has_format)
+        + 0.25 * bool(has_header)
+        + 0.25 * header_complete
+        + 0.10 * bool(has_modules)
+        + 0.10 * bool(uuid_valid)
+        + 0.10 * bool(version_valid)
+        + 0.10 * bool(module_types_valid)
     )
 
     return min(1.0, score)
@@ -511,13 +566,12 @@ def score_manifest_strict(completion: str, reference: str) -> float:
 def score_concise_output(completion: str, reference: str) -> float:
     """Reward concise, focused output. Penalize overly verbose responses."""
     blocks = extract_code_blocks(completion)
-    total_code_chars = sum(
-        len(b) for b in blocks["json"] + blocks["javascript"] + blocks["js"]
-    )
+    total_code_chars = sum(len(b) for b in blocks["json"] + blocks["javascript"] + blocks["js"])
     ref_code_chars = sum(
-        len(b) for b in extract_code_blocks(reference)["json"] +
-        extract_code_blocks(reference)["javascript"] +
-        extract_code_blocks(reference)["js"]
+        len(b)
+        for b in extract_code_blocks(reference)["json"]
+        + extract_code_blocks(reference)["javascript"]
+        + extract_code_blocks(reference)["js"]
     )
 
     if ref_code_chars == 0:
@@ -544,6 +598,7 @@ def score_concise_output(completion: str, reference: str) -> float:
 # Code BLEU from reward_v2.py
 # ─────────────────────────────────────────────────────────────
 
+
 def score_code_bleu(reference: str, hypothesis: str) -> float:
     """BLEU-like F1 score on CODE BLOCKS only (not prose)."""
     ref_blocks = extract_code_blocks(reference)
@@ -566,7 +621,7 @@ def score_code_bleu(reference: str, hypothesis: str) -> float:
     def tokenize_code(code: str) -> list[str]:
         code_no_strings = re.sub(r'"[^"]*"', '""', code)
         code_no_strings = re.sub(r"'[^']*'", "''", code_no_strings)
-        tokens = re.findall(r'[\w]+|[^\s\w]', code_no_strings)
+        tokens = re.findall(r"[\w]+|[^\s\w]", code_no_strings)
         return [t.lower() for t in tokens]
 
     ref_tokens = tokenize_code(ref_code)
@@ -607,6 +662,7 @@ def score_code_bleu(reference: str, hypothesis: str) -> float:
 # GRPO9 Composite Reward Function
 # ─────────────────────────────────────────────────────────────
 
+
 def compute_grpo9_reward(completion: str, reference: str) -> Tuple[float, dict]:
     """Compute GRPO9 reward with all P0 fixes incorporated.
 
@@ -643,11 +699,11 @@ def compute_grpo9_reward(completion: str, reference: str) -> Tuple[float, dict]:
     # anti_hallucination is shifted to [0.5, 1.0] range:
     # penalty -1.0 → 0.5, penalty 0.0 → 1.0
     total = (
-        0.10 * components["manifest"] +
-        0.25 * components["real_api"] +
-        0.25 * (1.0 + components["anti_hallucination"]) +  # Shift to [0.5, 1.0]
-        0.15 * components["concise"] +
-        0.25 * components["code_bleu"]
+        0.10 * components["manifest"]
+        + 0.25 * components["real_api"]
+        + 0.25 * (1.0 + components["anti_hallucination"])  # Shift to [0.5, 1.0]
+        + 0.15 * components["concise"]
+        + 0.25 * components["code_bleu"]
     )
 
     # Ensure total is in valid range
@@ -659,6 +715,7 @@ def compute_grpo9_reward(completion: str, reference: str) -> Tuple[float, dict]:
 # ─────────────────────────────────────────────────────────────
 # Issue #1584: GRPO Stabilization Functions
 # ─────────────────────────────────────────────────────────────
+
 
 def normalize_rewards(rewards: List[float]) -> List[float]:
     """Normalize rewards across GRPO group to zero mean, unit variance.
@@ -701,6 +758,7 @@ def compute_clipped_surrogate_advantage(
 # Issue #1585: Curriculum Learning
 # ─────────────────────────────────────────────────────────────
 
+
 def get_curriculum_weights(step: int, max_steps: int) -> dict:
     """Get sampling weights for current training step based on curriculum.
 
@@ -728,6 +786,7 @@ def get_curriculum_weights(step: int, max_steps: int) -> dict:
 # Training Loop
 # ─────────────────────────────────────────────────────────────
 
+
 def run_grpo9(args):
     import tinker
     import torch
@@ -750,9 +809,7 @@ def run_grpo9(args):
 
     # Load from GRPO8 checkpoint
     print(f"Loading from GRPO8 checkpoint: {args.checkpoint_path}")
-    training_client = service_client.create_training_client_from_state(
-        args.checkpoint_path
-    )
+    training_client = service_client.create_training_client_from_state(args.checkpoint_path)
 
     # Lower temperature for more precise output
     sampling_params = SamplingParams(
@@ -807,13 +864,13 @@ def run_grpo9(args):
         random.shuffle(batch_indices)
 
         # Apply curriculum sampling if enabled
-        if args.use_curriculum and hasattr(args, 'curriculum'):
+        if args.use_curriculum and hasattr(args, "curriculum"):
             curriculum_weights = get_curriculum_weights(step, args.max_steps)
             # Simple shuffle with curriculum awareness
             # In production, would filter by difficulty here
             pass
 
-        batch_indices = batch_indices[:args.batch_size]
+        batch_indices = batch_indices[: args.batch_size]
 
         datums = []
         step_rewards = []
@@ -822,7 +879,7 @@ def run_grpo9(args):
             "real_api": [],
             "anti_hallucination": [],
             "concise": [],
-            "code_bleu": []
+            "code_bleu": [],
         }
 
         # Get sampling client once per step
@@ -878,9 +935,7 @@ def run_grpo9(args):
 
             # Build datums
             for tokens, logprobs, advantage in zip(tokens_G, logprobs_G, advantages_G):
-                model_input = prompt.append(
-                    tinker.types.EncodedTextChunk(tokens=tokens[:-1])
-                )
+                model_input = prompt.append(tinker.types.EncodedTextChunk(tokens=tokens[:-1]))
                 ob_len = prompt.length - 1
                 target_tokens = [0] * ob_len + list(tokens)
                 padded_logprobs = [0.0] * ob_len + logprobs
@@ -896,27 +951,19 @@ def run_grpo9(args):
                 datum = tinker.types.Datum(
                     model_input=model_input,
                     loss_fn_inputs={
-                        "target_tokens": TensorData.from_torch(
-                            torch.tensor(target_tokens)
-                        ),
-                        "logprobs": TensorData.from_torch(
-                            torch.tensor(padded_logprobs)
-                        ),
-                        "advantages": TensorData.from_torch(
-                            torch.tensor(padded_advantages)
-                        ),
+                        "target_tokens": TensorData.from_torch(torch.tensor(target_tokens)),
+                        "logprobs": TensorData.from_torch(torch.tensor(padded_logprobs)),
+                        "advantages": TensorData.from_torch(torch.tensor(padded_advantages)),
                     },
                 )
                 datums.append(datum)
 
         # Training step with clipped surrogate loss
         if len(datums) == 0:
-            print(f"  Step {step+1}: all advantages zero, skipping")
+            print(f"  Step {step + 1}: all advantages zero, skipping")
             continue
 
-        fwd_bwd_future = training_client.forward_backward(
-            datums, loss_fn="ppo"
-        )
+        fwd_bwd_future = training_client.forward_backward(datums, loss_fn="ppo")
         adam_params = tinker.types.AdamParams(
             learning_rate=args.lr, beta1=0.9, beta2=0.95, eps=1e-8
         )
@@ -946,7 +993,7 @@ def run_grpo9(args):
 
         if (step + 1) % args.log_every == 0:
             print(
-                f"  Step {step+1}/{args.max_steps} | "
+                f"  Step {step + 1}/{args.max_steps} | "
                 f"Reward: {avg_reward:.4f} | "
                 f"Max: {max_reward:.4f}"
             )
@@ -963,7 +1010,7 @@ def run_grpo9(args):
         if args.save_every > 0 and (step + 1) % args.save_every == 0:
             checkpoint_utils.save_checkpoint(
                 training_client=training_client,
-                name=f"step_{step+1:06d}",
+                name=f"step_{step + 1:06d}",
                 log_path=log_path,
                 kind="both",
                 loop_state={"step": step + 1, "avg_reward": avg_reward},
@@ -1006,27 +1053,33 @@ def main():
     parser = argparse.ArgumentParser(description="PortKit GRPO9 Training — All P0 Fixes")
     parser.add_argument("--model", default="Qwen/Qwen3-8B")
     parser.add_argument("--train-data", default=str(DEFAULT_TRAIN_DATA))
-    parser.add_argument("--checkpoint-path",
-                        default="tinker://a9902a9f-027d-5c29-947a-635beeb5e37b:train:0/weights/final",
-                        help="GRPO8 final checkpoint")
-    parser.add_argument("--group-size", type=int, default=16,
-                        help="GRPO group size (16-20 per #1592)")
-    parser.add_argument("--max-steps", type=int, default=120,
-                        help="Budget-constrained steps")
-    parser.add_argument("--lr", type=float, default=5e-7,
-                        help="Learning rate (5e-7 per #1598 for stability)")
+    parser.add_argument(
+        "--checkpoint-path",
+        default="tinker://a9902a9f-027d-5c29-947a-635beeb5e37b:train:0/weights/final",
+        help="GRPO8 final checkpoint",
+    )
+    parser.add_argument(
+        "--group-size", type=int, default=16, help="GRPO group size (16-20 per #1592)"
+    )
+    parser.add_argument("--max-steps", type=int, default=120, help="Budget-constrained steps")
+    parser.add_argument(
+        "--lr", type=float, default=5e-7, help="Learning rate (5e-7 per #1598 for stability)"
+    )
     parser.add_argument("--batch-size", type=int, default=8)
     parser.add_argument("--max-completion-length", type=int, default=3072)
-    parser.add_argument("--temperature", type=float, default=0.7,
-                        help="Higher for diverse code generation")
+    parser.add_argument(
+        "--temperature", type=float, default=0.7, help="Higher for diverse code generation"
+    )
     parser.add_argument("--max-samples", type=int, default=None)
     parser.add_argument("--save-every", type=int, default=20)
     parser.add_argument("--log-every", type=int, default=5)
     parser.add_argument("--seed", type=int, default=42)
-    parser.add_argument("--use-curriculum", action="store_true", default=False,
-                        help="Enable curriculum learning")
-    parser.add_argument("--curriculum", type=str, default="default",
-                        help="Curriculum configuration name")
+    parser.add_argument(
+        "--use-curriculum", action="store_true", default=False, help="Enable curriculum learning"
+    )
+    parser.add_argument(
+        "--curriculum", type=str, default="default", help="Curriculum configuration name"
+    )
     args = parser.parse_args()
 
     check_prerequisites()
@@ -1054,9 +1107,13 @@ def main():
     print(f"    - #1586: Manifest fixes (UUID v4, version array, module type)")
     print(f"{'=' * 70}")
     print(f"\nNext steps:")
-    print(f"1. Evaluate: python evaluate_v2.py --checkpoint-path {log_path}/final --compare --max-samples 140")
+    print(
+        f"1. Evaluate: python evaluate_v2.py --checkpoint-path {log_path}/final --compare --max-samples 140"
+    )
     print(f"2. Compare hallucination rates vs GRPO7/GRPO8")
-    print(f"3. Export: python export_grpo8.py --checkpoint-path {log_path}/sampler_weights/final --push-merged")
+    print(
+        f"3. Export: python export_grpo8.py --checkpoint-path {log_path}/sampler_weights/final --push-merged"
+    )
 
 
 if __name__ == "__main__":

@@ -196,8 +196,10 @@ class BudgetGuardrails:
                 cost_record.error = budget_status["reason"]
                 self._trigger_callbacks("budget_exceeded", budget_status)
 
-            elif (budget_status["action"] == BudgetAction.WARN
-                  and cost_record.budget_action == BudgetAction.ALLOW):
+            elif (
+                budget_status["action"] == BudgetAction.WARN
+                and cost_record.budget_action == BudgetAction.ALLOW
+            ):
                 cost_record.budget_action = BudgetAction.WARN
                 self._trigger_callbacks("budget_warning", budget_status)
 
@@ -254,10 +256,7 @@ class BudgetGuardrails:
             elif daily_cost >= daily_warn:
                 return {
                     "action": BudgetAction.WARN,
-                    "reason": (
-                        f"Daily budget warning: "
-                        f"${daily_cost:.2f} >= ${daily_warn:.2f}"
-                    ),
+                    "reason": (f"Daily budget warning: ${daily_cost:.2f} >= ${daily_warn:.2f}"),
                     "budget_type": "daily",
                 }
 
@@ -269,8 +268,7 @@ class BudgetGuardrails:
                 return {
                     "action": BudgetAction.BLOCK,
                     "reason": (
-                        f"Monthly budget exceeded: "
-                        f"${monthly_cost:.2f} >= ${monthly_block:.2f}"
+                        f"Monthly budget exceeded: ${monthly_cost:.2f} >= ${monthly_block:.2f}"
                     ),
                     "budget_type": "monthly",
                 }
@@ -278,8 +276,7 @@ class BudgetGuardrails:
                 return {
                     "action": BudgetAction.WARN,
                     "reason": (
-                        f"Monthly budget warning: "
-                        f"${monthly_cost:.2f} >= ${monthly_warn:.2f}"
+                        f"Monthly budget warning: ${monthly_cost:.2f} >= ${monthly_warn:.2f}"
                     ),
                     "budget_type": "monthly",
                 }

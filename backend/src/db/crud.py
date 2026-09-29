@@ -2,6 +2,8 @@ from typing import Optional, List
 from uuid import UUID as PyUUID  # For type hinting UUID objects
 import uuid
 import os
+import re
+import hashlib
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, update, delete, func
 from sqlalchemy.orm import selectinload
@@ -10,8 +12,43 @@ from db import models
 from db.models import DocumentEmbedding
 from datetime import datetime, timezone
 
-# Base path for addon assets storage
 BASE_ASSET_PATH = os.path.join(os.path.dirname(os.path.dirname(__file__)), "addon_assets")
+
+_ANONYMIZATION_SALT = os.environ.get("FEEDBACK_ANONYMIZATION_SALT", "portkit-feedback-salt")
+
+
+def _anonymize_feedback_pii(
+    user_id: Optional[str], comment: Optional[str]
+) -> tuple[Optional[str], Optional[str], bool]:
+    """
+    Anonymize personal data in feedback before storage for GDPR compliance.
+
+    Args:
+        user_id: Self-reported user identifier (may be None for anonymous feedback).
+        comment: Free-text comment (may contain personal data).
+
+    Returns:
+        Tuple of (anonymized_user_id, anonymized_comment, is_anonymized).
+        - user_id is hashed with SHA256 + salt to allow grouping without identification
+        - comment has personal data patterns (email, phone, names) redacted
+    """
+    anonymized_user_id = None
+    anonymized_comment = None
+
+    if user_id:
+        anonymized_user_id = hashlib.sha256(
+            f"{_ANONYMIZATION_SALT}:{user_id}".encode()
+        ).hexdigest()[:16]
+
+    if comment:
+        anonymized_comment = comment
+        email_pattern = r"[\w.+-]+@[\w-]+\.[\w.-]+"
+        anonymized_comment = re.sub(email_pattern, "[EMAIL_REDACTED]", anonymized_comment)
+        phone_pattern = r"\+?[\d\s\-\(\)]{10,}"
+        anonymized_comment = re.sub(phone_pattern, "[PHONE_REDACTED]", anonymized_comment)
+
+    is_anonymized = anonymized_user_id is not None or anonymized_comment is not None
+    return anonymized_user_id, anonymized_comment, is_anonymized
 
 
 async def create_job(
@@ -191,11 +228,13 @@ async def create_enhanced_feedback(
     agent_specific_feedback: Optional[dict] = None,
     commit: bool = True,
 ) -> models.ConversionFeedback:
+    anon_user_id, anon_comment, is_anonymized = _anonymize_feedback_pii(user_id, comment)
     feedback = models.ConversionFeedback(
         job_id=job_id,
         feedback_type=feedback_type,
-        user_id=user_id,
-        comment=comment,
+        user_id=anon_user_id,
+        comment=anon_comment,
+        is_anonymized=is_anonymized,
     )
     session.add(feedback)
     if commit:
@@ -227,9 +266,12 @@ async def get_feedback_by_job_id(
 
 
 async def list_all_feedback(
-    session: AsyncSession, skip: int = 0, limit: int = 100
+    session: AsyncSession, skip: int = 0, limit: int = 100, is_anonymized: Optional[bool] = None
 ) -> List[models.ConversionFeedback]:
-    stmt = select(models.ConversionFeedback).offset(skip).limit(limit)
+    stmt = select(models.ConversionFeedback)
+    if is_anonymized is not None:
+        stmt = stmt.where(models.ConversionFeedback.is_anonymized == is_anonymized)
+    stmt = stmt.offset(skip).limit(limit)
     result = await session.execute(stmt)
     return result.scalars().all()
 

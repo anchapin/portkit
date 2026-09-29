@@ -199,6 +199,24 @@
   flex-shrink: 0;
 }
 
+.oauth-privacy-notice {
+  margin-top: 1rem;
+  font-size: 0.75rem;
+  line-height: 1.4;
+  color: #6b7280;
+  text-align: center;
+}
+
+.oauth-privacy-notice a {
+  color: #3b82f6;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.oauth-privacy-notice a:hover {
+  text-decoration: underline;
+}
+
 .login-footer {
   margin-top: 2rem;
   text-align: center;

@@ -9,7 +9,7 @@ Issue: #499 - Implement Modpack Conflict Detection & Load Order (Phase 5d)
 """
 
 import pytest
-from agents.modpack_conflict_detector import (
+from agents.modpack.conflict_detector import (
     ModpackConflictDetector,
     ModLoader,
     ConflictType,

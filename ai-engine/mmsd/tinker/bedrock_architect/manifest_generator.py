@@ -87,7 +87,10 @@ DEFAULT_MANIFEST_SCHEMA = {
                 "type": "object",
                 "required": ["type", "uuid", "version"],
                 "properties": {
-                    "type": {"type": "string", "enum": ["data", "resources", "client_data", "javascript"]},
+                    "type": {
+                        "type": "string",
+                        "enum": ["data", "resources", "client_data", "javascript"],
+                    },
                     "uuid": {
                         "type": "string",
                         "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
@@ -199,7 +202,9 @@ def create_behavior_manifest(
     modules = [{"type": "data", "uuid": str(uuid.uuid4()), "version": version}]
 
     # Add script module if needed
-    if capabilities and any(cap in capabilities for cap in ["experimental_custom_ui", "script_eval"]):
+    if capabilities and any(
+        cap in capabilities for cap in ["experimental_custom_ui", "script_eval"]
+    ):
         modules.append(
             {
                 "type": "javascript",
@@ -309,8 +314,12 @@ def generate_manifests_pair(mod_data: Dict[str, Any]) -> Tuple[Dict[str, Any], D
     rp_uuid = generate_pack_uuid()
     capabilities = determine_capabilities(mod_data)
 
-    bp_manifest = create_behavior_manifest(mod_name, mod_description, mod_version, bp_uuid, capabilities)
-    rp_manifest = create_resource_manifest(mod_name, mod_description, mod_version, rp_uuid, capabilities)
+    bp_manifest = create_behavior_manifest(
+        mod_name, mod_description, mod_version, bp_uuid, capabilities
+    )
+    rp_manifest = create_resource_manifest(
+        mod_name, mod_description, mod_version, rp_uuid, capabilities
+    )
 
     # Add cross-dependencies
     bp_manifest = add_pack_dependency(bp_manifest, rp_uuid, mod_version)
@@ -403,9 +412,13 @@ class BedrockManifestGenerator:
         capabilities = determine_capabilities(mod_data)
 
         if pack_type == PackType.BEHAVIOR:
-            manifest = create_behavior_manifest(mod_name, mod_description, mod_version, pack_uuid, capabilities)
+            manifest = create_behavior_manifest(
+                mod_name, mod_description, mod_version, pack_uuid, capabilities
+            )
         else:
-            manifest = create_resource_manifest(mod_name, mod_description, mod_version, pack_uuid, capabilities)
+            manifest = create_resource_manifest(
+                mod_name, mod_description, mod_version, pack_uuid, capabilities
+            )
 
         validate_manifest(manifest, pack_type.value)
         return manifest

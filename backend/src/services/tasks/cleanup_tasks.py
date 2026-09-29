@@ -1,30 +1,38 @@
 """
 Cleanup-related Celery tasks.
 
+Includes old-task reaping, orphaned JAR / output file purging, and post-
+conversion input file deletion.
+
+Task names are preserved as ``services.celery_tasks.*`` for runtime
+compatibility (celery routing, beat schedule, in-flight tasks).
+
 Issue: #1156 - JAR data retention: 24hr auto-delete + Privacy Policy statement
+Issue: #1743 - Split celery_tasks.py into task domain modules
 """
 
-from typing import Dict, Any
-from celery import shared_task
+import json
 import logging
 import os
-
-from tasks.base import QUEUE_NAMES, METRICS_KEY, DEAD_LETTER_QUEUE, PROCESSING_SET, RETRY_QUEUE
-from services.celery_config import celery_app, REDIS_URL
-from services.audit_logger import get_audit_logger
-import redis
-import time
 from datetime import datetime, timedelta, timezone
+from typing import Any, Dict
+
+from celery import shared_task
+
+from services.audit_logger import get_audit_logger
+from services.celery_config import celery_app
+from services.tasks.base import (
+    METRICS_KEY,
+    PROCESSING_SET,
+    QUEUE_NAMES,
+    RETRY_QUEUE,
+    _get_redis_sync,
+)
 
 logger = logging.getLogger(__name__)
 
 
-def _get_redis_sync():
-    """Get synchronous Redis client for Celery tasks."""
-    return redis.from_url(REDIS_URL, decode_responses=True)
-
-
-@celery_app.task(name="services.tasks.cleanup_tasks.cleanup_old_tasks")
+@celery_app.task(name="services.celery_tasks.cleanup_old_tasks")
 def cleanup_old_tasks(max_age_hours: int = 24) -> Dict[str, Any]:
     """Clean up old completed/failed tasks."""
     r = _get_redis_sync()
@@ -36,8 +44,6 @@ def cleanup_old_tasks(max_age_hours: int = 24) -> Dict[str, Any]:
             continue
         task_data = r.get(key)
         if task_data:
-            import json
-
             task_dict = json.loads(task_data)
             status = task_dict.get("status")
             if status in ("completed", "failed", "cancelled", "dead_letter"):
@@ -52,8 +58,8 @@ def cleanup_old_tasks(max_age_hours: int = 24) -> Dict[str, Any]:
     return {"cleaned": cleaned}
 
 
-@celery_app.task(name="services.tasks.cleanup_tasks.purge_orphaned_files")
-def purge_orphaned_files(max_age_hours: int = 24) -> Dict[str, Any]:  # noqa: C901
+@celery_app.task(name="services.celery_tasks.purge_orphaned_files")
+def purge_orphaned_files(max_age_hours: int = 24) -> Dict[str, Any]:
     """
     Purge orphaned JAR files older than max_age_hours.
 
@@ -153,7 +159,7 @@ def purge_orphaned_files(max_age_hours: int = 24) -> Dict[str, Any]:  # noqa: C9
     }
 
 
-@shared_task(name="services.tasks.cleanup_tasks.delete_input_file")
+@shared_task(name="services.celery_tasks.delete_input_file")
 def delete_input_file(job_id: str, file_id: str) -> Dict[str, Any]:
     """
     Delete the original input JAR file after conversion completes.

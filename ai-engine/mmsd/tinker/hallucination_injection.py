@@ -21,7 +21,7 @@ import random
 import re
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Callable, List, Optional, Tuple
+from typing import List, Optional
 
 from hallucination_catalog import (
     HALLUCINATION_CATALOG,
@@ -33,6 +33,7 @@ from hallucination_catalog import (
 @dataclass
 class InjectionSite:
     """Location in code where hallucination can be injected."""
+
     line_number: int
     line_content: str
     context_before: List[str]
@@ -44,6 +45,7 @@ class InjectionSite:
 @dataclass
 class InjectionResult:
     """Result of injecting a hallucination into code."""
+
     original_code: str
     injected_code: str
     injected_hallucination: str
@@ -59,7 +61,9 @@ class InjectionStrategy:
     def __init__(self, catalog: Optional[type] = None):
         self.catalog = catalog or HALLUCINATION_CATALOG
 
-    def select_pattern(self, context: str, available_patterns: List[HallucinationPattern]) -> Optional[HallucinationPattern]:
+    def select_pattern(
+        self, context: str, available_patterns: List[HallucinationPattern]
+    ) -> Optional[HallucinationPattern]:
         """Select hallucination pattern based on context."""
         raise NotImplementedError
 
@@ -67,7 +71,9 @@ class InjectionStrategy:
 class RandomInjectionStrategy(InjectionStrategy):
     """Randomly select patterns regardless of context."""
 
-    def select_pattern(self, context: str, available_patterns: List[HallucinationPattern]) -> Optional[HallucinationPattern]:
+    def select_pattern(
+        self, context: str, available_patterns: List[HallucinationPattern]
+    ) -> Optional[HallucinationPattern]:
         if not available_patterns:
             return None
         return random.choice(available_patterns)
@@ -76,7 +82,9 @@ class RandomInjectionStrategy(InjectionStrategy):
 class ContextAwareInjectionStrategy(InjectionStrategy):
     """Select patterns based on code context (imports, existing patterns, etc.)."""
 
-    def select_pattern(self, context: str, available_patterns: List[HallucinationPattern]) -> Optional[HallucinationPattern]:
+    def select_pattern(
+        self, context: str, available_patterns: List[HallucinationPattern]
+    ) -> Optional[HallucinationPattern]:
         """Select pattern based on what would be believable in context."""
         has_import = bool(re.search(r"from\s+['\"]@minecraft/server['\"]", context))
         has_world = bool(re.search(r"\bworld\b", context))
@@ -90,7 +98,9 @@ class ContextAwareInjectionStrategy(InjectionStrategy):
             if has_import and p.Hallucination_type == HallucinationType.SEMANTIC:
                 suitable.append(p)
             # If code uses world/player/system, hard patterns more believable
-            elif (has_world or has_player or has_system) and p.Hallucination_type == HallucinationType.HARD:
+            elif (
+                has_world or has_player or has_system
+            ) and p.Hallucination_type == HallucinationType.HARD:
                 suitable.append(p)
             else:
                 suitable.append(p)
@@ -245,7 +255,7 @@ class HallucinationInjectionPipeline:
 
     def find_injection_sites(self, code: str) -> List[InjectionSite]:
         """Find locations in code where hallucinations can be injected."""
-        lines = code.split('\n')
+        lines = code.split("\n")
         sites = []
 
         for i, line in enumerate(lines, 1):
@@ -262,27 +272,29 @@ class HallucinationInjectionPipeline:
 
             # At start of function body
             if re.search(r"\(\s*\)\s*\{", line):
-                insertion_points.append(line.index('{') + 1)
+                insertion_points.append(line.index("{") + 1)
 
             # After variable declarations
             if re.match(r"^\s*(const|let|var)\s+\w+", line):
                 insertion_points.append(len(line))
 
             # At end of lines with semicolons (statement ends)
-            if ';' in line and not line.strip().endswith('//'):
+            if ";" in line and not line.strip().endswith("//"):
                 insertion_points.append(len(line) - 1)
 
             for point in insertion_points:
                 # Find suitable patterns for this context
                 suitable = self._find_suitable_patterns(line, code)
-                sites.append(InjectionSite(
-                    line_number=i,
-                    line_content=line,
-                    context_before=lines[max(0, i-3):i],
-                    context_after=lines[i:min(len(lines), i+2)],
-                    insertion_point=point,
-                    suitable_patterns=suitable
-                ))
+                sites.append(
+                    InjectionSite(
+                        line_number=i,
+                        line_content=line,
+                        context_before=lines[max(0, i - 3) : i],
+                        context_after=lines[i : min(len(lines), i + 2)],
+                        insertion_point=point,
+                        suitable_patterns=suitable,
+                    )
+                )
 
         return sites
 
@@ -292,10 +304,13 @@ class HallucinationInjectionPipeline:
 
         # If inside import block, suggest semantic patterns
         if re.match(r"^\s*import\s+", line):
-            suitable.extend([
-                p for p in self.catalog.SEMANTIC_HALLUCINATIONS
-                if 'import' in p.description.lower()
-            ])
+            suitable.extend(
+                [
+                    p
+                    for p in self.catalog.SEMANTIC_HALLUCINATIONS
+                    if "import" in p.description.lower()
+                ]
+            )
 
         # If has @minecraft/server import, suggest hard patterns
         if re.search(r"@minecraft/server", full_context):
@@ -337,12 +352,16 @@ class HallucinationInjectionPipeline:
                 pattern_id="",
                 injection_type=HallucinationType.HARD,
                 line_number=-1,
-                is_valid=False
+                is_valid=False,
             )
 
         # Select site and pattern
         selected_site = site or random.choice(sites)
-        available_patterns = selected_site.suitable_patterns if selected_site.suitable_patterns else self.catalog.HARD_HALLUCINATIONS
+        available_patterns = (
+            selected_site.suitable_patterns
+            if selected_site.suitable_patterns
+            else self.catalog.HARD_HALLUCINATIONS
+        )
         selected_pattern = pattern or self.strategy.select_pattern(code, available_patterns)
 
         if not selected_pattern:
@@ -353,18 +372,21 @@ class HallucinationInjectionPipeline:
                 pattern_id="",
                 injection_type=HallucinationType.HARD,
                 line_number=-1,
-                is_valid=False
+                is_valid=False,
             )
 
         # Get hallucination template
-        templates = self.HALLUCINATION_TEMPLATES.get(selected_pattern.id, [
-            f"// Hallucinated: {selected_pattern.id}",
-            f"const _fake_{selected_pattern.id} = {selected_pattern.pattern};"
-        ])
+        templates = self.HALLUCINATION_TEMPLATES.get(
+            selected_pattern.id,
+            [
+                f"// Hallucinated: {selected_pattern.id}",
+                f"const _fake_{selected_pattern.id} = {selected_pattern.pattern};",
+            ],
+        )
         hallucination = random.choice(templates)
 
         # Insert hallucination
-        lines = code.split('\n')
+        lines = code.split("\n")
         line_idx = selected_site.line_number - 1
         line = lines[line_idx]
 
@@ -372,7 +394,13 @@ class HallucinationInjectionPipeline:
         if selected_site.insertion_point >= len(line):
             new_line = line + "\n" + hallucination
         else:
-            new_line = line[:selected_site.insertion_point] + "\n" + hallucination + "\n" + line[selected_site.insertion_point:]
+            new_line = (
+                line[: selected_site.insertion_point]
+                + "\n"
+                + hallucination
+                + "\n"
+                + line[selected_site.insertion_point :]
+            )
 
         lines[line_idx] = new_line
         injected_code = "\n".join(lines)
@@ -384,7 +412,7 @@ class HallucinationInjectionPipeline:
             pattern_id=selected_pattern.id,
             injection_type=selected_pattern.Hallucination_type,
             line_number=selected_site.line_number,
-            is_valid=True
+            is_valid=True,
         )
 
     def generate_dataset(
@@ -422,12 +450,14 @@ class HallucinationInjectionPipeline:
                 result = self.inject_hallucination(current_code)
                 if result.is_valid:
                     current_code = result.injected_code
-                    injected_hallucinations.append({
-                        "pattern_id": result.pattern_id,
-                        "type": result.injection_type.value,
-                        "hallucination": result.injected_hallucination,
-                        "line": result.line_number,
-                    })
+                    injected_hallucinations.append(
+                        {
+                            "pattern_id": result.pattern_id,
+                            "type": result.injection_type.value,
+                            "hallucination": result.injected_hallucination,
+                            "line": result.line_number,
+                        }
+                    )
 
             # Build synthetic sample
             synthetic_sample = {
@@ -458,9 +488,9 @@ class HallucinationInjectionPipeline:
 
     def save_dataset(self, dataset: List[dict], output_path: Path) -> None:
         """Save dataset to JSONL file."""
-        with open(output_path, 'w') as f:
+        with open(output_path, "w") as f:
             for item in dataset:
-                f.write(json.dumps(item) + '\n')
+                f.write(json.dumps(item) + "\n")
 
 
 def load_clean_samples(data_path: Path) -> List[dict]:
@@ -490,9 +520,7 @@ if __name__ == "__main__":
 
     pipeline = HallucinationInjectionPipeline(seed=args.seed)
     synthetic_data = pipeline.generate_dataset(
-        clean_samples,
-        injection_rate=args.rate,
-        max_injections_per_sample=args.max_per_sample
+        clean_samples, injection_rate=args.rate, max_injections_per_sample=args.max_per_sample
     )
     print(f"Generated {len(synthetic_data)} synthetic samples")
 
@@ -501,4 +529,6 @@ if __name__ == "__main__":
 
     # Stats
     with_halluc = sum(1 for d in synthetic_data if d["has_hallucination"])
-    print(f"Samples with hallucinations: {with_halluc} ({100*with_halluc/len(synthetic_data):.1f}%)")
+    print(
+        f"Samples with hallucinations: {with_halluc} ({100 * with_halluc / len(synthetic_data):.1f}%)"
+    )

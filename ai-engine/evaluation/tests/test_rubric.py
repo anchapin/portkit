@@ -124,12 +124,14 @@ class TestBedrockConstraintChecker:
     def test_check_json_nesting_depth_invalid(self):
         """Test invalid JSON nesting depth."""
         checker = BedrockConstraintChecker()
+
         # Create deeply nested JSON exceeding the limit of 6
         # Use programmatically built nested dict to ensure correct depth
         def make_nested(depth):
             if depth <= 1:
                 return "value"
             return {"level": make_nested(depth - 1)}
+
         deep_json = json.dumps(make_nested(8))  # 8 levels creates max_depth of 7
         is_valid, max_depth = checker.check_json_nesting_depth(deep_json)
         assert is_valid is False
@@ -196,18 +198,24 @@ class TestBedrockConstraintChecker:
     def test_check_event_queue_size_valid(self):
         """Test valid event queue size."""
         checker = BedrockConstraintChecker()
-        script = """
+        script = (
+            """
         import { world } from "@minecraft/server";
-        """ + "world.afterEvents.tick.subscribe(() => {});\n" * 10
+        """
+            + "world.afterEvents.tick.subscribe(() => {});\n" * 10
+        )
         is_valid, _ = checker.check_event_queue_size(script)
         assert is_valid is True
 
     def test_check_event_queue_size_high(self):
         """Test high event subscription count."""
         checker = BedrockConstraintChecker()
-        script = """
+        script = (
+            """
         import { world } from "@minecraft/server";
-        """ + "world.afterEvents.tick.subscribe(() => {});\n" * 150
+        """
+            + "world.afterEvents.tick.subscribe(() => {});\n" * 150
+        )
         is_valid, warning = checker.check_event_queue_size(script)
         assert is_valid is False
         assert "150" in warning

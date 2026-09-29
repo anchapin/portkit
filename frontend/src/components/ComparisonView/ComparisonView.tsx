@@ -3,6 +3,7 @@ import { useParams } from 'react-router-dom';
 import DiffViewer from './DiffViewer';
 import FeatureMapper from './FeatureMapper';
 import AssumptionTracker from './AssumptionTracker';
+import { ConfidenceMeter } from '../ui/confidence-badge';
 
 // Interface matching the backend response structure for a single comparison result
 interface FeatureMappingData {
@@ -109,7 +110,53 @@ const ComparisonView: React.FC = () => {
       <section>
         <h2>Confidence Scores</h2>
         {data.confidence_scores ? (
-          <pre>{JSON.stringify(data.confidence_scores, null, 2)}</pre>
+          typeof data.confidence_scores === 'object' ? (
+            <div
+              style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}
+            >
+              {Object.entries(data.confidence_scores).map(([key, value]) => (
+                <div
+                  key={key}
+                  style={{
+                    padding: '12px',
+                    border: '1px solid #e5e7eb',
+                    borderRadius: '8px',
+                    backgroundColor: '#f9fafb',
+                  }}
+                >
+                  <div
+                    style={{
+                      fontWeight: 600,
+                      marginBottom: '8px',
+                      color: '#374151',
+                    }}
+                  >
+                    {key.replace(/_/g, ' ')}
+                  </div>
+                  {typeof value === 'number' ? (
+                    <ConfidenceMeter
+                      score={value}
+                      showLabel={false}
+                      height={6}
+                    />
+                  ) : (
+                    <pre
+                      style={{
+                        fontSize: '12px',
+                        margin: 0,
+                        whiteSpace: 'pre-wrap',
+                        color: '#6b7280',
+                      }}
+                    >
+                      {JSON.stringify(value, null, 2)}
+                    </pre>
+                  )}
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p>No confidence scores available.</p>
+          )
         ) : (
           <p>No confidence scores.</p>
         )}

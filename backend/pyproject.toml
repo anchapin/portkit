@@ -193,6 +193,7 @@ ignore = [
 "src/exceptions.py" = ["N818"]  # exception names should have Error suffix (legacy names)
 "src/services/*.py" = ["N806"]  # variable in function should be lowercase (constants in functions)
 "src/services/celery_tasks.py" = ["C901"]
+"src/services/tasks/cleanup_tasks.py" = ["C901"]  # purge_orphaned_files migrated from celery_tasks.py (issue #1743)
 
 [tool.ruff.lint.isort]
 known-first-party = ["app", "core", "src"]

@@ -53,9 +53,7 @@ def log_pipeline_progress(
     message: str,
     *,
     details: Optional[Dict[str, Any]] = None,
-    progress_callback: Optional[
-        Callable[[str, str, int, str], Awaitable[None]]
-    ] = None,
+    progress_callback: Optional[Callable[[str, str, int, str], Awaitable[None]]] = None,
 ) -> PipelineProgress:
     """Log a pipeline-progress event and optionally fan it out to a callback."""
 
@@ -80,9 +78,7 @@ def log_pipeline_progress(
             loop = asyncio.get_event_loop()
             if loop.is_running():
                 pct = int((stage.value / _TOTAL_STAGES) * 100)
-                loop.create_task(
-                    progress_callback("LangGraphPipeline", status, pct, message)
-                )
+                loop.create_task(progress_callback("LangGraphPipeline", status, pct, message))
         except Exception as e:  # pragma: no cover - best-effort progress reporting
             logger.warning(f"Failed to dispatch progress update: {e}")
 

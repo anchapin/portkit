@@ -116,7 +116,7 @@ We may update this Cookie Policy from time to time to reflect changes in our pra
 
 If you have questions about this Cookie Policy or our use of cookies, please contact us:
 
-- **Email**: [privacy@example-portkit.com](mailto:privacy@example-portkit.com)
+- **Email**: [privacy@portkit.ai](mailto:privacy@portkit.ai)
 - **Issue Tracker**: [GitHub Issue Tracker](https://github.com/anchapin/portkit/issues)
 
 For California residents: See our [Privacy Policy](#) for additional rights under CCPA.

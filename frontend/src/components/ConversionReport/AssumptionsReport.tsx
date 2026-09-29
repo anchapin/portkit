@@ -8,6 +8,7 @@ import type {
   AssumptionsReport as AssumptionsReportType,
   AssumptionDetail,
 } from '../../types/api';
+import { ConfidenceMeter } from '../ui/confidence-badge';
 import styles from './ConversionReport.module.css';
 
 interface AssumptionsReportProps {
@@ -53,29 +54,13 @@ const ImpactBadge: React.FC<{ impact: string }> = ({ impact }) => {
 };
 
 const ConfidenceIndicator: React.FC<{ score: number }> = ({ score }) => {
-  const getConfidenceColor = (score: number) => {
-    if (score >= 0.8) return '#28a745';
-    if (score >= 0.6) return '#ffc107';
-    return '#dc3545';
-  };
-
-  const confidencePercentage = Math.round(score * 100);
-
   return (
-    <div className={styles.confidenceIndicator}>
-      <div className={styles.confidenceBar}>
-        <div
-          className={styles.confidenceFill}
-          style={{
-            width: `${confidencePercentage}%`,
-            backgroundColor: getConfidenceColor(score),
-          }}
-        />
-      </div>
-      <span className={styles.confidenceText}>
-        {confidencePercentage}% confident
-      </span>
-    </div>
+    <ConfidenceMeter
+      score={score}
+      showLabel={false}
+      showPercentage={true}
+      height={6}
+    />
   );
 };
 

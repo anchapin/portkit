@@ -105,9 +105,7 @@ def convert_ai_goals(java_goals: List[Dict[str, Any]]) -> Dict[str, Dict[str, An
 
         bedrock_behavior = GOAL_MAPPINGS.get(goal_type)
         if bedrock_behavior:
-            result[bedrock_behavior] = build_behavior_config(
-                goal_type, priority, goal_config
-            )
+            result[bedrock_behavior] = build_behavior_config(goal_type, priority, goal_config)
 
     return result
 

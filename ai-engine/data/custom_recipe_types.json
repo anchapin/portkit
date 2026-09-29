@@ -2,9 +2,9 @@
     "metadata": {
         "description": "Custom Forge recipe type definitions for NeoForge, Farmer's Delight, Create, and other mods",
         "source": "recipe_converter.py extraction",
-        "type_count": 18,
-        "updated": "2026-05-15",
-        "change": "Added Create cutting/haunting/sandpaper_polishing/item_application; marked mixing/sequenced_assembly/filling/emptying as convertible"
+        "type_count": 22,
+        "updated": "2026-06-24",
+        "change": "Added ImmersiveEngineering crusher/metalpress/arc_furnace/refinery (issue #1771)"
     },
     "types": {
         "farmersdelight:cooking": {
@@ -95,6 +95,26 @@
         "create:item_application": {
             "category": "item_application",
             "description": "Item application recipe (manual or automated)",
+            "convertible": true
+        },
+        "immersiveengineering:crusher": {
+            "category": "ie_crusher",
+            "description": "IE crusher recipe (Crusher) - ore processing with secondaries",
+            "convertible": true
+        },
+        "immersiveengineering:metalpress": {
+            "category": "ie_metalpress",
+            "description": "IE metal press recipe (Metal Press) - molding with a mold item",
+            "convertible": true
+        },
+        "immersiveengineering:arc_furnace": {
+            "category": "ie_arc_furnace",
+            "description": "IE arc furnace recipe (Arc Furnace) - electric smelting/alloying",
+            "convertible": true
+        },
+        "immersiveengineering:refinery": {
+            "category": "ie_refinery",
+            "description": "IE refinery recipe (Refinery) - fluid mixing to fluid output",
             "convertible": true
         }
     }

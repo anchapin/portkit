@@ -27,6 +27,7 @@ logger = logging.getLogger(__name__)
 
 class SteeringMode(str, Enum):
     """How to apply steering"""
+
     SUPPRESS = "suppress"  # Subtract steering vector (reduce features)
     AMPLIFY = "amplify"  # Add steering vector (enhance features)
     REPLACE = "replace"  # Replace activations with steering vector
@@ -35,6 +36,7 @@ class SteeringMode(str, Enum):
 @dataclass
 class SteeringVector:
     """A computed steering vector for feature manipulation"""
+
     name: str
     feature_ids: List[int]
     weights: np.ndarray  # Same length as feature_ids
@@ -102,6 +104,7 @@ class SteeringVector:
 @dataclass
 class SteeringConfig:
     """Configuration for steering application"""
+
     steering_scale: float = 2.0  # Default steering magnitude
     steering_mode: SteeringMode = SteeringMode.SUPPRESS
     feature_threshold: float = 0.1  # Minimum activation to include in steering

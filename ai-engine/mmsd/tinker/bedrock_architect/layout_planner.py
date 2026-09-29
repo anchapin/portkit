@@ -12,7 +12,7 @@ import logging
 from dataclasses import dataclass, field
 from enum import Enum
 from pathlib import Path
-from typing import Dict, List, Optional, Set
+from typing import Dict, List, Set
 
 logger = logging.getLogger(__name__)
 
@@ -31,7 +31,7 @@ class DirectoryNode:
 
     path: str  # Relative path within the pack (e.g., "blocks", "items")
     required: bool = True  # Whether this dir is mandatory in a valid pack
-    children: List["DirectoryNode"] = field(default_factory=list)
+    children: List[DirectoryNode] = field(default_factory=list)
     description: str = ""  # Human-readable description of purpose
 
 
@@ -86,8 +86,12 @@ RESOURCE_PACK_STRUCTURE = [
     DirectoryNode(path="models/item", required=False, description="Item models"),
     DirectoryNode(path="models/entity", required=False, description="Entity models"),
     DirectoryNode(path="animations", required=False, description="Animation JSON"),
-    DirectoryNode(path="animations/animation_controllers", required=False, description="Anim controllers"),
-    DirectoryNode(path="animation_controllers", required=False, description="Animation controllers"),
+    DirectoryNode(
+        path="animations/animation_controllers", required=False, description="Anim controllers"
+    ),
+    DirectoryNode(
+        path="animation_controllers", required=False, description="Animation controllers"
+    ),
     DirectoryNode(path="render_controllers", required=False, description="Render controllers"),
     DirectoryNode(path="entity", required=False, description="Entity JSON definitions"),
     DirectoryNode(path="font", required=False, description="Custom font textures"),
@@ -257,7 +261,7 @@ class LayoutPlanner:
         self._custom_dirs: Dict[str, List[str]] = {"behavior": [], "resource": []}
         self._custom_files: Set[str] = set()
 
-    def add_behavior_dir(self, dir_path: str) -> "LayoutPlanner":
+    def add_behavior_dir(self, dir_path: str) -> LayoutPlanner:
         """Add a custom behavior pack directory.
 
         Args:
@@ -270,7 +274,7 @@ class LayoutPlanner:
             self._custom_dirs["behavior"].append(dir_path)
         return self
 
-    def add_resource_dir(self, dir_path: str) -> "LayoutPlanner":
+    def add_resource_dir(self, dir_path: str) -> LayoutPlanner:
         """Add a custom resource pack directory.
 
         Args:
@@ -283,7 +287,7 @@ class LayoutPlanner:
             self._custom_dirs["resource"].append(dir_path)
         return self
 
-    def add_required_file(self, file_path: str) -> "LayoutPlanner":
+    def add_required_file(self, file_path: str) -> LayoutPlanner:
         """Add a required file path.
 
         Args:
@@ -322,7 +326,7 @@ class LayoutPlanner:
 
         return plan
 
-    def apply_from_features(self, features: List[Dict[str, Any]]) -> "LayoutPlanner":
+    def apply_from_features(self, features: List[Dict[str, Any]]) -> LayoutPlanner:
         """Auto-add directories based on detected mod features.
 
         Args:

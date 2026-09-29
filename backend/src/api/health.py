@@ -9,6 +9,8 @@ Issue #699: Add health check endpoints
 Readiness Pillar: Debugging & Observability
 """
 
+import asyncio
+import os
 import time
 from datetime import datetime, timezone
 from typing import Dict, Any, List
@@ -18,6 +20,10 @@ import logging
 
 from db.base import async_engine
 from services.cache import CacheService
+
+# AI Engine configuration for health checks
+AI_ENGINE_URL = os.getenv("AI_ENGINE_URL", "http://ai-engine:8001")
+AI_ENGINE_HEALTH_TIMEOUT = 5.0  # 5 second timeout for health checks
 
 logger = logging.getLogger(__name__)
 
@@ -117,6 +123,58 @@ async def check_redis_health() -> DependencyHealth:
         )
 
 
+async def check_ai_engine_health() -> DependencyHealth:
+    """
+    Check AI Engine connectivity and return health status.
+
+    The AI Engine is an optional dependency for conversions - if it's unavailable,
+    the backend reports degraded status rather than unhealthy to avoid restart loops.
+    """
+    start_time = time.time()
+
+    try:
+        import httpx
+
+        async with asyncio.timeout(AI_ENGINE_HEALTH_TIMEOUT):
+            async with httpx.AsyncClient(timeout=AI_ENGINE_HEALTH_TIMEOUT) as client:
+                response = await client.get(f"{AI_ENGINE_URL}/health/liveness")
+
+        latency_ms = (time.time() - start_time) * 1000
+
+        if response.status_code == 200:
+            return DependencyHealth(
+                name="ai_engine",
+                status="healthy",
+                latency_ms=latency_ms,
+                message="AI Engine connection successful",
+            )
+        else:
+            return DependencyHealth(
+                name="ai_engine",
+                status="degraded",
+                latency_ms=latency_ms,
+                message=f"AI Engine returned status {response.status_code}",
+            )
+    except TimeoutError:
+        latency_ms = (time.time() - start_time) * 1000
+        logger.warning(f"AI Engine health check timed out after {AI_ENGINE_HEALTH_TIMEOUT}s")
+        return DependencyHealth(
+            name="ai_engine",
+            status="degraded",
+            latency_ms=latency_ms,
+            message=f"AI Engine health check timed out after {AI_ENGINE_HEALTH_TIMEOUT}s",
+        )
+    except Exception as e:
+        latency_ms = (time.time() - start_time) * 1000
+        logger.warning(f"AI Engine health check failed: {e}")
+        return DependencyHealth(
+            name="ai_engine",
+            status="degraded",
+            latency_ms=latency_ms,
+            message=f"AI Engine is unreachable: {str(e)}",
+        )
+
+
 @router.get("/health/readiness", response_model=HealthStatus)
 async def readiness_check():
     """
@@ -139,16 +197,23 @@ async def readiness_check():
     redis_health = await check_redis_health()
     checks.append(redis_health)
 
+    # Check AI Engine (optional dependency - reports degraded if unavailable)
+    ai_engine_health = await check_ai_engine_health()
+    checks.append(ai_engine_health)
+
     # Determine overall status
     unhealthy_checks = [c for c in checks if c.status == "unhealthy"]
+    degraded_checks = [c for c in checks if c.status == "degraded"]
 
     if unhealthy_checks:
         # If database is unhealthy, the app cannot serve traffic
         if any(c.name == "database" and c.status == "unhealthy" for c in checks):
             status = "unhealthy"
         else:
-            # Redis is optional - degraded status
             status = "degraded"
+    elif degraded_checks:
+        # AI Engine or Redis degraded - conversions may fail but basic ops work
+        status = "degraded"
     else:
         status = "healthy"
 

@@ -224,9 +224,7 @@ class UAETrainingPipeline:
             retrieved_ids = [d[0] for d in sorted_docs[:5]]
 
             if query.hallucination_risk:
-                has_correct = any(
-                    doc_id in query.useful_doc_ids for doc_id in retrieved_ids
-                )
+                has_correct = any(doc_id in query.useful_doc_ids for doc_id in retrieved_ids)
                 if not has_correct:
                     hallucination_count += 1
 
@@ -259,9 +257,7 @@ class UAETrainingPipeline:
 
         history = training_history or self.dataset.get_conversion_history()
 
-        baseline_benchmark = self._benchmark_retriever(
-            self._baseline_engine, use_uae=False
-        )
+        baseline_benchmark = self._benchmark_retriever(self._baseline_engine, use_uae=False)
 
         if self.progress_callback:
             self.progress_callback(10, 0.1, "Created baseline benchmark")
@@ -303,7 +299,9 @@ class UAETrainingPipeline:
         )
 
         if self.progress_callback:
-            self.progress_callback(80, training_metrics.get("final_loss", 0.0), "Fine-tuning complete")
+            self.progress_callback(
+                80, training_metrics.get("final_loss", 0.0), "Fine-tuning complete"
+            )
 
         uae_benchmark = self._benchmark_retriever(self._uae_engine, use_uae=True)
 
@@ -318,9 +316,7 @@ class UAETrainingPipeline:
         baseline_halluc = self._calculate_hallucination_metrics(
             self._baseline_engine, use_uae=False
         )
-        uae_halluc = self._calculate_hallucination_metrics(
-            self._uae_engine, use_uae=True
-        )
+        uae_halluc = self._calculate_hallucination_metrics(self._uae_engine, use_uae=True)
 
         improvement = 0.0
         if baseline_benchmark.precision_at_k > 0:

@@ -184,7 +184,11 @@ class TokenBudgetEstimator:
         "simple": {"max_loc": 500, "max_classes": 20, "max_depth": 3},
         "moderate": {"max_loc": 2000, "max_classes": 100, "max_depth": 5},
         "complex": {"max_loc": 5000, "max_classes": 250, "max_depth": 7},
-        "very_complex": {"max_loc": float("inf"), "max_classes": float("inf"), "max_depth": float("inf")},
+        "very_complex": {
+            "max_loc": float("inf"),
+            "max_classes": float("inf"),
+            "max_depth": float("inf"),
+        },
     }
 
     def __init__(
@@ -397,7 +401,9 @@ class TokenBudgetEstimator:
         depth_factor = 1 + (metadata.max_class_depth * 0.1)
         complexity_factor = 1 + (metadata.class_count / 500)
 
-        input_tokens = int(loc_factor * depth_factor * complexity_factor * self.CONTEXT_OVERHEAD_FACTOR)
+        input_tokens = int(
+            loc_factor * depth_factor * complexity_factor * self.CONTEXT_OVERHEAD_FACTOR
+        )
 
         input_tokens = max(input_tokens, 5000)
 
@@ -429,18 +435,14 @@ class TokenBudgetEstimator:
         class_factor = metadata.class_count * 0.5
         complexity_tier = self._determine_complexity_tier(metadata)
         complexity_multiplier = (
-            1.0 if complexity_tier == "simple"
-            else 1.5 if complexity_tier == "moderate"
-            else 2.0
+            1.0 if complexity_tier == "simple" else 1.5 if complexity_tier == "moderate" else 2.0
         )
 
         return base_duration + (loc_factor + class_factor) * complexity_multiplier
 
     def start_phase_tracking(self, conversion_id: str) -> None:
         """Start tracking tokens per phase for a conversion"""
-        self._phase_trackers[conversion_id] = {
-            phase: 0 for phase in ConversionPhase
-        }
+        self._phase_trackers[conversion_id] = {phase: 0 for phase in ConversionPhase}
 
     def record_phase_tokens(
         self,
@@ -544,7 +546,10 @@ class TokenBudgetEstimator:
             actual_output_tokens=actual_output,
             actual_cost_usd=actual_cost,
             by_phase={
-                phase.value: {"input_tokens": data.get("input_tokens", 0), "output_tokens": data.get("output_tokens", 0)}
+                phase.value: {
+                    "input_tokens": data.get("input_tokens", 0),
+                    "output_tokens": data.get("output_tokens", 0),
+                }
                 for phase, data in actual_by_phase.items()
             },
             completed_at=datetime.now(timezone.utc),
@@ -562,14 +567,16 @@ class TokenBudgetEstimator:
         self, estimated: EstimatedTokenUsage, actual_total: int, conversion_id: str
     ) -> None:
         """Record historical data for model improvement"""
-        self._historical_data.append({
-            "conversion_id": conversion_id,
-            "estimated_tokens": estimated.total_input_tokens + estimated.total_output_tokens,
-            "actual_tokens": actual_total,
-            "estimated_cost": estimated.estimated_cost_usd,
-            "complexity_tier": estimated.complexity_tier,
-            "timestamp": time.time(),
-        })
+        self._historical_data.append(
+            {
+                "conversion_id": conversion_id,
+                "estimated_tokens": estimated.total_input_tokens + estimated.total_output_tokens,
+                "actual_tokens": actual_total,
+                "estimated_cost": estimated.estimated_cost_usd,
+                "complexity_tier": estimated.complexity_tier,
+                "timestamp": time.time(),
+            }
+        )
 
         if len(self._historical_data) > 1000:
             self._historical_data = self._historical_data[-1000:]

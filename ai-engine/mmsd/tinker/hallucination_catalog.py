@@ -17,20 +17,22 @@ Usage:
 import re
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import List, Pattern, Tuple
+from typing import List, Pattern
 
 
 class HallucinationType(Enum):
     """Hallucination severity classification."""
-    HARD = "hard"           # Completely fabricated APIs (Tier 1, #1648)
-    SEMANTIC = "semantic"   # Valid syntax, invalid semantics (#1647)
-    LINGERING = "lingering" # References to removed/deprecated APIs
+
+    HARD = "hard"  # Completely fabricated APIs (Tier 1, #1648)
+    SEMANTIC = "semantic"  # Valid syntax, invalid semantics (#1647)
+    LINGERING = "lingering"  # References to removed/deprecated APIs
     STRUCTURAL = "structural"  # Incorrect manifest structure patterns
 
 
 @dataclass
 class HallucinationPattern:
     """A single hallucination pattern with metadata."""
+
     id: str
     pattern: str
     regex: Pattern
@@ -44,6 +46,7 @@ class HallucinationPattern:
 @dataclass
 class HallucinationFinding:
     """A detected hallucination in code."""
+
     pattern_id: str
     matched_text: str
     line_number: int
@@ -68,7 +71,7 @@ class HallucinationCatalog:
             penalty=-0.3,
             description="Java-mod-style fake class — ServerPlayerAPI does not exist in Bedrock",
             examples=["ServerPlayerAPI.getPlayer(id)", "ServerPlayerAPI.create()"],
-            fixed_by=["#1648"]
+            fixed_by=["#1648"],
         ),
         HallucinationPattern(
             id="hard_002",
@@ -78,7 +81,7 @@ class HallucinationCatalog:
             penalty=-0.3,
             description="Java-mod-style class — use Player from @minecraft/server",
             examples=["ServerPlayer.sendMessage()", "new ServerPlayer()"],
-            fixed_by=["#1648"]
+            fixed_by=["#1648"],
         ),
         HallucinationPattern(
             id="hard_003",
@@ -88,7 +91,7 @@ class HallucinationCatalog:
             penalty=-0.3,
             description="Non-existent API — Bedrock has no PlayerAPI class",
             examples=["PlayerAPI.getAllPlayers()", "PlayerAPI.create()"],
-            fixed_by=["#1648"]
+            fixed_by=["#1648"],
         ),
         HallucinationPattern(
             id="hard_004",
@@ -98,7 +101,7 @@ class HallucinationCatalog:
             penalty=-0.3,
             description="Non-existent event class — use world.afterEvents or world.beforeEvents",
             examples=["WorldEvent.listen()", "WorldEvent.broadcast()"],
-            fixed_by=["#1648"]
+            fixed_by=["#1648"],
         ),
         HallucinationPattern(
             id="hard_005",
@@ -108,7 +111,7 @@ class HallucinationCatalog:
             penalty=-0.3,
             description="Java mod loader pattern — Bedrock uses different event system",
             examples=["modEventBus.register()", "modEventBus.listen()"],
-            fixed_by=["#1648"]
+            fixed_by=["#1648"],
         ),
         HallucinationPattern(
             id="hard_006",
@@ -118,7 +121,7 @@ class HallucinationCatalog:
             penalty=-0.3,
             description="Non-existent class — use world.getBlock() and Block properties",
             examples=["BlockEntityAPI.get()", "BlockEntityAPI.set()"],
-            fixed_by=["#1648"]
+            fixed_by=["#1648"],
         ),
         HallucinationPattern(
             id="hard_007",
@@ -128,7 +131,7 @@ class HallucinationCatalog:
             penalty=-0.3,
             description="Hybrid Java/Bedrock class that doesn't exist",
             examples=["EntityPlayerAPI.spawn()", "EntityPlayerAPI.getEntities()"],
-            fixed_by=["#1648"]
+            fixed_by=["#1648"],
         ),
         HallucinationPattern(
             id="hard_008",
@@ -138,7 +141,7 @@ class HallucinationCatalog:
             penalty=-0.3,
             description="Non-existent wrapper class — use world directly",
             examples=["WorldAPI.getInstance()", "WorldAPI.createWorld()"],
-            fixed_by=["#1648"]
+            fixed_by=["#1648"],
         ),
         # Non-existent require/define patterns
         HallucinationPattern(
@@ -149,7 +152,7 @@ class HallucinationCatalog:
             penalty=-0.3,
             description="CommonJS require — Bedrock uses ES6 import syntax",
             examples=['require("@minecraft/server")', 'require("@minecraft/server-ui")'],
-            fixed_by=["#1648"]
+            fixed_by=["#1648"],
         ),
         HallucinationPattern(
             id="hard_010",
@@ -159,7 +162,7 @@ class HallucinationCatalog:
             penalty=-0.3,
             description="Java mod loader pattern — Bedrock uses manifest.json",
             examples=["registerMod(myMod)", "registerMod('modId', config)"],
-            fixed_by=["#1648"]
+            fixed_by=["#1648"],
         ),
         HallucinationPattern(
             id="hard_011",
@@ -169,7 +172,7 @@ class HallucinationCatalog:
             penalty=-0.3,
             description="Non-existent mod definition API",
             examples=["defineMod('my_mod', { init: fn })", "defineMod(config)"],
-            fixed_by=["#1648"]
+            fixed_by=["#1648"],
         ),
         # Non-existent methods on known classes
         HallucinationPattern(
@@ -180,7 +183,7 @@ class HallucinationCatalog:
             penalty=-0.3,
             description="Non-existent world method — use dimension.spawnEntity()",
             examples=["world.createLightningBolt(location)", "world.createLightningBolt(player)"],
-            fixed_by=["#1648"]
+            fixed_by=["#1648"],
         ),
         HallucinationPattern(
             id="hard_013",
@@ -190,7 +193,7 @@ class HallucinationCatalog:
             penalty=-0.3,
             description="Non-existent spawn method",
             examples=["dimension.spawnLightning(loc)", "world.spawnLightning()"],
-            fixed_by=["#1648"]
+            fixed_by=["#1648"],
         ),
         HallucinationPattern(
             id="hard_014",
@@ -200,7 +203,7 @@ class HallucinationCatalog:
             penalty=-0.3,
             description="Wrong event registration — use .subscribe() on afterEvents/beforeEvents",
             examples=["player.registerEvent('tick', handler)", "world.registerEvent('tick')"],
-            fixed_by=["#1648"]
+            fixed_by=["#1648"],
         ),
         HallucinationPattern(
             id="hard_015",
@@ -209,8 +212,11 @@ class HallucinationCatalog:
             Hallucination_type=HallucinationType.HARD,
             penalty=-0.3,
             description="Non-existent server event API",
-            examples=["system.registerServerEvent('start', handler)", "world.registerServerEvent()"],
-            fixed_by=["#1648"]
+            examples=[
+                "system.registerServerEvent('start', handler)",
+                "world.registerServerEvent()",
+            ],
+            fixed_by=["#1648"],
         ),
         HallucinationPattern(
             id="hard_016",
@@ -220,7 +226,7 @@ class HallucinationCatalog:
             penalty=-0.3,
             description="Non-existent lifecycle hook — use WorldInitializeEvent or tick events",
             examples=["world.onServerStart(() => {})", "system.onServerStart(run)"],
-            fixed_by=["#1648"]
+            fixed_by=["#1648"],
         ),
         HallucinationPattern(
             id="hard_017",
@@ -230,7 +236,7 @@ class HallucinationCatalog:
             penalty=-0.3,
             description="Non-existent lifecycle hook",
             examples=["world.onServerStop(() => {})", "system.onServerStop(handler)"],
-            fixed_by=["#1648"]
+            fixed_by=["#1648"],
         ),
         # Non-existent static accessors
         HallucinationPattern(
@@ -241,7 +247,7 @@ class HallucinationCatalog:
             penalty=-0.3,
             description="Non-existent event property chain — use event.source or event.dimension",
             examples=["event.level.createBlock()", "event.level.getEntities()"],
-            fixed_by=["#1648"]
+            fixed_by=["#1648"],
         ),
         HallucinationPattern(
             id="hard_019",
@@ -251,7 +257,7 @@ class HallucinationCatalog:
             penalty=-0.3,
             description="Non-existent server method — use world.getDimension()",
             examples=["server.getWorld('overworld')", "server.getWorld('nether')"],
-            fixed_by=["#1648"]
+            fixed_by=["#1648"],
         ),
         HallucinationPattern(
             id="hard_020",
@@ -261,7 +267,7 @@ class HallucinationCatalog:
             penalty=-0.3,
             description="Non-existent static accessor — use system or world directly",
             examples=["getServer().getWorld()", "getServer().sendMessage()"],
-            fixed_by=["#1648"]
+            fixed_by=["#1648"],
         ),
         HallucinationPattern(
             id="hard_021",
@@ -271,7 +277,7 @@ class HallucinationCatalog:
             penalty=-0.3,
             description="Java singleton pattern — Bedrock has no Server singleton",
             examples=["Server.getInstance().getWorld()", "Server.getInstance().broadcast()"],
-            fixed_by=["#1648"]
+            fixed_by=["#1648"],
         ),
         # Non-existent property chains
         HallucinationPattern(
@@ -281,8 +287,11 @@ class HallucinationCatalog:
             Hallucination_type=HallucinationType.HARD,
             penalty=-0.3,
             description="Chained method that doesn't exist in Bedrock API",
-            examples=["block.getTileEntity().getInventory()", "chest.getTileEntity().getInventory()"],
-            fixed_by=["#1648"]
+            examples=[
+                "block.getTileEntity().getInventory()",
+                "chest.getTileEntity().getInventory()",
+            ],
+            fixed_by=["#1648"],
         ),
         HallucinationPattern(
             id="hard_023",
@@ -291,8 +300,11 @@ class HallucinationCatalog:
             Hallucination_type=HallucinationType.HARD,
             penalty=-0.3,
             description="Non-existent block placement API",
-            examples=["world.setBlock(location.getPosition())", "world.setBlock(pos.getPosition())"],
-            fixed_by=["#1648"]
+            examples=[
+                "world.setBlock(location.getPosition())",
+                "world.setBlock(pos.getPosition())",
+            ],
+            fixed_by=["#1648"],
         ),
     ]
 
@@ -303,32 +315,44 @@ class HallucinationCatalog:
         HallucinationPattern(
             id="sem_001",
             pattern=r"import\s+\{[^}]*\bLightningBoltEvent\b[^}]*\}\s+from\s+['\"]@minecraft/server['\"]",
-            regex=re.compile(r"import\s+\{[^}]*\bLightningBoltEvent\b[^}]*\}\s+from\s+['\"]@minecraft/server['\"]", re.IGNORECASE),
+            regex=re.compile(
+                r"import\s+\{[^}]*\bLightningBoltEvent\b[^}]*\}\s+from\s+['\"]@minecraft/server['\"]",
+                re.IGNORECASE,
+            ),
             Hallucination_type=HallucinationType.SEMANTIC,
             penalty=-0.15,
             description="Non-existent event class — LightningBoltEvent doesn't exist",
-            examples=["import { LightningBoltEvent } from '@minecraft/server'", "LightningBoltEvent.subscribe()"],
-            fixed_by=["#1647"]
+            examples=[
+                "import { LightningBoltEvent } from '@minecraft/server'",
+                "LightningBoltEvent.subscribe()",
+            ],
+            fixed_by=["#1647"],
         ),
         HallucinationPattern(
             id="sem_002",
             pattern=r"import\s+\{[^}]*\bPlayerEvent\b[^}]*\}\s+from\s+['\"]@minecraft/server['\"]",
-            regex=re.compile(r"import\s+\{[^}]*\bPlayerEvent\b[^}]*\}\s+from\s+['\"]@minecraft/server['\"]", re.IGNORECASE),
+            regex=re.compile(
+                r"import\s+\{[^}]*\bPlayerEvent\b[^}]*\}\s+from\s+['\"]@minecraft/server['\"]",
+                re.IGNORECASE,
+            ),
             Hallucination_type=HallucinationType.SEMANTIC,
             penalty=-0.15,
             description="Wrong event namespace — use PlayerAfterEvents/PlayerBeforeEvents",
             examples=["import { PlayerEvent } from '@minecraft/server'", "PlayerEvent.subscribe()"],
-            fixed_by=["#1647"]
+            fixed_by=["#1647"],
         ),
         HallucinationPattern(
             id="sem_003",
             pattern=r"import\s+\{[^}]*\bWorldEvent\b[^}]*\}\s+from\s+['\"]@minecraft/server['\"]",
-            regex=re.compile(r"import\s+\{[^}]*\bWorldEvent\b[^}]*\}\s+from\s+['\"]@minecraft/server['\"]", re.IGNORECASE),
+            regex=re.compile(
+                r"import\s+\{[^}]*\bWorldEvent\b[^}]*\}\s+from\s+['\"]@minecraft/server['\"]",
+                re.IGNORECASE,
+            ),
             Hallucination_type=HallucinationType.SEMANTIC,
             penalty=-0.15,
             description="Non-existent event class — use WorldAfterEvents or WorldBeforeEvents",
             examples=["import { WorldEvent } from '@minecraft/server'", "WorldEvent.listen()"],
-            fixed_by=["#1647"]
+            fixed_by=["#1647"],
         ),
         HallucinationPattern(
             id="sem_004",
@@ -338,7 +362,7 @@ class HallucinationCatalog:
             penalty=-0.15,
             description="Ambiguous event class — specify PlayerAfterEvents or PlayerBeforeEvents",
             examples=["world.onPlayerEvent('tick', handler)", "PlayerEvent.broadcast()"],
-            fixed_by=["#1647"]
+            fixed_by=["#1647"],
         ),
     ]
 
@@ -354,76 +378,122 @@ class HallucinationCatalog:
             penalty=-0.1,
             description="Old event registration pattern — use .subscribe() instead",
             examples=["events.tick.register(handler)", "events.blockPlace.register(fn)"],
-            fixed_by=["#1647"]
+            fixed_by=["#1647"],
         ),
         HallucinationPattern(
             id="ling_002",
             pattern=r"import\s+\{[^}]*\}\s+from\s+['\"]minecraft/server['\"]",
-            regex=re.compile(r"import\s+\{[^}]*\}\s+from\s+['\"]minecraft/server['\"]", re.IGNORECASE),
+            regex=re.compile(
+                r"import\s+\{[^}]*\}\s+from\s+['\"]minecraft/server['\"]", re.IGNORECASE
+            ),
             Hallucination_type=HallucinationType.LINGERING,
             penalty=-0.1,
             description="Wrong module path — must be '@minecraft/server' (with @)",
-            examples=['import { world } from "minecraft/server"', "import { player } from 'minecraft/server'"],
-            fixed_by=["#1647"]
+            examples=[
+                'import { world } from "minecraft/server"',
+                "import { player } from 'minecraft/server'",
+            ],
+            fixed_by=["#1647"],
         ),
     ]
 
     # Valid Bedrock classes for semantic validation (#1647)
     VALID_MINECRAFT_CLASSES: set = {
         # Core classes
-        "world", "system", "player", "players", "dimension",
-        "Block", "BlockPermutation", "BlockState", "ItemStack",
-        "Entity", "EntityInventoryComponent", "Player", "Container",
-        "ItemEnchants", "Enchantment", "EnchantmentType",
-        "Vector3", "BoundingBox", "Location",
-        "WorldAfterEvents", "WorldBeforeEvents", "WorldInitializeEvent",
-        "PlayerAfterEvents", "PlayerBeforeEvents",
-        "EntityAfterEvents", "EntityBeforeEvents",
-        "SystemEvents", "TickEvent", "LoadEvent",
-        "PropertyRegistry", "BoolSignProperty", "IntSignProperty",
-        "MessageChannel", "RawMessage", "RawMessageWithArgs",
-        "Scoreboard", "Objective", "ScoreboardIdentity",
-        "BossBar", "BossBarDisplay", "ActionEventData",
-        "IBlock", "IInventory", "IEntity", "IPlayer",
+        "world",
+        "system",
+        "player",
+        "players",
+        "dimension",
+        "Block",
+        "BlockPermutation",
+        "BlockState",
+        "ItemStack",
+        "Entity",
+        "EntityInventoryComponent",
+        "Player",
+        "Container",
+        "ItemEnchants",
+        "Enchantment",
+        "EnchantmentType",
+        "Vector3",
+        "BoundingBox",
+        "Location",
+        "WorldAfterEvents",
+        "WorldBeforeEvents",
+        "WorldInitializeEvent",
+        "PlayerAfterEvents",
+        "PlayerBeforeEvents",
+        "EntityAfterEvents",
+        "EntityBeforeEvents",
+        "SystemEvents",
+        "TickEvent",
+        "LoadEvent",
+        "PropertyRegistry",
+        "BoolSignProperty",
+        "IntSignProperty",
+        "MessageChannel",
+        "RawMessage",
+        "RawMessageWithArgs",
+        "Scoreboard",
+        "Objective",
+        "ScoreboardIdentity",
+        "BossBar",
+        "BossBarDisplay",
+        "ActionEventData",
+        "IBlock",
+        "IInventory",
+        "IEntity",
+        "IPlayer",
         # Event classes
-        "BlockEvent", "BlockHitEvent", "BlockPlaceEvent", "BlockDestroyEvent",
-        "EntityEvent", "PlayerSpawnEvent",
-        "ItemUseEvent", "ItemUseOnEvent",
-        "ProjectileHitEvent", "ExplosionEvent",
-        "EntityDieEvent", "EntityHealthChangedEvent",
+        "BlockEvent",
+        "BlockHitEvent",
+        "BlockPlaceEvent",
+        "BlockDestroyEvent",
+        "EntityEvent",
+        "PlayerSpawnEvent",
+        "ItemUseEvent",
+        "ItemUseOnEvent",
+        "ProjectileHitEvent",
+        "ExplosionEvent",
+        "EntityDieEvent",
+        "EntityHealthChangedEvent",
         "PlayerDimensionChangeEvent",
         # Component classes
-        "MinecraftEntityTypes", "MinecraftBlockTypes", "MinecraftItemTypes",
+        "MinecraftEntityTypes",
+        "MinecraftBlockTypes",
+        "MinecraftItemTypes",
         # Other
-        "DynamicPropertiesDefinition", "PropertyDefinition",
+        "DynamicPropertiesDefinition",
+        "PropertyDefinition",
     }
 
     @property
     def all_patterns(self) -> List[HallucinationPattern]:
         """Get all hallucination patterns."""
         return (
-            self.HARD_HALLUCINATIONS +
-            self.SEMANTIC_HALLUCINATIONS +
-            self.LINGERING_HALLUCINATIONS
+            self.HARD_HALLUCINATIONS + self.SEMANTIC_HALLUCINATIONS + self.LINGERING_HALLUCINATIONS
         )
 
     def detect(self, code: str) -> List[HallucinationFinding]:
         """Detect hallucinations in code."""
         findings = []
-        lines = code.split('\n')
+        lines = code.split("\n")
 
         for pattern in self.all_patterns:
             for line_num, line in enumerate(lines, 1):
                 matches = pattern.regex.finditer(line)
                 for match in matches:
-                    findings.append(HallucinationFinding(
-                        pattern_id=pattern.id,
-                        matched_text=match.group(),
-                        line_number=line_num,
-                        context=line.strip(),
-                        hallucination_type=pattern.Hallucination_type,
-                        penalty=pattern.penalty
-                    ))
+                    findings.append(
+                        HallucinationFinding(
+                            pattern_id=pattern.id,
+                            matched_text=match.group(),
+                            line_number=line_num,
+                            context=line.strip(),
+                            hallucination_type=pattern.Hallucination_type,
+                            penalty=pattern.penalty,
+                        )
+                    )
 
         return findings
 
@@ -448,8 +518,12 @@ class HallucinationCatalog:
             "total_findings": len(findings),
             "by_type": {
                 "hard": sum(1 for f in findings if f.hallucination_type == HallucinationType.HARD),
-                "semantic": sum(1 for f in findings if f.hallucination_type == HallucinationType.SEMANTIC),
-                "lingering": sum(1 for f in findings if f.hallucination_type == HallucinationType.LINGERING),
+                "semantic": sum(
+                    1 for f in findings if f.hallucination_type == HallucinationType.SEMANTIC
+                ),
+                "lingering": sum(
+                    1 for f in findings if f.hallucination_type == HallucinationType.LINGERING
+                ),
             },
             "total_penalty": self.count_total_penalty(code),
             "findings": [
@@ -459,10 +533,10 @@ class HallucinationCatalog:
                     "type": f.hallucination_type.value,
                     "penalty": f.penalty,
                     "matched": f.matched_text,
-                    "context": f.context
+                    "context": f.context,
                 }
                 for f in sorted(findings, key=lambda x: x.line_number)
-            ]
+            ],
         }
 
 

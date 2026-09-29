@@ -258,31 +258,37 @@ class BlockItemGenerator:
     def _convert_java_block(self, java_block: Dict[str, Any]) -> Dict[str, Any]:
         """Convert a single Java block to Bedrock format."""
         from agents.entity.block_generator import convert_java_block as convert
+
         return convert(java_block)
 
     def _convert_java_item(self, java_item: Dict[str, Any]) -> Dict[str, Any]:
         """Convert a single Java item to Bedrock format."""
         from agents.entity.item_generator import convert_java_item as convert
+
         return convert(java_item)
 
     def _parse_java_block_properties(self, java_block: Dict[str, Any]) -> BlockProperties:
         """Parse Java block properties."""
         from agents.entity.nbt_parser import parse_java_block_properties as parse
+
         return parse(java_block)
 
     def _parse_java_item_properties(self, java_item: Dict[str, Any]) -> ItemProperties:
         """Parse Java item properties."""
         from agents.entity.nbt_parser import parse_java_item_properties as parse
+
         return parse(java_item)
 
     def _determine_block_category(self, java_block: Dict[str, Any]) -> Optional[str]:
         """Determine appropriate creative menu category for block."""
         from agents.entity.block_state_parser import determine_block_category
+
         return determine_block_category(java_block)
 
     def _determine_item_category(self, java_item: Dict[str, Any]) -> Optional[str]:
         """Determine appropriate creative menu category for item."""
         from agents.entity.block_state_parser import determine_item_category
+
         return determine_item_category(java_item)
 
     def _write_json_files(
@@ -327,6 +333,7 @@ class BlockItemGenerator:
 
 class MaterialType:
     """Material type enum for backward compatibility."""
+
     STONE = "stone"
     WOOD = "wood"
     METAL = "metal"
@@ -342,6 +349,7 @@ class MaterialType:
 
 class ToolType:
     """Tool type enum for backward compatibility."""
+
     PICKAXE = "pickaxe"
     AXE = "axe"
     SHOVEL = "shovel"
@@ -355,6 +363,7 @@ class ToolType:
 
 class ArmorType:
     """Armor type enum for backward compatibility."""
+
     HELMET = "helmet"
     CHESTPLATE = "chestplate"
     LEGGINGS = "leggings"

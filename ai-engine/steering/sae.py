@@ -31,6 +31,7 @@ logger = logging.getLogger(__name__)
 
 class SAEOutputType(str, Enum):
     """What the SAE model returns"""
+
     SPARSE_ACTIVATIONS = "sparse_activations"  # Top-k activated features
     DENSE_ACTIVATIONS = "dense_activations"  # All features before sparsification
     RECONSTRUCTED = "reconstructed"  # Reconstructed hidden states
@@ -39,6 +40,7 @@ class SAEOutputType(str, Enum):
 @dataclass
 class SAEConfig:
     """Configuration for SAE model"""
+
     # SAE model endpoint (OpenAI-compatible)
     endpoint_url: Optional[str] = None
     api_key: Optional[str] = None
@@ -60,6 +62,7 @@ class SAEConfig:
 @dataclass
 class SAEResult:
     """Result from running text through SAE"""
+
     text: str
     features: List[int]  # Feature indices
     activations: List[float]  # Activation values
@@ -143,12 +146,13 @@ class SAEClient:
     def run(self, text: str, top_k: Optional[int] = None) -> SAEResult:
         """Synchronous wrapper for run_async"""
         import asyncio
+
         try:
             loop = asyncio.get_event_loop()
             if loop.is_running():
                 # Create future if loop is running
                 future = asyncio.ensure_future(self.run_async(text, top_k))
-                return future.result() if hasattr(future, 'result') else None
+                return future.result() if hasattr(future, "result") else None
             else:
                 return loop.run_until_complete(self.run_async(text, top_k))
         except RuntimeError:
@@ -166,6 +170,7 @@ class SAEClient:
         """Run SAE inference via remote endpoint"""
         try:
             import httpx
+
             headers = {}
             if self.config.api_key:
                 headers["Authorization"] = f"Bearer {self.config.api_key}"
@@ -178,7 +183,7 @@ class SAEClient:
                         "text": text,
                         "top_k": top_k,
                         "threshold": self.config.threshold,
-                    }
+                    },
                 )
                 response.raise_for_status()
                 data = response.json()
@@ -188,7 +193,8 @@ class SAEClient:
                     features=data.get("features", []),
                     activations=data.get("activations", []),
                     dense_activations=np.array(data.get("dense_activations", []))
-                    if data.get("dense_activations") else None,
+                    if data.get("dense_activations")
+                    else None,
                     sparsity=data.get("sparsity", 0.0),
                     metadata=data.get("metadata", {}),
                 )
@@ -304,7 +310,6 @@ FEATURE_NAMES = {
     1007: "java_entity_superclass",
     1008: "java_capability_pattern",
     1009: "java_registry_pattern",
-
     # Java class structure patterns
     2000: "java_class_declaration",
     2001: "java_import_statement",
@@ -316,7 +321,6 @@ FEATURE_NAMES = {
     2007: "java_enum_usage",
     2008: "java_interface_usage",
     2009: "java_abstract_class",
-
     # Java API patterns
     3000: "forge_event_handlers",
     3001: "minecraft_server_api",
@@ -328,7 +332,6 @@ FEATURE_NAMES = {
     3007: "client_side_handlers",
     3008: "server_side_handlers",
     3009: "network_packet_pattern",
-
     # Bedrock desired patterns (encourage these)
     4000: "bedrock_js_syntax",
     4001: "bedrock_event_subscribe",

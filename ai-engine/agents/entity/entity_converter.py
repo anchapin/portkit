@@ -20,6 +20,7 @@ from agents.entity.attribute_mapper import (
     apply_entity_properties,
     build_behavior_config,
 )
+from agents.entity.client_entity_generator import generate_client_entity
 from agents.entity.nbt_parser import EntityProperties, EntityType
 from agents.entity.type_registry import add_ai_goals, create_entity_description
 
@@ -191,6 +192,14 @@ class EntityConverter:
                 animation_controllers = self._generate_animation_controllers(java_entity, entity_id)
                 if animation_controllers:
                     bedrock_entities[f"{entity_id}_animation_controllers"] = animation_controllers
+
+                # Issue #1773: emit the resource-pack client-entity definition that
+                # binds this identifier to geometry/texture/material/render controllers
+                # so the mob actually renders in Bedrock. Mirrors the identifier and
+                # the animation-controller keys computed above to keep BP/RP in parity.
+                client_entity = generate_client_entity(bedrock_entity, java_entity)
+                if client_entity:
+                    bedrock_entities[f"{entity_id}_client_entity"] = client_entity
 
             except Exception as e:
                 logger.error(f"Failed to convert entity {java_entity.get('id', 'unknown')}: {e}")
@@ -424,6 +433,7 @@ class EntityConverter:
     def _parse_java_entity_properties(self, java_entity: Dict[str, Any]) -> EntityProperties:
         """Parse Java entity properties."""
         from agents.entity.nbt_parser import parse_java_entity_properties as parse
+
         return parse(java_entity)
 
     def _apply_entity_properties(self, components: Dict[str, Any], properties: EntityProperties):
@@ -499,6 +509,7 @@ class EntityConverter:
             Dictionary of Bedrock behavior components
         """
         from agents.entity.type_registry import convert_ai_goals as convert
+
         return convert(java_goals)
 
     def _generate_entity_behaviors(self, java_entity: Dict[str, Any]) -> Optional[Dict[str, Any]]:
@@ -545,6 +556,7 @@ class EntityConverter:
             "animations": [],
             "spawn_rules": [],
             "loot_tables": [],
+            "entities_rp": [],
         }
 
         bp_entities_dir = bp_path / "entities"
@@ -588,6 +600,17 @@ class EntityConverter:
                         json.dump(entity_data, f, indent=2, ensure_ascii=False)
                     written_files["animations"].append(anim_file)
 
+                elif entity_key.endswith("_client_entity"):
+                    # Issue #1773: write the resource-pack client-entity
+                    # definition (minecraft:client_entity) that wires
+                    # geometry/texture/material/render controllers so the
+                    # mob renders in Bedrock.
+                    entity_id = entity_key.replace("_client_entity", "")
+                    client_file = rp_entity_dir / f"{entity_id.split(':')[-1]}.entity.json"
+                    with open(client_file, "w", encoding="utf-8") as f:
+                        json.dump(entity_data, f, indent=2, ensure_ascii=False)
+                    written_files["entities_rp"].append(client_file)
+
                 else:
                     entity_file = bp_entities_dir / f"{entity_key.split(':')[-1]}.json"
                     with open(entity_file, "w", encoding="utf-8") as f:
@@ -603,7 +626,8 @@ class EntityConverter:
             f"{len(written_files['behaviors'])} behaviors, "
             f"{len(written_files['animations'])} animations, "
             f"{len(written_files['spawn_rules'])} spawn_rules, "
-            f"{len(written_files['loot_tables'])} loot_tables to disk"
+            f"{len(written_files['loot_tables'])} loot_tables, "
+            f"{len(written_files['entities_rp'])} client_entities to disk"
         )
 
         return written_files
@@ -611,6 +635,7 @@ class EntityConverter:
 
 class EntityType:
     """Entity type enum for backward compatibility."""
+
     PASSIVE = "passive"
     NEUTRAL = "neutral"
     HOSTILE = "hostile"
@@ -621,6 +646,7 @@ class EntityType:
 
 class MobCategory:
     """Mob category enum for backward compatibility."""
+
     HOSTILE = "hostile"
     PASSIVE = "passive"
     NEUTRAL = "neutral"

@@ -351,6 +351,9 @@ class ConversionFeedback(Base):
     user_id: Mapped[Optional[str]] = mapped_column(String, nullable=True)
     feedback_type: Mapped[str] = mapped_column(String(50), nullable=False)
     comment: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    is_anonymized: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, server_default=text("'false'")
+    )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now()
     )

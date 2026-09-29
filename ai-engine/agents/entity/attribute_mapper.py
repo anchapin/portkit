@@ -174,9 +174,7 @@ def apply_entity_properties(components: Dict[str, Any], properties: EntityProper
         }
 
     if properties.knockback_resistance > 0:
-        components["minecraft:knockback_resistance"] = {
-            "value": properties.knockback_resistance
-        }
+        components["minecraft:knockback_resistance"] = {"value": properties.knockback_resistance}
 
     if not properties.can_swim:
         components["minecraft:navigation.walk"]["avoid_water"] = True
@@ -275,9 +273,7 @@ def build_behavior_config(
     if "distance" in goal_config:
         if goal_type in ["follow", "follow_player"]:
             config["start_distance"] = goal_config["distance"]
-            config["stop_distance"] = goal_config.get(
-                "stop_distance", goal_config["distance"] / 2
-            )
+            config["stop_distance"] = goal_config.get("stop_distance", goal_config["distance"] / 2)
 
     if goal_type in ["melee_attack", "attack", "attack_entity"]:
         config["track_target"] = goal_config.get("track_target", True)

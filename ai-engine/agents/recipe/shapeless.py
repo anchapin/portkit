@@ -23,6 +23,12 @@ class ShapelessRecipeConverter:
                 item_data_val = ingredient.get("data", 0)
 
                 bedrock_item = self._map_java_item(item_data)
+                if bedrock_item is None:
+                    return self._create_manual_review_result(
+                        namespace,
+                        recipe_name,
+                        f"Unresolved tag ingredient: {item_data}",
+                    )
 
                 ingredient_entry = {"item": bedrock_item, "data": item_data_val}
                 if item_count > 1:
@@ -30,10 +36,26 @@ class ShapelessRecipeConverter:
 
                 bedrock_ingredients.append(ingredient_entry)
             elif isinstance(ingredient, str):
-                bedrock_ingredients.append({"item": self._map_java_item(ingredient), "data": 0})
+                bedrock_item = self._map_java_item(ingredient)
+                if bedrock_item is None:
+                    return self._create_manual_review_result(
+                        namespace,
+                        recipe_name,
+                        f"Unresolved tag ingredient: {ingredient}",
+                    )
+                bedrock_ingredients.append({"item": bedrock_item, "data": 0})
+
+        result_item = normalized_recipe.get("result_item", "")
+        bedrock_result_item = self._map_java_item(result_item)
+        if bedrock_result_item is None:
+            return self._create_manual_review_result(
+                namespace,
+                recipe_name,
+                f"Unresolved tag ingredient: {result_item}",
+            )
 
         bedrock_result = {
-            "item": self._map_java_item(normalized_recipe.get("result_item", "")),
+            "item": bedrock_result_item,
             "data": normalized_recipe.get("result_data", 0),
             "count": normalized_recipe.get("result_count", 1),
         }
@@ -49,6 +71,17 @@ class ShapelessRecipeConverter:
         }
 
         return bedrock_recipe
+
+    def _create_manual_review_result(self, namespace: str, recipe_name: str, reason: str) -> Dict:
+        """Create a result indicating the recipe requires manual review."""
+        return {
+            "format_version": "1.20.10",
+            "manual_review_required": True,
+            "reason": reason,
+            "original_recipe": f"{namespace}:{recipe_name}",
+            "description": {"identifier": f"{namespace}:{recipe_name}"},
+            "portkit:unresolved_tag": True,
+        }
 
 
 __all__ = ["ShapelessRecipeConverter"]

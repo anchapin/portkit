@@ -436,6 +436,9 @@ def get_behaviors_by_type(behavior_type: EntityBehaviorType) -> List[BehaviorPat
     ]
 
 
+_unmapped_goal_count = 0
+
+
 def convert_java_goal_to_bedrock(
     java_goal: Dict[str, Any],
     override_defaults: Optional[Dict[str, Any]] = None,
@@ -448,28 +451,33 @@ def convert_java_goal_to_bedrock(
         override_defaults: Optional overrides for default config
 
     Returns:
-        Bedrock behavior component dictionary
+        Bedrock behavior component dictionary; unmapped goals return
+        {"minecraft:behavior.<unmapped>": {...}, "_unmapped": True}
     """
-    goal_type = java_goal.get("type", "").lower()
+    global _unmapped_goal_count
+    goal_type = java_goal.get("type", "").strip().lower()
     goal_config = java_goal.get("config", {})
     priority = java_goal.get("priority", None)
 
     pattern = get_behavior_pattern(goal_type)
     if not pattern:
-        return {}
+        _unmapped_goal_count += 1
+        unmapped_config = {"priority": priority} if priority is not None else {}
+        if goal_config:
+            unmapped_config["_raw_config"] = goal_config
+        return {
+            f"minecraft:behavior.{goal_type}": unmapped_config,
+            "_unmapped": True,
+        }
 
-    # Start with default config
     result = pattern.default_config.copy()
 
-    # Override with goal-specific config
     if goal_config:
         result.update(goal_config)
 
-    # Override with user-specified overrides
     if override_defaults:
         result.update(override_defaults)
 
-    # Set priority if specified
     if priority is not None:
         result["priority"] = priority
     else:
@@ -555,7 +563,14 @@ def get_behavior_stats() -> Dict[str, int]:
         "interaction_behaviors": len(get_behaviors_by_type(EntityBehaviorType.INTERACTION)),
         "specialized_behaviors": len(get_behaviors_by_type(EntityBehaviorType.SPECIALIZED)),
         "entity_templates": len(get_entity_ai_templates()),
+        "unmapped_goal_count": _unmapped_goal_count,
     }
+
+
+def reset_unmapped_goal_count() -> None:
+    """Reset the unmapped goal counter (for testing)."""
+    global _unmapped_goal_count
+    _unmapped_goal_count = 0
 
 
 # Export commonly used items
@@ -570,4 +585,5 @@ __all__ = [
     "convert_java_goal_to_bedrock",
     "get_entity_ai_templates",
     "get_behavior_stats",
+    "reset_unmapped_goal_count",
 ]

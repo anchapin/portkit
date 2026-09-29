@@ -11,7 +11,6 @@ Usage:
 """
 
 import argparse
-import os
 import subprocess
 import sys
 from pathlib import Path
@@ -119,6 +118,7 @@ def deploy_model(model_key: str, model_path: str | None, ollama_name: str | None
 
     # Copy template
     import shutil
+
     shutil.copy(MODELFILE_TEMPLATE, modelfile_path)
 
     # Replace FROM line with actual model path
@@ -127,7 +127,9 @@ def deploy_model(model_key: str, model_path: str | None, ollama_name: str | None
         gguf_path = gguf_files[0].relative_to(model_dir)
         with open(modelfile_path, "r") as f:
             content = f.read()
-        content = content.replace("./model/portkit-coder-gguf", f"./{gguf_path.parent}/{gguf_path.name}")
+        content = content.replace(
+            "./model/portkit-coder-gguf", f"./{gguf_path.parent}/{gguf_path.name}"
+        )
         with open(modelfile_path, "w") as f:
             f.write(content)
         print(f"Updated Modelfile to use GGUF: {gguf_path}")
@@ -144,10 +146,7 @@ def deploy_model(model_key: str, model_path: str | None, ollama_name: str | None
     print(f"Using Modelfile: {modelfile_path}")
 
     # Create model in Ollama
-    result = run_command(
-        ["ollama", "create", name, "-f", str(modelfile_path)],
-        check=False
-    )
+    result = run_command(["ollama", "create", name, "-f", str(modelfile_path)], check=False)
 
     if result.returncode == 0:
         print(f"\n✅ Model '{name}' created successfully!")
@@ -172,16 +171,17 @@ Examples:
   python deploy_to_ollama.py --list
   python deploy_to_ollama.py --model grpo6 --model-path /path/to/exported/model
   python deploy_to_ollama.py --model grpo8 --ollama-name portkit-coder-v8
-        """
+        """,
     )
-    parser.add_argument("--list", "-l", action="store_true",
-                        help="List available models")
-    parser.add_argument("--model", "-m", choices=list(MODELS.keys()),
-                        help="Model to deploy (grpo6, grpo7, grpo8, sft1)")
-    parser.add_argument("--model-path", "-p",
-                        help="Path to exported model directory")
-    parser.add_argument("--ollama-name", "-o",
-                        help="Custom name for the Ollama model")
+    parser.add_argument("--list", "-l", action="store_true", help="List available models")
+    parser.add_argument(
+        "--model",
+        "-m",
+        choices=list(MODELS.keys()),
+        help="Model to deploy (grpo6, grpo7, grpo8, sft1)",
+    )
+    parser.add_argument("--model-path", "-p", help="Path to exported model directory")
+    parser.add_argument("--ollama-name", "-o", help="Custom name for the Ollama model")
 
     args = parser.parse_args()
 

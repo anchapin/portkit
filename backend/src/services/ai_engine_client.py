@@ -12,6 +12,8 @@ from typing import Optional, Dict, Any, AsyncIterator
 
 import httpx
 
+from services.tracing import inject_trace_context
+
 logger = logging.getLogger(__name__)
 
 # AI Engine configuration
@@ -117,9 +119,13 @@ class AIEngineClient:
             if experiment_variant:
                 request_data["experiment_variant"] = experiment_variant
 
+            trace_headers: Dict[str, str] = {}
+            inject_trace_context(trace_headers)
+
             response = await client.post(
                 "/api/v1/convert",
                 json=request_data,
+                headers=trace_headers,
             )
 
             if response.status_code != 200:

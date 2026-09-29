@@ -47,11 +47,7 @@ def validate_manifest(manifest: dict, path: str) -> Dict[str, Any]:
 
     checks += 1
     version = header.get("version", [])
-    if (
-        isinstance(version, list)
-        and len(version) == 3
-        and all(isinstance(v, int) for v in version)
-    ):
+    if isinstance(version, list) and len(version) == 3 and all(isinstance(v, int) for v in version):
         passed += 1
     else:
         errors.append(f"{path}: Version must be array of 3 integers, got {version}")
@@ -68,7 +64,9 @@ def validate_manifest(manifest: dict, path: str) -> Dict[str, Any]:
                 f"(Bedrock Scripting API 2.x requires [1, 21, 0])"
             )
     else:
-        errors.append(f"{path}: min_engine_version must be array of 3 integers, got {min_engine_version}")
+        errors.append(
+            f"{path}: min_engine_version must be array of 3 integers, got {min_engine_version}"
+        )
 
     checks += 1
     modules = manifest.get("modules", [])
@@ -87,9 +85,7 @@ def validate_manifest(manifest: dict, path: str) -> Dict[str, Any]:
     return {"checks": checks, "passed": passed, "errors": errors, "warnings": warnings}
 
 
-def validate_manifest_files(
-    zipf, namelist: List[str]
-) -> Dict[str, Any]:
+def validate_manifest_files(zipf, namelist: List[str]) -> Dict[str, Any]:
     """Validate all manifest.json files in a ZIP archive."""
     checks = 0
     passed = 0

@@ -148,6 +148,78 @@ def check_js_syntax(js_code: Optional[str]) -> dict:
         return {"valid": False, "reason": str(e)}
 
 
+def check_hallucination(js_code: Optional[str]) -> dict:
+    """
+    Check Bedrock JS for hallucinated API patterns (issue #1678).
+
+    Returns dict with:
+      - hallucinated: bool — True if any hallucinated API found
+      - apis: list[str] — hallucinated API names found
+      - rate: float — hallucination rate (hallucinated / (hallucinated + valid))
+    """
+    if not js_code:
+        return {"hallucinated": False, "apis": [], "rate": 0.0}
+
+    hallucinated_apis: list[str] = []
+    valid_apis: list[str] = []
+
+    forbidden_patterns = [
+        (r"\bServerPlayerAPI\b", "ServerPlayerAPI"),
+        (r"\bServerPlayer\b", "ServerPlayer"),
+        (r"\bPlayerAPI\b", "PlayerAPI"),
+        (r"\bWorldEvent\b", "WorldEvent"),
+        (r"\bmodEventBus\b", "modEventBus"),
+        (r"\bBlockEntityAPI\b", "BlockEntityAPI"),
+        (r"\bEntityPlayerAPI\b", "EntityPlayerAPI"),
+        (r"\bWorldAPI\b", "WorldAPI"),
+        (r'require\(["\']@minecraft/server["\']\)', "require(@minecraft/server)"),
+        (r"\bregisterMod\(", "registerMod"),
+        (r"\bdefineMod\(", "defineMod"),
+        (r"\.createLightningBolt\(", "createLightningBolt"),
+        (r"\.spawnLightning\(", "spawnLightning"),
+        (r"\.registerEvent\(", "registerEvent"),
+        (r"\.registerServerEvent\(", "registerServerEvent"),
+        (r"\.onServerStart\(", "onServerStart"),
+        (r"\.onServerStop\(", "onServerStop"),
+        (r"event\.level\.", "event.level"),
+        (r"server\.getWorld\(", "server.getWorld"),
+        (r"getServer\(\)", "getServer"),
+        (r"Server\.getInstance\(\)", "Server.getInstance"),
+    ]
+
+    import re
+
+    for pattern_str, name in forbidden_patterns:
+        if re.search(pattern_str, js_code, re.IGNORECASE):
+            hallucinated_apis.append(name)
+
+    valid_patterns = [
+        (r"world\.afterEvents", "world.afterEvents"),
+        (r"world\.beforeEvents", "world.beforeEvents"),
+        (r"player\.afterEvents", "player.afterEvents"),
+        (r"player\.beforeEvents", "player.beforeEvents"),
+        (r"system\.run", "system.run"),
+        (r"dimension\.spawnEntity", "dimension.spawnEntity"),
+        (r"player\.sendMessage", "player.sendMessage"),
+        (r"player\.getComponent", "player.getComponent"),
+        (r"\.subscribe\(", ".subscribe"),
+        (r"world\.getDimension", "world.getDimension"),
+        (r"world\.playSound", "world.playSound"),
+    ]
+    for pattern_str, name in valid_patterns:
+        if re.search(pattern_str, js_code):
+            valid_apis.append(name)
+
+    total = len(hallucinated_apis) + len(valid_apis)
+    rate = len(hallucinated_apis) / max(1, total)
+
+    return {
+        "hallucinated": len(hallucinated_apis) > 0,
+        "apis": hallucinated_apis,
+        "rate": rate,
+    }
+
+
 def compute_perplexity(model, tokenizer, texts: list[str], device: str = "cuda") -> float:
     """Compute perplexity on a set of texts."""
     import math
@@ -259,6 +331,8 @@ def main():
         js_valid_count = 0
         js_check_available = True
         generation_times = []
+        hallucinated_samples = 0
+        total_hallucination_rate = 0.0
 
         for i, pair in enumerate(eval_pairs):
             prompt = EVAL_PROMPT_TEMPLATE.format(
@@ -308,11 +382,19 @@ def main():
                 elif js_result["valid"]:
                     js_valid_count += 1
 
+            # Check hallucination (issue #1678)
+            halluc_result = check_hallucination(js_code)
+            if halluc_result["hallucinated"]:
+                hallucinated_samples += 1
+            total_hallucination_rate += halluc_result["rate"]
+
             if (i + 1) % 10 == 0:
+                avg_halluc_rate = total_hallucination_rate / (i + 1)
                 print(
                     f"  [{i + 1}/{len(eval_pairs)}] "
                     f"JSON valid: {json_valid_count}/{i + 1}, "
                     f"JS valid: {js_valid_count}/{i + 1}, "
+                    f"Hallucination rate: {avg_halluc_rate:.1%} "
                     f"Avg time: {sum(generation_times) / len(generation_times):.1f}s"
                 )
 
@@ -339,6 +421,12 @@ def main():
             "avg_generation_time_s": sum(generation_times) / len(generation_times)
             if generation_times
             else 0,
+            # Hallucination metrics (issue #1678)
+            "hallucination_rate": total_hallucination_rate / len(eval_pairs) if eval_pairs else 0.0,
+            "hallucination_pct": 100 * hallucinated_samples / len(eval_pairs)
+            if eval_pairs
+            else 0.0,
+            "hallucinated_samples": hallucinated_samples,
         }
         results[model_label] = model_results
 
@@ -362,9 +450,20 @@ def main():
         print("=" * 60)
         print(f"{'Metric':<25} {'Baseline':>15} {'Fine-tuned':>15}")
         print("-" * 60)
-        for metric in ["bleu", "json_valid_pct", "js_valid_pct", "perplexity"]:
+        for metric in [
+            "bleu",
+            "json_valid_pct",
+            "js_valid_pct",
+            "hallucination_rate",
+            "perplexity",
+        ]:
             baseline_val = results.get("baseline", {}).get(metric, "N/A")
             ft_val = results.get("finetuned", {}).get(metric, "N/A")
+            if metric == "hallucination_rate":
+                baseline_val = (
+                    f"{baseline_val:.1%}" if isinstance(baseline_val, float) else baseline_val
+                )
+                ft_val = f"{ft_val:.1%}" if isinstance(ft_val, float) else ft_val
             print(f"{metric:<25} {str(baseline_val):>15} {str(ft_val):>15}")
 
 

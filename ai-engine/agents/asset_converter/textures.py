@@ -46,7 +46,13 @@ def detect_texture_atlas(agent, texture_path: str) -> Dict:
     return detect_texture_atlas(agent, texture_path)
 
 
-def extract_texture_atlas(agent, atlas_path: str, output_dir: str, tile_size: int = 16, naming_pattern: str = "tile_{x}_{y}") -> Dict:
+def extract_texture_atlas(
+    agent,
+    atlas_path: str,
+    output_dir: str,
+    tile_size: int = 16,
+    naming_pattern: str = "tile_{x}_{y}",
+) -> Dict:
     """Extract individual textures from an atlas."""
     return extract_texture_atlas(agent, atlas_path, output_dir, tile_size, naming_pattern)
 
@@ -56,7 +62,9 @@ def parse_atlas_metadata(agent, mcmeta_path: str) -> Dict:
     return parse_atlas_metadata(agent, mcmeta_path)
 
 
-def convert_atlas_to_bedrock(agent, atlas_path: str, output_dir: str, texture_names: List[str] = None) -> Dict:
+def convert_atlas_to_bedrock(
+    agent, atlas_path: str, output_dir: str, texture_names: List[str] = None
+) -> Dict:
     """Convert a texture atlas to Bedrock format."""
     return convert_atlas_to_bedrock(agent, atlas_path, output_dir, texture_names)
 
@@ -71,7 +79,9 @@ def validate_texture(agent, texture_path: str) -> Dict:
     return _validate_texture(agent, texture_path)
 
 
-def generate_fallback_for_jar(agent, output_path: str, block_name: str, texture_type: str = "blocks") -> Dict:
+def generate_fallback_for_jar(
+    agent, output_path: str, block_name: str, texture_type: str = "blocks"
+) -> Dict:
     """Generate a fallback texture for a JAR mod."""
     return generate_fallback_for_jar(agent, output_path, block_name, texture_type)
 
@@ -91,7 +101,9 @@ def _assess_conversion_complexity(agent, analysis: Dict) -> str:
     return _assess_conversion_complexity(agent, analysis)
 
 
-def extract_textures_from_jar(agent, jar_path: str, output_dir: str, texture_types: Optional[List[str]] = None) -> Dict:
+def extract_textures_from_jar(
+    agent, jar_path: str, output_dir: str, texture_types: Optional[List[str]] = None
+) -> Dict:
     """Extract textures from a Java mod JAR file."""
     return _extract_textures_from_jar(agent, jar_path, output_dir, texture_types)
 
@@ -126,7 +138,9 @@ def extract_texture_atlas_from_jar(agent, jar_path: str, atlas_type: str, output
     return extract_texture_atlas_from_jar(agent, jar_path, atlas_type, output_dir)
 
 
-def convert_jar_textures_to_bedrock(agent, jar_path: str, output_dir: str, namespace: str = None) -> Dict:
+def convert_jar_textures_to_bedrock(
+    agent, jar_path: str, output_dir: str, namespace: str = None
+) -> Dict:
     """Convert all textures from a JAR to Bedrock format."""
     return convert_jar_textures_to_bedrock(agent, jar_path, output_dir, namespace)
 
@@ -146,7 +160,9 @@ def _extract_textures_from_alt_locations(agent, jar, output_path: Path):
     return _extract_textures_from_alt_locations(agent, jar, output_path)
 
 
-def _convert_single_texture(agent, texture_path: str, metadata: Dict, usage: str, output_dir: Path = None) -> Dict:
+def _convert_single_texture(
+    agent, texture_path: str, metadata: Dict, usage: str, output_dir: Path = None
+) -> Dict:
     """Convert a single texture to Bedrock format."""
     return _tc_convert_single_texture(agent, texture_path, metadata, usage, output_dir)
 

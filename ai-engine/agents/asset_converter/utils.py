@@ -4,8 +4,6 @@ Asset Converter Agent - Utilities module.
 Contains standalone utility functions.
 """
 
-from typing import List
-
 
 def is_power_of_2(n: int) -> bool:
     """Check if a number is a power of 2"""

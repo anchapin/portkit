@@ -119,7 +119,7 @@ class TestWorkerPool:
 
     def test_start_process_pool(self):
         with patch('multiprocessing.cpu_count', return_value=2), \
-             patch('orchestration.worker_pool.ProcessPoolExecutor') as mock_exec:
+             patch('orchestration.pool.worker_pool.ProcessPoolExecutor') as mock_exec:
             pool = WorkerPool(max_workers=2, worker_type=WorkerType.PROCESS)
             pool.start()
             assert mock_exec.called
@@ -205,7 +205,7 @@ class TestWorkerPool:
         
         # Mock as_completed to return a future not in our list
         mock_future = MagicMock()
-        with patch('orchestration.worker_pool.as_completed', return_value=[mock_future]):
+        with patch('orchestration.pool.worker_pool.as_completed', return_value=[mock_future]):
             results = pool.wait_for_completion([t1], timeout=0.1)
             # Should continue loop and handle it
             assert len(results["completed"]) == 0

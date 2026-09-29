@@ -77,9 +77,7 @@ class ReasoningPattern:
         if not self.steps:
             raise ValueError("Pattern must have at least one step")
         if self.success_threshold < 0 or self.success_threshold > 1:
-            raise ValueError(
-                f"Success threshold must be 0.0-1.0, got {self.success_threshold}"
-            )
+            raise ValueError(f"Success threshold must be 0.0-1.0, got {self.success_threshold}")
 
     def to_prompt(self) -> str:
         """Convert pattern to full reasoning prompt."""
@@ -171,8 +169,8 @@ class PatternPerformance:
         self.total_reward += reward
         self.avg_reward = self.total_reward / self.total_attempts
         self.avg_confidence = (
-            (self.avg_confidence * (self.total_attempts - 1) + confidence) / self.total_attempts
-        )
+            self.avg_confidence * (self.total_attempts - 1) + confidence
+        ) / self.total_attempts
         self.success_rate = self.successful_attempts / self.total_attempts
 
     def get_score(self) -> float:
@@ -206,10 +204,26 @@ HANDCRAFTED_PATTERNS: List[ReasoningPattern] = [
         description="Approach NBT (Named Binary Tag) data structure conversions by understanding the data hierarchy first",
         feature_type=FeatureType.NBT_LOGIC,
         steps=[
-            ReasoningStep(1, "Analyze NBT Structure", "Identify all NBT tags and their types (compound, list, primitive)"),
-            ReasoningStep(2, "Map to Bedrock Schema", "Find semantic equivalents in Bedrock's JSON component system"),
-            ReasoningStep(3, "Handle Nested Data", "Convert nested structures to Bedrock's flat component model"),
-            ReasoningStep(4, "Test with Payloads", "Validate against sample NBT payloads to ensure data integrity"),
+            ReasoningStep(
+                1,
+                "Analyze NBT Structure",
+                "Identify all NBT tags and their types (compound, list, primitive)",
+            ),
+            ReasoningStep(
+                2,
+                "Map to Bedrock Schema",
+                "Find semantic equivalents in Bedrock's JSON component system",
+            ),
+            ReasoningStep(
+                3,
+                "Handle Nested Data",
+                "Convert nested structures to Bedrock's flat component model",
+            ),
+            ReasoningStep(
+                4,
+                "Test with Payloads",
+                "Validate against sample NBT payloads to ensure data integrity",
+            ),
         ],
         is_handcrafted=True,
     ),
@@ -219,8 +233,16 @@ HANDCRAFTED_PATTERNS: List[ReasoningPattern] = [
         description="Convert Java GUI systems to Bedrock interfaces using sign-based interactions",
         feature_type=FeatureType.GUI,
         steps=[
-            ReasoningStep(1, "Identify GUI Components", "List all GUI elements: containers, buttons, text fields"),
-            ReasoningStep(2, "Map to Bedrock Alternatives", "Find Bedrock equivalents (signs, hoppers,Lecterns)"),
+            ReasoningStep(
+                1,
+                "Identify GUI Components",
+                "List all GUI elements: containers, buttons, text fields",
+            ),
+            ReasoningStep(
+                2,
+                "Map to Bedrock Alternatives",
+                "Find Bedrock equivalents (signs, hoppers,Lecterns)",
+            ),
             ReasoningStep(3, "Handle Events", "Convert event handlers to Bedrock's trigger system"),
             ReasoningStep(4, "Test Interactions", "Verify all interaction paths work correctly"),
         ],
@@ -232,8 +254,16 @@ HANDCRAFTED_PATTERNS: List[ReasoningPattern] = [
         description="Convert Java entities to Bedrock with proper AI goals and behaviors",
         feature_type=FeatureType.ENTITY,
         steps=[
-            ReasoningStep(1, "Identify Entity Type", "Determine entity category: mob, projectile, vehicle, etc."),
-            ReasoningStep(2, "Map Attributes", "Convert health, speed, damage attributes to Bedrock attributes"),
+            ReasoningStep(
+                1,
+                "Identify Entity Type",
+                "Determine entity category: mob, projectile, vehicle, etc.",
+            ),
+            ReasoningStep(
+                2,
+                "Map Attributes",
+                "Convert health, speed, damage attributes to Bedrock attributes",
+            ),
             ReasoningStep(3, "Convert AI Goals", "Map Java goal selectors to Bedrock AI goals"),
             ReasoningStep(4, "Handle Events", "Convert entity events to Bedrock's event system"),
             ReasoningStep(5, "Test in Game", "Verify entity spawns and behaves correctly"),
@@ -246,10 +276,20 @@ HANDCRAFTED_PATTERNS: List[ReasoningPattern] = [
         description="Convert Java blocks with state properties to Bedrock blocks",
         feature_type=FeatureType.BLOCK,
         steps=[
-            ReasoningStep(1, "Analyze Block Properties", "Identify state properties, block states, and behaviors"),
-            ReasoningStep(2, "Create Bedrock Definition", "Create JSON block definition with components"),
-            ReasoningStep(3, "Map Block States", "Convert Java block states to Bedrock permutation system"),
-            ReasoningStep(4, "Handle Block Events", "Convert block interaction events to Bedrock triggers"),
+            ReasoningStep(
+                1,
+                "Analyze Block Properties",
+                "Identify state properties, block states, and behaviors",
+            ),
+            ReasoningStep(
+                2, "Create Bedrock Definition", "Create JSON block definition with components"
+            ),
+            ReasoningStep(
+                3, "Map Block States", "Convert Java block states to Bedrock permutation system"
+            ),
+            ReasoningStep(
+                4, "Handle Block Events", "Convert block interaction events to Bedrock triggers"
+            ),
         ],
         is_handcrafted=True,
     ),
@@ -259,10 +299,14 @@ HANDCRAFTED_PATTERNS: List[ReasoningPattern] = [
         description="General-purpose pattern for any Java-to-Bedrock conversion",
         feature_type=FeatureType.UNKNOWN,
         steps=[
-            ReasoningStep(1, "Extract Java Structure", "Identify class structure, methods, and dependencies"),
+            ReasoningStep(
+                1, "Extract Java Structure", "Identify class structure, methods, and dependencies"
+            ),
             ReasoningStep(2, "Map to Bedrock Type", "Find appropriate Bedrock equivalent type"),
             ReasoningStep(3, "Translate Methods", "Convert Java logic to Bedrock JavaScript"),
-            ReasoningStep(4, "Handle Differences", "Document incompatibilities and apply workarounds"),
+            ReasoningStep(
+                4, "Handle Differences", "Document incompatibilities and apply workarounds"
+            ),
             ReasoningStep(5, "Validate Output", "Ensure generated code is syntactically correct"),
         ],
         is_handcrafted=True,

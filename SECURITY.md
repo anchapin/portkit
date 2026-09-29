@@ -12,7 +12,7 @@ Instead, please report them via one of the following methods:
 
 1. **GitHub Security Advisories**: Use the [GitHub Security Advisory](https://github.com/anchapin/portkit/security/advisories/new) to report vulnerabilities privately.
 
-2. **Email**: Contact us at **alex** (you can find the email associated with the GitHub account @anchapin).
+2. **Email**: Contact us at **security@portkit.ai** for security reports, or **privacy@portkit.ai** for privacy / personal-data concerns (including suspected data breaches).
 
 ### What to Include
 
@@ -56,6 +56,17 @@ When contributing to portkit, please follow these security best practices:
 - Follow the principle of least privilege
 - Keep dependencies up to date
 - Run security checks before submitting PRs
+
+## Data Breach Handling (GDPR Article 33 / 34)
+
+If you become aware of a **personal data breach**, contact **privacy@portkit.ai**
+immediately. The supervisory authority must be notified within **72 hours** of
+awareness; affected data subjects must be notified without undue delay when the
+breach is high-risk.
+
+- **Procedure & timeline**: see the [Security Incident Runbook](./docs/runbooks/security-incident.md).
+- **Code entry point**: `backend/src/services/breach_notification.py`
+  (`BreachNotificationService.detect_breach()`).
 
 ## Security-Related Configuration
 
