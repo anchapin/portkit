@@ -1,8 +1,25 @@
 # PortKit
 
-AI-powered Minecraft Java to Bedrock conversion platform. Convert mods, add-ons, and extensions with 67%+ coverage across textures, models, recipes, sounds, lang files, and entities.
+> ## This project is no longer developed here
+>
+> The hosted service at modporter.ai is **shut down**. There is no website to
+> upload a mod to any more, and no API to call. What is left in this repository
+> still runs if you host it yourself, but it is not being maintained and no new
+> features are coming.
+>
+> **Development has moved to [anchapin/portkit-v2](https://github.com/anchapin/portkit-v2)**,
+> a rebuild with a deterministic conversion core, a real structural validator,
+> and a much smaller surface area.
+>
+> **If a mod failed to convert here, please tell us about it on v2.** Open an
+> issue at [portkit-v2/issues](https://github.com/anchapin/portkit-v2/issues)
+> with a link to the mod and what went wrong. Those reports decide which
+> converters get built first, so a failure report is genuinely the most useful
+> thing you can send.
 
-**[modporter.ai](https://modporter.ai)** | [Documentation](docs/getting-started.md) | [API Reference](docs/api-reference.md) | [Conversion Guide](docs/conversion-guide.md)
+AI-powered Minecraft Java to Bedrock conversion platform. Self-host only; the hosted service has been shut down.
+
+[Documentation](docs/getting-started.md) | [API Reference](docs/api-reference.md) | [Conversion Guide](docs/conversion-guide.md)
 
 [![codecov](https://codecov.io/gh/anchapin/PortKit/branch/main/graph/badge.svg)](https://codecov.io/gh/anchapin/PortKit)
 
